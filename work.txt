@@ -9,21 +9,13 @@ ssh -i /Applications/Code/ppk/beginstore.pem staging-big@3.8.249.69
 puttygen /Applications/Code/ppk/beginstore.ppk -O private-openssh -o /Applications/Code/ppk/beginstore.pem
 chmod 600 /Applications/Code/ppk/beginstore.pem
 
+https://bitbucket.org/jack_risk/three-model/src/staging/assets/
+
+
+
 
 engraved
 emboss
-
-cd ~/Downloads/sonar-scanner-5.0.1.3006-macosx/bin
-
-
-export PATH="/Users/tribondinfosystem/Downloads/sonar-scanner-5.0.1.3006-macosx/bin:$PATH"
-
-export JAVA_HOME="<path-to-java>"
-export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
-export PATH="$JAVA_HOME/bin:$PATH"
-/opt/homebrew/opt/openjdk@17/bin/java
-
-
 
 
 
