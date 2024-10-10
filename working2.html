@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>DAE Viewer with Dynamic Textures</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #info {
+            position: absolute;
+            top: 80px;
+            z-index: 1;
+        }
+
+        #info label,
+        #info select {
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 16px;
+            margin: 5px;
+            padding: 10px;
+            display: block;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            color: #333;
+        }
+
+        #info img {
+            width: 40px;
+            height: 40px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <select id="innerTextureDropdown">
+            <option value="">Inner Texture</option>
+            <option value="./assets/images/inner-images/adidas.jpg">Adidas</option>
+            <option value="./assets/images/inner-images/tree1.jpeg">Tree1</option>
+            <option value="./assets/images/inner-images/sunset.jpeg">Sunset</option>
+            <option value="./assets/images/inner-images/sunset2.webp">Sunset2</option>
+            <option value="./assets/images/inner-images/mount.jpeg">Mount</option>
+            <option value="./assets/images/inner-images/trees.jpg">Trees</option>
+        </select>
+
+        <select id="borderTextureDropdown">
+            <option value="">Border Texture</option>
+            <option value="./assets/images/borders/Light_Wood.jpg">Light Wood</option>
+            <option value="./assets/images/borders/Red_Cherry_Wood.jpg">Red Cherry Wood</option>
+            <option value="./assets/images/borders/Lighter_Wood.jpg">Lighter Wood</option>
+            <option value="./assets/images/borders/Dark_Wood.jpg">Dark Wood</option>
+        </select>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./three/build/three.module.js",
+                "three/addons/": "./three/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import Stats from 'three/addons/libs/stats.module.js';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+
+        const container = document.getElementById('container');
+        let renderer, scene, camera, stats;
+        let elf;
+
+        let params = {
+            scale: 0.4,
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            moveX: 0,
+            moveY: 0,
+            moveZ: 0,
+            borderColor: '#d6d6d6',
+            clear: clear
+        };
+
+        init();
+
+        function init() {
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setAnimationLoop(animate);
+            container.appendChild(renderer.domElement);
+
+            stats = new Stats();
+            container.appendChild(stats.dom);
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight);
+            camera.position.z = 120;
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 50;
+            controls.maxDistance = 200;
+
+            scene.add(new THREE.AmbientLight(0xffffff));
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5); // Reduced intensity
+            dirLight1.position.set(1, 0.75, 0.5);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 1.5); // Reduced intensity
+            dirLight2.position.set(-1, 0.75, -0.5);
+            scene.add(dirLight2);
+
+            // Load Collada file
+            const loader = new ColladaLoader();
+            loader.load('./assets/models/texture2.dae', function (collada) {
+                elf = collada.scene;
+                elf.scale.set(0.4, 0.4, 0.4);
+                elf.position.y = -25;
+
+                scene.add(elf);
+            });
+
+
+            // const tttt = elf
+
+
+            window.addEventListener('resize', onWindowResize);
+
+            const gui = new GUI();
+            gui.add(params, 'scale', 0.1, 5).onChange(updateScale);
+            gui.add(params, 'rotateX', -Math.PI, Math.PI).onChange(value => updateRotation('rotateX', value));
+            gui.add(params, 'rotateY', -Math.PI, Math.PI).onChange(value => updateRotation('rotateY', value));
+            gui.add(params, 'rotateZ', -Math.PI, Math.PI).onChange(value => updateRotation('rotateZ', value));
+            gui.add(params, 'moveX', -100, 100).onChange(value => updatePosition('moveX', value));
+            gui.add(params, 'moveY', -100, 100).onChange(value => updatePosition('moveY', value));
+            gui.add(params, 'moveZ', -100, 100).onChange(value => updatePosition('moveZ', value));
+            gui.addColor(params, 'borderColor').onChange(updateBorderColor);
+            gui.add(params, 'clear');
+            gui.open();
+
+            window.addEventListener('keydown', onKeyDown);
+
+            // Set up the dropdowns
+            const innerDropdown = document.getElementById('innerTextureDropdown');
+            innerDropdown.addEventListener('change', function () {
+                const selectedOption = innerDropdown.options[innerDropdown.selectedIndex];
+                const image = selectedOption.value;
+                changeTexture(image, false); // Apply to inner parts
+            });
+
+            const borderDropdown = document.getElementById('borderTextureDropdown');
+            borderDropdown.addEventListener('change', function () {
+                const selectedOption = borderDropdown.options[borderDropdown.selectedIndex];
+                const image = selectedOption.value;
+                changeTexture(image, true); // Apply to border parts
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            renderer.render(scene, camera);
+            stats.update();
+        }
+
+        function onKeyDown(event) {
+            if (!elf) return;
+
+            const step = 1;
+            const rotationStep = 0.1;
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    elf.position.y += step;
+                    break;
+                case 'ArrowDown':
+                    elf.position.y -= step;
+                    break;
+                case 'ArrowLeft':
+                    elf.position.x -= step;
+                    break;
+                case 'ArrowRight':
+                    elf.position.x += step;
+                    break;
+                case 'w':
+                    elf.position.y += step;
+                    break;
+                case 's':
+                    elf.position.y -= step;
+                    break;
+                case 'a':
+                    elf.position.x -= step;
+                    break;
+                case 'd':
+                    elf.position.x += step;
+                    break;
+                case 't':
+                    elf.rotation.y -= rotationStep;
+                    break;
+                case 'g':
+                    elf.rotation.y += rotationStep;
+                    break;
+                case 'r':
+                    elf.rotation.x -= rotationStep;
+                    break;
+                case 'f':
+                    elf.rotation.x += rotationStep;
+                    break;
+                case 'q':
+                    elf.rotation.z -= rotationStep;
+                    break;
+                case 'e':
+                    elf.rotation.z += rotationStep;
+                    break;
+                case '=':
+                case '+':
+                    elf.scale.multiplyScalar(1.1);
+                    break;
+                case '-':
+                    elf.scale.multiplyScalar(0.9);
+                    break;
+            }
+        }
+
+        function updateScale(value) {
+            if (elf) elf.scale.set(value, value, value);
+        }
+
+        function updateRotation(axis, value) {
+            if (elf) {
+                switch (axis) {
+                    case 'rotateX':
+                        elf.rotation.x = value;
+                        break;
+                    case 'rotateY':
+                        elf.rotation.y = value;
+                        break;
+                    case 'rotateZ':
+                        elf.rotation.z = value;
+                        break;
+                }
+            }
+        }
+
+        function updatePosition(axis, value) {
+            if (elf) {
+                switch (axis) {
+                    case 'moveX':
+                        elf.position.x = value;
+                        break;
+                    case 'moveY':
+                        elf.position.y = value;
+                        break;
+                    case 'moveZ':
+                        elf.position.z = value;
+                        break;
+                }
+            }
+        }
+
+        function updateBorderColor(borderColor) {
+            if (!elf) return;
+
+            elf.traverse(function (child) {
+                if (child.isMesh && isBorderPart(child)) {
+                    child.material.color.set(borderColor);
+                    child.material.needsUpdate = true;
+                }
+            });
+        }
+
+        function clear() {
+            // location.href = location.pathname;
+
+            if (elf) {
+                elf.scale.set(params.scale, params.scale, params.scale);
+                elf.rotation.set(params.rotateX, params.rotateY, params.rotateZ);
+                elf.position.set(params.moveX, params.moveY, params.moveZ);
+
+                elf.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material.color.set(params.borderColor);
+                        child.material.needsUpdate = true;
+                    }
+                });
+            }
+
+            Object.assign(params, {
+                scale: 0.4,
+                rotateX: 0,
+                rotateY: 0,
+                rotateZ: 0,
+                moveX: 0,
+                moveY: 0,
+                moveZ: 0,
+                borderColor: '#d6d6d6'
+            });
+        }
+
+        function isInnerPart(mesh) {
+            const innerNames = ['Cube.2', 'Cube.1']; // Replace with actual names or IDs of inner meshes
+            return innerNames.includes(mesh.name);
+        }
+
+        function isBorderPart(mesh) {
+            const borderNames = ['Cube', '_0001-20-001', '_0001-20-002', 'Solid2_1_.2', 'Solid2_1_.1']; // Replace with actual names or IDs of border meshes
+            return borderNames.includes(mesh.name);
+        }
+
+        function changeTexture(image, isBorderTexture = false) {
+            if (!elf) return;
+
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(image, function (texture) {
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.encoding = THREE.sRGBEncoding;
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.needsUpdate = true;
+
+                elf.traverse(function (child) {
+                    if (child.isMesh) {
+                        if (isBorderTexture && isBorderPart(child)) {
+                            console.log('Applying border texture to:', child.name);
+
+                            if (!child.material) {
+                                child.material = new THREE.MeshStandardMaterial();
+                            }
+
+                            child.material.map = texture;
+                            child.material.needsUpdate = true;
+                            child.material.toneMapped = true;
+                            child.material.shininess = 0;
+                            child.material.emissive.set(0x000000);
+                            child.material.emissiveIntensity = 0;
+                            child.material.roughness = 1;
+                            child.material.metalness = 1;
+                        } else if (!isBorderTexture && isInnerPart(child)) {
+                            console.log('Applying inner texture to:', child.name);
+
+                            if (!child.material) {
+                                child.material = new THREE.MeshStandardMaterial();
+                            }
+
+                            child.material.map = texture;
+                            child.material.needsUpdate = true;
+                            child.material.toneMapped = true;
+                            child.material.shininess = 0;
+                            child.material.emissive.set(0x000000);
+                            child.material.emissiveIntensity = 0;
+                            child.material.roughness = 1;
+                            child.material.metalness = 1;
+                        }
+                    }
+                });
+            }, undefined, function (error) {
+                console.error('An error occurred while loading the texture.', error);
+            });
+        }
+    </script>
+</body>
+
+</html>

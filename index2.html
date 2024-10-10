@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three.js Frame Customizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    .controls {
+      width: 300px;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      /* overflow-y: auto; */
+      position: absolute;
+      top: 50px;
+    }
+
+    .preview {
+      flex-grow: 1;
+      background: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .preview canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .control-group input,
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .control-group input[type="checkbox"] {
+      width: auto;
+      margin-right: 10px;
+    }
+
+    .submit-button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+
+    .custom-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-button {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 10px;
+      cursor: pointer;
+      width: 220px;
+      /* Adjust the width to accommodate image and text */
+      display: flex;
+      align-items: center;
+    }
+
+    .selected-image {
+      width: 40px;
+      /* Size of the selected image thumbnail */
+      height: 40px;
+      margin-right: 10px;
+      display: none;
+      /* Hide by default, will show when an image is selected */
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      z-index: 1;
+      max-height: 300px;
+      /* Adjust height as needed */
+      overflow-y: auto;
+      width: 100%;
+      /* Matches the width of the button */
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .dropdown-item img {
+      width: 50px;
+      /* Adjust the size of the images */
+      height: 50px;
+      margin-right: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .dropdown-item span {
+      flex: 1;
+      /* Ensures the text takes up remaining space */
+    }
+
+    .dropdown-item:hover {
+      background-color: #e0e0e0;
+    }
+
+
+    .color-box {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+      display: inline-block;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="controls">
+    <div class="control-group">
+      <label for="frameSize">Frame Size</label>
+      <select id="frameSize">
+        <option value="600">600</option>
+        <option value="900">900</option>
+        <option value="1000">1000</option>
+        <option value="1200">1200</option>
+        <option value="1500">1500</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="frameCount">Number of Frame</label>
+      <select id="frameCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="baseColor">Base Color</label>
+      <select id="baseColor">
+        <option value="#000000">Black</option>
+        <option value="#ffffff">White</option>
+      </select>
+    </div>
+    <div class="control-group">
+
+      <label for="frameTexture">Frame Style</label>
+      <div class="custom-dropdown">
+        <button class="dropdown-button">
+          <img src="" alt="Selected Texture" class="selected-image" />
+          <span>Select Texture/Color</span>
+        </button>
+        <!-- <button class="dropdown-button">Select Frame Style</button> -->
+        <div class="dropdown-content">
+          <!-- Color options -->
+          <div class="dropdown-item" data-type="color" data-color="0xffffff">
+            <div class="color-box" style="background-color: white;"></div>
+            <span>Solid White Color</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-color="0x000000">
+            <div class="color-box" style="background-color: black;"></div>
+            <span>Solid Black Color</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Gold-Oak.jpg">
+            <img src="./assets/images/borders/Gold-Oak.jpg" alt="Gold-Oak" />
+            <span>Gold-Oak</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Mat-Red.jpg">
+            <img src="./assets/images/borders/Mat-Red.jpg" alt="Mat-Red" />
+            <span>Mat-Red</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Oak-1.jpg">
+            <img src="./assets/images/borders/Oak-1.jpg" alt="Oak-1" />
+            <span>Oak-1</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Oak-2.jpg">
+            <img src="./assets/images/borders/Oak-2.jpg" alt="Oak-2" />
+            <span>Oak-2</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Red-Walnut.jpg">
+            <img src="./assets/images/borders/Red-Walnut.jpg" alt="Red-Walnut" />
+            <span>Red-Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Sandal-Wood.jpg">
+            <img src="./assets/images/borders/Sandal-Wood.jpg" alt="Sandal-Wood" />
+            <span>Sandal-Wood</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Shabili.jpg">
+            <img src="./assets/images/borders/Shabili.jpg" alt="Shabili" />
+            <span>Shabili</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Walnut.jpg">
+            <img src="./assets/images/borders/Walnut.jpg" alt="Walnut" />
+            <span>Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Yellow-Cherry.jpg">
+            <img src="./assets/images/borders/Yellow-Cherry.jpg" alt="Yellow-Cherry" />
+            <span>Yellow-Cherry</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Yellow-Pear.jpg">
+            <img src="./assets/images/borders/Yellow-Pear.jpg" alt="Yellow-Pear" />
+            <span>Yellow-Pear</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Black-Wallnut.jpg">
+            <img src="./assets/images/borders/Black-Wallnut.jpg" alt="Black-Wallnut" />
+            <span>Black-Wallnut</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="control-group">
+      <label for="frameColor">Frame Color</label>
+      <select id="frameColor">
+        <option value="#ff0000">Red</option>
+        <option value="#00ff00">Green</option>
+        <option value="#0000ff">Blue</option>
+        <option value="#ffff00">Yellow</option>
+        <option value="#ff00ff">Magenta</option>
+        <option value="#00ffff">Cyan</option>
+        <option value="#000000">Black</option>
+        <option value="#ffffff">White</option>
+      </select>
+    </div> -->
+    <div class="control-group">
+      <label for="headerToggle">
+        <input type="checkbox" id="headerToggle" checked /> Header
+      </label>
+    </div>
+    <div class="control-group">
+      <label for="imageUpload">Upload SES Image</label>
+      <input type="file" id="imageUpload" />
+    </div>
+    <!-- <button class="submit-button" onclick="submitForm()">Submit</button> -->
+  </div>
+  <!-- <div class="preview">
+    <canvas id="canvas"></canvas>
+  </div> -->
+  <div id="container"></div>
+
+
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/ColladaLoader.js"></script> -->
+  <script type="importmap">
+      {
+        "imports": {
+          "three": "./three/build/three.module.js",
+          "three/addons/": "./three/examples/jsm/"
+        }
+      }
+    </script>
+  <script type="module">
+    import * as THREE from "three";
+    import Stats from 'three/addons/libs/stats.module.js';
+
+    import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+    import { ColladaLoader } from "three/addons/loaders/ColladaLoader.js";
+
+    const container = document.getElementById('container');
+
+
+    var frameTop1Names = ['Header_Graphic.1', 'Header_Graphic.2'];
+    var frameMainNames = ['Cube.1', 'Cube.2'];
+    var allFrameBorderNames = ['Header_Frame', 'Top_Ex', 'Bottom_Ex', 'Left_Ex', 'Right_Ex'];
+    var baseFrameNames = ['Base_Option_1', 'Base_Option_2'];
+    var defaultColor = '0xffffff';
+
+
+    let mesh, renderer, scene, camera, stats, controls, elf, elfGroup;
+    let gui,
+      guiExposure = null;
+    const state = {
+      frameSize: 600,
+      baseColor: "#000000",
+      frameTexture: "texture1.jpg",
+      frameColor: "#ff0000",
+      headerVisible: true,
+      image: null,
+    };
+    const toneMappingOptions = {
+      None: THREE.NoToneMapping,
+      Linear: THREE.LinearToneMapping,
+      Reinhard: THREE.ReinhardToneMapping,
+      Cineon: THREE.CineonToneMapping,
+      ACESFilmic: THREE.ACESFilmicToneMapping,
+      AgX: THREE.AgXToneMapping,
+      Neutral: THREE.NeutralToneMapping,
+      Custom: THREE.CustomToneMapping,
+    };
+
+
+
+    const hdrEquirect = new RGBELoader()
+      .setPath("./assets/images/background/")
+      .load("venice_sunset_1k.hdr", function () {
+        hdrEquirect.mapping = THREE.EquirectangularReflectionMapping;
+        render();
+      });
+
+    let params = {
+      color: 0xffffff,
+      transmission: 1,
+      opacity: 1,
+      baseMetalness: 0,
+      baseRoughness: 0,
+      ior: 1.5,
+      thickness: 0.01,
+      specularIntensity: 1,
+      specularColor: 0xffffff,
+      envMapIntensity: 1,
+      lightIntensity: 1,
+      exposure: 1,
+      blurriness: 0.3,
+      toneMapping: "AgX",
+      selectedBaseFrame: baseFrameNames[1],
+      baseSheen: 0,
+      frameMetalness: 0.5,
+      frameRoughness: 0.5,
+    };
+
+    init().catch(function (err) {
+      console.error(err);
+    });
+    async function init() {
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      // renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setAnimationLoop(render);
+
+      container.appendChild(renderer.domElement);
+
+      renderer.toneMapping = toneMappingOptions[params.toneMapping];
+      renderer.toneMappingExposure = params.exposure;
+
+
+      stats = new Stats();
+      container.appendChild(stats.dom);
+
+      // Set CustomToneMapping to Uncharted2
+      // source: http://filmicworlds.com/blog/filmic-tonemapping-operators/
+
+      THREE.ShaderChunk.tonemapping_pars_fragment =
+        THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+          "vec3 CustomToneMapping( vec3 color ) { return color; }",
+
+          `#define Uncharted2Helper( x ) max( ( ( x * ( 0.15 * x + 0.10 * 0.50 ) + 0.20 * 0.02 ) / ( x * ( 0.15 * x + 0.50 ) + 0.20 * 0.30 ) ) - 0.02 / 0.30, vec3( 0.0 ) )
+
+              float toneMappingWhitePoint = 1.0;
+
+              vec3 CustomToneMapping( vec3 color ) {
+                  color *= toneMappingExposure;
+                  return saturate( Uncharted2Helper( color ) / Uncharted2Helper( vec3( toneMappingWhitePoint ) ) );
+
+              }`
+        );
+
+      scene = new THREE.Scene();
+      scene.backgroundBlurriness = params.blurriness;
+
+      // camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+      camera = new THREE.PerspectiveCamera(
+        30,
+        window.innerWidth / window.innerHeight
+      );
+      camera.position.set(1.8, 0.6, 2.7);
+      // camera.position.set(50, 50, 90);
+
+      camera.aspect = window.innerWidth / window.innerHeight;
+      // renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.updateProjectionMatrix();
+
+      controls = new OrbitControls(camera, renderer.domElement);
+
+      // controls.minPolarAngle = Math.PI / 2; // Adjust the value as needed
+      controls.maxPolarAngle = Math.PI / 2; // Adjust the value as needed
+
+      // Restrict the horizontal rotation (azimuthal angle)
+      // controls.minAzimuthAngle = -Math.PI / 2; // Adjust the value as needed
+      // controls.maxAzimuthAngle = Math.PI / 2;
+
+      camera.position.z = 120;
+
+      controls.addEventListener("change", render); // use if there is no animation loop
+      // controls.target.set(0, 0, -0.2);
+      controls.update();
+
+      const rgbeLoader = new RGBELoader().setPath("./assets/images/background/");
+
+      const loader = new ColladaLoader().setPath("./assets/models/");
+      // const gltfLoader = new GLTFLoader().setPath( './three/examples/models/gltf/DamagedHelmet/glTF/' );
+      const textureLoader = new THREE.TextureLoader();
+      const [texture, collada, texture_border] = await Promise.all([
+        rgbeLoader.loadAsync("venice_sunset_1k.hdr"),
+        loader.loadAsync("texture600.dae"),
+        textureLoader.load("./assets/images/borders/Light_Wood.jpg"),
+      ]);
+
+
+      elfGroup = new THREE.Group();
+      scene.add(elfGroup);
+
+      elf = collada.scene;
+      // environment
+      elf.scale.set(0.3, 0.3, 0.3);
+      elf.position.set(0, -20, 0);
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      elf.castShadow = true;
+      scene.background = texture;
+      scene.environment = texture;
+
+      {
+        const radius = 50;
+        const height = 35;
+        const lightIntensity = 1.0;
+
+        for (let i = 0; i < 4; i++) {
+          const angle = (i / 4) * Math.PI * 2;
+          const x = Math.cos(angle) * radius;
+          const z = Math.sin(angle) * radius;
+
+          const directionalLight = new THREE.DirectionalLight(
+            0xffffff,
+            i % 2 == 0 ? lightIntensity : 2
+          );
+          directionalLight.position.set(x, height, z);
+
+          const targetObject = new THREE.Object3D();
+          targetObject.position.x = 0;
+          targetObject.position.y = -20;
+          // Set target to the position of the elf model
+          scene.add(targetObject);
+
+          directionalLight.target = targetObject;
+          directionalLight.target.updateMatrixWorld();
+
+          scene.add(directionalLight);
+
+          const directionalLightHelper = new THREE.DirectionalLightHelper(
+            directionalLight,
+            5
+          );
+          // scene.add(directionalLightHelper);
+        }
+      }
+
+      // {
+      //   const radius = 50;
+      //   const height = 5;
+      //   const lightIntensity = 1;
+
+      //   for (let i = 0; i < 8; i++) {
+      //     const angle = (i / 8) * Math.PI * 2;
+      //     const x = Math.cos(angle) * radius;
+      //     const z = Math.sin(angle) * radius;
+
+      //     const directionalLight = new THREE.DirectionalLight(
+      //       0xffffff,
+      //       i % 2 == 0 ? lightIntensity : 0.5
+      //     );
+      //     directionalLight.position.set(x, height, z);
+
+      //     const targetObject = new THREE.Object3D();
+      //     targetObject.position.copy(elf.position); // Set target to the position of the elf model
+      //     scene.add(targetObject);
+
+      //     directionalLight.target = targetObject;
+      //     directionalLight.target.updateMatrixWorld();
+
+      //     scene.add(directionalLight);
+
+      //     const directionalLightHelper = new THREE.DirectionalLightHelper(
+      //       directionalLight,
+      //       5
+      //     );
+      //     scene.add(directionalLightHelper);
+      //   }
+      // }
+
+      // const node = elf.getObjectByName("Top_Ex");
+
+      // const nodeClone = node.clone();
+      // nodeClone.scale.set(0.3, 0.3, 0.3);
+      // scene.add(nodeClone);
+      // nodeClone.position.x = 10;
+      // nodeClone.position.y = 0;
+      // nodeClone.position.y = 0;
+
+      // elf.traverse(function (child) {
+      //   if (child.name == "Top_Ex") {
+      //     console.log(child);
+      //     console.log("material", child.material);
+
+      //     console.log("------------------------------");
+      //     const greenMaterial = new THREE.MeshStandardMaterial({
+      //       color: 0x000000, // Green color
+      //       metalness: 0.5, // Adjust for desired metallic effect
+      //       roughness: 0.5, // Adjust for desired shininess
+      //       opacity: 0.5,
+      //       transparent: true,
+      //     });
+
+      //     const whitematerial = new THREE.MeshStandardMaterial({
+      //       color: 0x808080, // Green color
+      //       metalness: 0.5, // Adjust for desired metallic effect
+      //       roughness: 0.5, // Adjust for desired shininess
+      //     });
+
+      //     child.material = [child.material[0], greenMaterial];
+
+      //     console.log("material", child.material);
+      //     // let oldMat = child.material;
+
+      //     // const geometry = new THREE.SphereGeometry(20, 64, 32);
+
+      //     // const texture = new THREE.CanvasTexture(generateTexture());
+      //     // texture.magFilter = THREE.NearestFilter;
+      //     // texture.wrapT = THREE.RepeatWrapping;
+      //     // texture.wrapS = THREE.RepeatWrapping;
+      //     // texture.repeat.set(1, 3.5);
+      //     // const material = new THREE.MeshPhysicalMaterial({
+      //     //   color: params.color,
+      //     //   metalness: params.baseMetalness,
+      //     //   roughness: params.baseRoughness,
+      //     //   ior: params.ior,
+      //     //   alphaMap: texture,
+      //     //   envMap: hdrEquirect,
+      //     //   envMapIntensity: params.envMapIntensity,
+      //     //   transmission: params.transmission, // use material.transmission for glass materials
+      //     //   specularIntensity: params.specularIntensity,
+      //     //   specularColor: params.specularColor,
+      //     //   opacity: params.opacity,
+      //     //   side: THREE.DoubleSide,
+      //     //   transparent: true,
+      //     //   texture
+      //     // });
+
+      //     texture_border.encoding = THREE.sRGBEncoding;
+      //     texture_border.minFilter = 1008;
+      //     texture_border.magFilter = THREE.LinearFilter;
+      //     texture_border.colorSpace = "srgb";
+
+      //     texture_border.wrapT = THREE.RepeatWrapping;
+      //     texture_border.wrapS = THREE.RepeatWrapping;
+
+      //     const material = new THREE.MeshPhongMaterial({
+      //       name: "newMat",
+      //       specular: 3355443,
+      //       map: texture_border,
+      //       shininess: 0.5,
+      //     });
+
+      //     child.material = [material, greenMaterial];
+
+      //     console.log("new Material", material);
+
+      //     // let n = child.copy();
+      //     // scene.add(n)
+      //     // child.material = oldMat;
+
+      //     child.material.needsUpdate = true;
+
+      //   }
+
+      // });
+
+      // model
+      // scene.add(collada.scene);
+      loadObjects(1)
+
+      // if (elf.rotation.x > Math.PI / 2) {
+      //   elf.rotation.x = Math.PI / 2;
+      // } else if (elf.rotation.x < -Math.PI / 2) {
+      //   elf.rotation.x = -Math.PI / 2;
+      // }
+
+      // if (elf.rotation.y > Math.PI / 2) {
+      //   elf.rotation.y = Math.PI / 2;
+      // } else if (elf.rotation.y < -Math.PI / 2) {
+      //   elf.rotation.y = -Math.PI / 2;
+      // }
+
+      // elf.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, elf.rotation.x));
+      // elf.rotation.y = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, elf.rotation.y));
+
+      // {
+
+      // 	const geometry = new THREE.SphereGeometry( 20, 64, 32 );
+
+      // const texture = new THREE.CanvasTexture( generateTexture() );
+      // texture.magFilter = THREE.NearestFilter;
+      // texture.wrapT = THREE.RepeatWrapping;
+      // texture.wrapS = THREE.RepeatWrapping;
+      // texture.repeat.set( 1, 3.5 );
+      // const material = new THREE.MeshPhysicalMaterial( {
+      // 					color: params.color,
+      // 					metalness: params.baseMetalness,
+      // 					roughness: params.baseRoughness,
+      // 					ior: params.ior,
+      // 					alphaMap: texture,
+      // 					envMap: hdrEquirect,
+      // 					envMapIntensity: params.envMapIntensity,
+      // 					transmission: params.transmission, // use material.transmission for glass materials
+      // 					specularIntensity: params.specularIntensity,
+      // 					specularColor: params.specularColor,
+      // 					opacity: params.opacity,
+      // 					side: THREE.DoubleSide,
+      // 					transparent: true
+      // 				} );
+
+      // 				mesh = new THREE.Mesh( geometry, material );
+      // 				scene.add( mesh );
+
+      // }
+
+
+
+      render();
+
+      window.addEventListener("resize", onWindowResize);
+
+      const gui = new GUI();
+      gui.add(params, 'selectedBaseFrame', baseFrameNames).name('Select Base Frame').onChange(function (value) {
+        // Call the function to update the visibility based on the selected frame
+        updateBaseFrameVisibility(value);
+      });
+      // gui.add(params, 'baseSheen').min(0.01).max(1).step(0.01).name('Select Base Sheen').onChange(function (value) {
+      //   elfGroup.traverse(function (elf) {
+      //     elf.traverse(function (child) {
+      //       params.baseSheen = value
+      //       if (baseFrameNames.includes(child.name)) {
+      //         child.material.sheen = params.baseSheen
+      //       }
+      //     });
+      //   });
+      // });
+      // gui.add(params, 'baseMetalness').min(0.01).max(1).step(0.01).onChange(updateBaseFrameMetalness).name('Base Metalness');
+      // gui.add(params, 'baseRoughness').min(0.01).max(1).step(0.01).onChange(updateBaseFrameRoughness).name('Base Roughness');
+      // gui.add(params, 'frameMetalness').min(0.01).max(1).step(0.01).onChange(updateFrameMetalness).name('Frame Metalness');
+      // gui.add(params, 'frameRoughness').min(0.01).max(1).step(0.01).onChange(updateFrameRoughness).name('Frame Roughness');
+      updateBaseFrameVisibility(params.selectedBaseFrame)
+      updateBaseFrameMesh()
+      updateMaterial('color', defaultColor, '', '');
+    }
+
+    function commonMaterial(color) {
+      const material = new THREE.MeshPhysicalMaterial({
+        color: color, // Black color
+        metalness: 1, // Full metallic
+        roughness: 0.5, // Adjust roughness as needed
+        // sheen: params.baseSheen, // Enable sheen
+        // sheenColor: new THREE.Color(0xffffff) // Sheen color (dark gray)
+      });
+
+      return material
+    }
+
+    function updateBaseFrameMeshElf(elf) {
+      elf.traverse(function (child) {
+        // console.log('baseFrameNames', baseFrameNames)
+        if (child.material && baseFrameNames.includes(child.name)) {
+          var old_material = child.material
+          const material = commonMaterial(parseInt(defaultColor, 16))
+          child.material = material
+          child.material.needsUpdate = true;
+
+          // Check if the mesh has multiple materials
+          // if (Array.isArray(child.material)) {
+          //   child.material.forEach((mat, index) => {
+          //     console.log('mat', mat)
+          //     child.material[index] = material;
+          //     child.material[index].needsUpdate = true;
+          //   });
+          // } else {
+          //     console.log('material_tttt', material)
+          //     console.log('material_bbbb', child.material)
+          //   child.material = material;
+          //   child.material.needsUpdate = true;
+          // }
+        }
+      });
+    }
+
+    function updateBaseFrameMesh() {
+      updateBaseFrameMeshElf(elf)
+      elfGroup.traverse(function (elf) {
+        updateBaseFrameMeshElf(elf)
+      });
+    }
+
+    function updateBaseFrameVisibilityElf(elf, selectedFrame) {
+      elf.traverse(function (child) {
+        if (baseFrameNames.includes(child.name)) {
+          console.log('show_hide', child.name)
+          child.visible = (child.name === selectedFrame);
+        }
+      });
+    }
+
+    function updateBaseFrameVisibility(selectedFrame) {
+      updateBaseFrameVisibilityElf(elf, selectedFrame)
+      elfGroup.traverse(function (elf) {
+        updateBaseFrameVisibilityElf(elf, selectedFrame)
+      });
+    }
+
+    function checkMeshType(type) {
+      switch (type) {
+        case 'MeshBasicMaterial':
+          console.log("This is a MeshBasicMaterial.");
+          break;
+        case 'MeshStandardMaterial':
+          console.log("This is a MeshStandardMaterial.");
+          break;
+        case 'MeshPhongMaterial':
+          console.log("This is a MeshPhongMaterial.");
+          break;
+        case 'MeshLambertMaterial':
+          console.log("This is a MeshLambertMaterial.");
+          break;
+        case 'MeshPhysicalMaterial':
+          console.log("This is a MeshPhysicalMaterial.");
+          break;
+        case 'MeshNormalMaterial':
+          console.log("This is a MeshNormalMaterial.");
+          break;
+        case 'MeshToonMaterial':
+          console.log("This is a MeshToonMaterial.");
+          break;
+        case 'MeshMatcapMaterial':
+          console.log("This is a MeshMatcapMaterial.");
+          break;
+        case 'LineBasicMaterial':
+          console.log("This is a LineBasicMaterial.");
+          break;
+        case 'LineDashedMaterial':
+          console.log("This is a LineDashedMaterial.");
+          break;
+        case 'PointsMaterial':
+          console.log("This is a PointsMaterial.");
+          break;
+        default:
+          console.log("Unknown material type.");
+          break;
+      }
+
+    }
+
+    function updateBaseFrameMetalness(metalness) {
+      params.baseMetalness = metalness
+      elfGroup.traverse(function (elf) {
+        elf.traverse(mesh => {
+          if (mesh.isMesh && baseFrameNames.includes(mesh.name)) {
+            checkMeshType(mesh.material.type)
+            mesh.material.roughness = params.baseRoughness;
+            mesh.material.metalness = params.baseMetalness;
+          }
+        })
+      })
+    }
+
+    function updateBaseFrameRoughness(roughness) {
+      params.baseRoughness = roughness
+      elfGroup.traverse(function (elf) {
+        elf.traverse(mesh => {
+          if (mesh.isMesh && baseFrameNames.includes(mesh.name)) {
+            mesh.material.roughness = params.baseRoughness;
+            mesh.material.metalness = params.baseMetalness;
+            mesh.material.specular = 3355443;
+            mesh.material.shininess = 0.5;
+          }
+        })
+      })
+    }
+
+    function updateFrameMetalness(metalness) {
+      params.baseMetalness = metalness
+      elfGroup.traverse(function (elf) {
+        elf.traverse(mesh => {
+          if (mesh.isMesh && allFrameBorderNames.includes(mesh.name)) {
+            checkMeshType(mesh.material.type)
+            mesh.material.roughness = params.baseRoughness;
+            mesh.material.metalness = params.baseMetalness;
+          }
+        })
+      })
+    }
+
+    function updateFrameRoughness(roughness) {
+      params.baseRoughness = roughness
+      elfGroup.traverse(function (elf) {
+        elf.traverse(mesh => {
+          if (allFrameBorderNames.includes(mesh.name)) {
+            mesh.material.roughness = params.baseRoughness;
+            mesh.material.metalness = params.baseMetalness;
+            mesh.material.specular = 3355443;
+            mesh.material.shininess = 0.5;
+          }
+        })
+      })
+    }
+
+    function generateTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 2;
+      canvas.height = 2;
+
+      const context = canvas.getContext("2d");
+      context.fillStyle = "white";
+      context.fillRect(0, 1, 2, 1);
+
+      return canvas;
+    }
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      render();
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+      stats.update();
+    }
+
+    function loadObjects(count) {
+      if (!elf) {
+        console.error('Failed to load the scene.');
+        return;
+      }
+
+      elfGroup.clear(); // Clear previous objects
+
+      for (let i = 0; i < count; i++) {
+        const newElf = elf.clone();
+        // newElf.name = 'test' + i
+        // newElf.position.x = i * 50.05 - ((count - 1) * 25.025);
+        newElf.position.x = i * 18.05 - ((count - 1) * 9.025);
+        elfGroup.add(newElf);
+      }
+
+    }
+
+
+    // Event listeners for controls
+    document
+      .getElementById("frameSize")
+      .addEventListener("change", function (event) {
+        const size = event.target.value;
+        console.log('size', size);
+
+        if (elf) {
+          const scale = size / 600; // Assuming 600 is the base size
+          elf.scale.set(scale, scale, scale);
+        }
+      });
+    document
+      .getElementById("frameCount")
+      .addEventListener("change", function (event) {
+        const frame_no = event.target.value;
+        console.log('frame_no', frame_no);
+
+        if (elf) {
+          loadObjects(frame_no)
+        }
+      });
+
+    document
+      .getElementById("baseColor")
+      .addEventListener("change", function (event) {
+        const color_new = event.target.value;
+        if (elfGroup) {
+          elfGroup.traverse(function (elf) {
+            elf.traverse(function (child) {
+              if (child.material && baseFrameNames.includes(child.name)) {
+                child.material.color.set(color_new);
+                child.material.needsUpdate = true;
+              }
+            });
+          });
+        }
+      });
+
+    // Function to update texture or color on selection
+    function updateMaterial(type, value, imageUrl, displayText) {
+      console.log('value', value)
+      // Reset selected class
+      document.querySelectorAll(".dropdown-item").forEach(function (el) {
+        el.classList.remove("selected");
+      });
+
+      // Find the matching element and add the selected class
+      document.querySelectorAll(".dropdown-item").forEach(function (element) {
+        if ((type === "texture" && element.getAttribute("data-texture") === value) ||
+          (type === "color" && element.getAttribute("data-color") === value)) {
+          element.classList.add("selected");
+        }
+      });
+
+      // Update Three.js material
+      elfGroup.traverse(function (elf) {
+        elf.traverse(function (child) {
+          if (child.isMesh && allFrameBorderNames.includes(child.name)) {
+            if (type === "texture") {
+              // Load texture
+              const texture_border = new THREE.TextureLoader().load("./assets/images/borders/" + value, function () {
+                texture_border.encoding = THREE.sRGBEncoding;
+                texture_border.minFilter = 1008;
+                texture_border.magFilter = THREE.LinearFilter;
+                texture_border.colorSpace = "srgb";
+                texture_border.wrapT = THREE.RepeatWrapping;
+                texture_border.wrapS = THREE.RepeatWrapping;
+
+                const material = new THREE.MeshPhongMaterial({
+                  name: "newMat",
+                  specular: 3355443,
+                  map: texture_border,
+                  shininess: 0.5,
+                });
+
+                child.material = material;
+                child.material.needsUpdate = true;
+              });
+            } else if (type === "color") {
+              // Apply color
+              const material = commonMaterial(parseInt(value, 16))
+
+              child.material = material;
+              child.material.needsUpdate = true;
+            }
+          }
+        });
+      });
+
+      // Update dropdown button with selected image/color and name
+      const selectedImage = document.querySelector(".dropdown-button .selected-image");
+      const selectedText = document.querySelector(".dropdown-button span");
+
+      if (type === "texture") {
+        selectedImage.src = imageUrl;
+        selectedImage.style.display = "inline-block"; // Show image
+      } else if (type === "color") {
+        selectedImage.style.display = "none"; // Hide image for color
+      }
+      if (displayText) {
+        selectedText.innerText = displayText;
+      }
+    }
+
+    // Toggle dropdown visibility
+    document.querySelector(".dropdown-button").addEventListener("click", function () {
+      const dropdownContent = document.querySelector(".dropdown-content");
+      dropdownContent.style.display = dropdownContent.style.display === "block" ? "none" : "block";
+    });
+
+    // Add event listeners to dropdown items
+    document.querySelectorAll(".dropdown-item").forEach(function (item) {
+      item.addEventListener("click", function () {
+        const type = item.getAttribute("data-type");
+        const value = type === "texture" ? item.getAttribute("data-texture") : item.getAttribute("data-color");
+        const imageUrl = type === "texture" ? item.querySelector("img").src : "";
+        const displayText = item.querySelector("span").innerText;
+
+        updateMaterial(type, value, imageUrl, displayText);
+        document.querySelector(".dropdown-content").style.display = "none"; // Hide dropdown
+      });
+    });
+
+    // Close the dropdown if clicked outside
+    window.addEventListener("click", function (event) {
+      if (!event.target.closest('.custom-dropdown')) {
+        const dropdownContent = document.querySelector(".dropdown-content");
+        if (dropdownContent.style.display === "block") {
+          dropdownContent.style.display = "none";
+        }
+      }
+    });
+
+
+
+    // document.querySelectorAll(".texture-option").forEach(function (element) {
+    //   element.addEventListener("click", function () {
+    //     document.querySelectorAll(".texture-option").forEach(function (el) {
+    //       el.classList.remove("selected");
+    //     });
+    //     element.classList.add("selected");
+    //     const textureFile = element.getAttribute("data-texture");
+
+    //     elfGroup.traverse(function (elf) {
+    //       elf.traverse(function (child) {
+    //         if (child.isMesh && allFrameBorderNames.includes(child.name)) {
+    //           console.log('child', child)
+    //           const shadow = new THREE.MeshStandardMaterial({
+    //             color: 0x000000, // Green color
+    //             metalness: 0.5, // Adjust for desired metallic effect
+    //             roughness: 0.5, // Adjust for desired shininess
+    //             opacity: 0.5,
+    //             transparent: true,
+    //           });
+
+    //           // child.material = [child.material[0], shadow];
+
+
+    //           const texture_border = new THREE.TextureLoader().load("./assets/images/borders/" + textureFile, function () {
+    //             texture_border.encoding = THREE.sRGBEncoding;
+    //             texture_border.minFilter = 1008;
+    //             texture_border.magFilter = THREE.LinearFilter;
+    //             texture_border.colorSpace = "srgb";
+
+    //             texture_border.wrapT = THREE.RepeatWrapping;
+    //             texture_border.wrapS = THREE.RepeatWrapping;
+
+    //             const material = new THREE.MeshPhongMaterial({
+    //               name: "newMat",
+    //               specular: 3355443,
+    //               map: texture_border,
+    //               shininess: 0.5,
+    //             });
+    //             console.log(material);
+
+    //             child.material = [material, shadow];
+
+    //             child.material.needsUpdate = true;
+
+    //           });
+
+
+    //         }
+    //       });
+    //     });
+
+    //   });
+    // });
+
+    // document
+    //   .getElementById("frameColor")
+    //   .addEventListener("change", function (event) {
+    //     const color = event.target.value;
+    //     if (elfGroup) {
+    //       elfGroup.traverse(function (elf) {
+    //         elf.traverse(function (child) {
+    //           if (child.isMesh && allFrameBorderNames.includes(child.name)) {
+    //             const material = new THREE.MeshStandardMaterial({
+    //               color: color, // Green color
+    //               metalness: 0.5, // Adjust for desired metallic effect
+    //               roughness: 0.5, // Adjust for desired shininess
+    //               opacity: 0.9,
+    //               transparent: false,
+    //             });
+    //             child.material = material;
+    //             child.material.needsUpdate = true;
+
+    //           }
+    //         });
+    //       });
+    //     }
+    //   });
+
+    document
+      .getElementById("headerToggle")
+      .addEventListener("change", function (event) {
+        const isChecked = event.target.checked;
+        if (elfGroup) {
+          elfGroup.traverse(function (elf) {
+            elf.traverse(function (child) {
+              if (child.name === "Header") {
+                child.visible = isChecked;
+              }
+            });
+          });
+        }
+      });
+
+    document
+      .getElementById("imageUpload")
+      .addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (file && elf) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const texture = new THREE.TextureLoader().load(e.target.result);
+            elf.traverse(function (child) {
+              if (child.isMesh && child.name === "image") {
+                child.material.map = texture;
+                child.material.needsUpdate = true;
+              }
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+    function submitForm() {
+      alert("Form Submitted!");
+    }
+
+
+  </script>
+</body>
+
+</html>

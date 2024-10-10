@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Render .dae File</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/ColladaLoader.js"></script>
+    <script>
+        console.log('Initializing scene');
+        
+        // Scene, Camera, Renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Light
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1).normalize();
+        scene.add(light);
+
+        // Animation mixer
+        let mixer;
+
+        // Load .dae file
+        const loader = new THREE.ColladaLoader();
+        console.log('Loading .dae file');
+        loader.load('test.dae', function (collada) {
+            console.log('Loaded .dae file', collada);
+            const model = collada.scene;
+            scene.add(model);
+
+            // Adjust position and scale
+            // model.position.set(0, 0, 0);
+            // model.scale.set(0.1, 0.1, 0.1);
+
+            // Check for animations
+            if (collada.animations && collada.animations.length) {
+                mixer = new THREE.AnimationMixer(model);
+                collada.animations.forEach(animation => {
+                    mixer.clipAction(animation).play();
+                });
+            }
+
+        }, undefined, function (error) {
+            console.error('An error happened', error);
+        });
+
+        // Camera position
+        camera.position.z = 5;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (mixer) {
+                mixer.update(0.01);
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+
+
+// const textureLoader = new THREE.TextureLoader();
+
+// // function applyTextureToNode(model, nodeName) {
+//   // Load the texture
+//   textureLoader.load(image, (texture) => {
+//     // Create a material with the texture
+//     const material = new THREE.MeshBasicMaterial({ map: texture });
+
+//     // Find the node (mesh) by its name
+//     const specificNode = elf.getObjectByName('Cube.2');
+//     if (specificNode && specificNode.isMesh ) {
+//         console.log('ddd', specificNode)
+//       // Apply the material to the mesh
+//       specificNode.material = material;
+//       specificNode.material.needsUpdate = true;
+//     }
+//   });
+// // }
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three.js Frame Customizer</title>
+  <link href="assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
+  <link href="assets/plugins/cropperjs/cropper.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+
+</head>
+
+<body class="loaded">
+  <!-- Loader element with a progress bar -->
+  <div id="loader">
+    <div id="progress-bar">
+      <div id="progress-bar-fill"></div>
+    </div>
+    <div id="progress-text">Loading... 0%</div>
+  </div>
+  <!-- <div class="loader-wrapper">
+    <div class="loader"></div>
+  </div> -->
+  <!-- <div class="controls-wrapper"> -->
+
+  <div class="controls left-controls">
+    <div class="control-group">
+      <label for="frameSize">Unit Size</label>
+      <select id="frameSize">
+        <option value="Model_600">661mm Wide</option>
+        <option value="Model_900">1061mm Wide</option>
+        <option value="Model_1200">1200mm Wide</option>
+        <option value="Model_1500">1500mm Wide</option>
+        <option value="Model_2000">2000mm Wide</option>
+        <option value="Model_3000">3000mm Wide</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="topDropdown">Top Options</label>
+      <select id="topDropdown">
+        <option value="Header">Header</option>
+        <option value="Shelf">Shelf</option>
+        <option value="None">None</option>
+      </select>
+    </div>
+    <div class="control-group topShelfOptions">
+      <label for="shelfTypeDropdown">Shelf Type</label>
+      <select id="shelfTypeDropdown">
+        <option value="Header_Wooden_Shelf">Wooden Shelf 18mm</option>
+        <option value="Header_Glass_Shelf">Glass Shelf 8mm</option>
+      </select>
+    </div>
+    <div class="control-group topShelfOptions shelfTypeBox">
+      <label for="shelfTexture">Shelf Style</label>
+      <div class="custom-dropdown" data-type="shelf">
+        <button class="dropdown-button">
+          <img data-src="" alt="Selected Texture" class="selected-image" />
+          <span>Select Shelf Style</span>
+        </button>
+        <div class="dropdown-content">
+          <!-- Color options -->
+          <div class="dropdown-item" data-type="color" data-value="0xffffff">
+            <div class="color-box" style="background-color: white;"></div>
+            <span>White Melamine 18mm</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x000000">
+            <div class="color-box" style="background-color: black;"></div>
+            <span>Black Melamine 18mm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="control-group topHeaderOptions">
+      <label for="headerOptions">Header Option</label>
+      <select id="headerOptions">
+        <option value="SEG">SEG</option>
+        <option value="ALG">Acrylic with logo</option>
+        <option value="ALG3D">Acrylic with Logo in 3D</option>
+      </select>
+    </div>
+    <div class="control-group topHeaderOptions">
+      <label for="headerSizeDropdown">Header Height</label>
+      <select id="headerSizeDropdown">
+        <option value="Header_300">300mm</option>
+        <option value="Header_500">500mm</option>
+      </select>
+    </div>
+    <div class="control-group topHeaderOptions">
+      <label for="headerRodToggle" class="header-toggle-label">
+        <input type="checkbox" id="headerRodToggle" class="header-toggle-input" /> Rods
+      </label>
+    </div>
+    <div class="control-group topHeaderOptions headerRodColorDropdownBox">
+      <label for="headerRodColorDropdown">Rod Color</label>
+      <select id="headerRodColorDropdown">
+        <option value="0x000000">Black RAL 9005</option>
+        <option value="0xffffff">White RAL 9016</option>
+      </select>
+    </div>
+    <div class="control-group topHeaderOptions">
+      <label for="topFrameFileUpload">Header Graphics</label>
+      <div class="file-upload-wrapper">
+        <input type="file" id="topFrameFileUpload" accept="image/*" class="file-upload-input">
+        <label for="topFrameFileUpload" class="file-upload-label">Upload Header Graphics</label>
+      </div>
+    </div>
+    <div class="control-group topHeaderOptions headerFrameColorInputBox">
+      <label for="headerFrameColorInput">Header Graphic BG Colour</label>
+      <input type="color" id="headerFrameColorInput">
+    </div>
+    <div class="control-group topHeaderOptions headerFrameColorDropdownBox">
+      <label for="headerFrameColorDropdown">Header Acrylic Color</label>
+      <select id="headerFrameColorDropdown">
+        <option value="0x000000">Black</option>
+        <option value="0xffffff">White</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="slottedSidesToggle" class="header-toggle-label">
+        <input type="checkbox" id="slottedSidesToggle" class="header-toggle-input" /> Slotted Sides
+      </label>
+    </div>
+    <div class="control-group">
+      <label for="frameTexture">Frame Style</label>
+      <div class="custom-dropdown" data-type="frame">
+        <button class="dropdown-button">
+          <img src="" alt="Selected Texture" class="selected-image" />
+          <span>Select Frame Style</span>
+        </button>
+        <div class="dropdown-content">
+          <!-- Color options -->
+          <div class="dropdown-item" data-type="color" data-value="0xffffff">
+            <div class="color-box" style="background-color: white;"></div>
+            <span>White RAL 9016 </span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x000000">
+            <div class="color-box" style="background-color: black;"></div>
+            <span>Black RAL 9005</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x4E5358">
+            <div class="color-box" style="background-color: #4E5358;"></div>
+            <span>Slate Grey RAL 7015</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x383E42">
+            <div class="color-box" style="background-color: #383E42;"></div>
+            <span>Anthracite Grey RAL 7016</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x2B3A44">
+            <div class="color-box" style="background-color: #2B3A44;"></div>
+            <span>Grey Blue RAL 5008</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x00387B">
+            <div class="color-box" style="background-color: #00387B;"></div>
+            <span>Ultramarine Blue RAL 5002</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x1F3855">
+            <div class="color-box" style="background-color: #1F3855;"></div>
+            <span>Sapphire Blue RAL 5003</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0xCC2C24">
+            <div class="color-box" style="background-color: #CC2C24;"></div>
+            <span>Pure Red RAL 3028</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0xA72920">
+            <div class="color-box" style="background-color: #A72920;"></div>
+            <span>Flame Red RAL 3000</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0xE26E0E">
+            <div class="color-box" style="background-color: #E26E0E;"></div>
+            <span>Deep Orange RAL 2011</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0xE25303">
+            <div class="color-box" style="background-color: #E25303;"></div>
+            <span>Pure Orange RAL 2004</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x3C7460">
+            <div class="color-box" style="background-color: #3C7460;"></div>
+            <span>Patina Green RAL 6000</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-value="0x315442">
+            <div class="color-box" style="background-color: #315442;"></div>
+            <span>Pine Green RAL 6028</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Gold-Oak.jpg">
+            <img data-src="./assets/images/borders/Gold-Oak.jpg" alt="Gold-Oak" />
+            <span>Gold-Oak</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Mat-Red.jpg">
+            <img data-src="./assets/images/borders/Mat-Red.jpg" alt="Mat-Red" />
+            <span>Mat-Red</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Oak-1.jpg">
+            <img data-src="./assets/images/borders/Oak-1.jpg" alt="Oak-1" />
+            <span>Oak-1</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Oak-2.jpg">
+            <img data-src="./assets/images/borders/Oak-2.jpg" alt="Oak-2" />
+            <span>Oak-2</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Red-Walnut.jpg">
+            <img data-src="./assets/images/borders/Red-Walnut.jpg" alt="Red-Walnut" />
+            <span>Red-Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Sandal-Wood.jpg">
+            <img data-src="./assets/images/borders/Sandal-Wood.jpg" alt="Sandal-Wood" />
+            <span>Sandal-Wood</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Shabili.jpg">
+            <img data-src="./assets/images/borders/Shabili.jpg" alt="Shabili" />
+            <span>Shabili</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Walnut.jpg">
+            <img data-src="./assets/images/borders/Walnut.jpg" alt="Walnut" />
+            <span>Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Yellow-Cherry.jpg">
+            <img data-src="./assets/images/borders/Yellow-Cherry.jpg" alt="Yellow-Cherry" />
+            <span>Yellow-Cherry</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Yellow-Pear.jpg">
+            <img data-src="./assets/images/borders/Yellow-Pear.jpg" alt="Yellow-Pear" />
+            <span>Yellow-Pear</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-value="Black-Wallnut.jpg">
+            <img data-src="./assets/images/borders/Black-Wallnut.jpg" alt="Black-Wallnut" />
+            <span>Black-Wallnut</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="mainFrameFileUpload">Frame Graphic</label>
+      <div class="file-upload-wrapper">
+        <input type="file" id="mainFrameFileUpload" accept="image/*" class="file-upload-input">
+        <label for="mainFrameFileUpload" class="file-upload-label">Upload Frame Graphic</label>
+      </div>
+    </div>
+    <!-- <div class="control-group">
+      <label for="mainFrameColorInput">Frame Background</label>
+      <input type="color" id="mainFrameColorInput">
+    </div> -->
+    <div class="control-group">
+      <label for="baseSelector">Base Style</label>
+      <select id="baseSelector" class="">
+        <option value="none">Select Base Style</option>
+        <option value="Base_Flat">Flat</option>
+        <option value="Base_Solid">Solid</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="baseColor">Base Color</label>
+      <select id="baseColor">
+        <option value="0x000000">Black RAL 9005</option>
+        <option value="0xffffff">White RAL 9016</option>
+        <!-- <option value="0x4E5358">Slate Grey RAL 7015</option>
+        <option value="0x383E42">Anthracite Grey RAL 7016</option>
+        <option value="0x2B3A44">Grey Blue RAL 5008</option>
+        <option value="0x00387B">Ultramarine Blue RAL 5002</option>
+        <option value="0x1F3855">Sapphire Blue RAL 5003</option>
+        <option value="0xCC2C24">Pure Red RAL 3028</option>
+        <option value="0xA72920">Flame Red RAL 3000</option>
+        <option value="0xE26E0E">Deep Orange RAL 2011</option>
+        <option value="0xE25303">Pure Orange RAL 2004</option>
+        <option value="0x3C7460">Patina Green RAL 6000</option>
+        <option value="0x315442">Pine Green RAL 6028</option> -->
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="addHanger">Fixtures</label>
+      <div class="horizontal-buttons d-flex gap-2">
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Step">Step Arm</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Single">Pond Arm</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_500mm">Rail-D 500mm</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_1000mm">Rail-D 1000mm</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Iron">Golf Arm Iron</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Driver">Golf Arm
+          Driver</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="hangerClothesToggle" class="header-toggle-label">
+        <input type="checkbox" id="hangerClothesToggle" class="header-toggle-input" /> Clothes
+      </label>
+    </div>
+    <div class="control-group">
+      <label for="hangerGolfClubsToggle" class="header-toggle-label">
+        <input type="checkbox" id="hangerGolfClubsToggle" class="header-toggle-input" /> Golf Clubs
+      </label>
+    </div>
+    <div class="control-group">
+      <label for="hangerStandColor">Fixtures Color</label>
+      <select id="hangerStandColor">
+        <option value="0x000000">Black</option>
+        <option value="0xffffff">White</option>
+      </select>
+    </div>
+    <!-- <div class="control-group"></div>
+      <label for="addHanger">Fixtures</label>
+      <div class="horizontal-buttons d-flex gap-2">
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Iron">Golf Club Iron</button>
+        <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Driver">Golf Club Driver</button>
+      </div>
+    </div> -->
+    <div class="control-group">
+      <!-- <label for="addRack">Shelf</label> -->
+      <div class="horizontal-buttons d-flex gap-2">
+        <button class="btn btn-primary btn-sm addRack" data-rack="RackWoodenShelf">Wooden Shelf</button>
+        <button class="btn btn-primary btn-sm addRack" data-rack="RackGlassShelf">Glass Shelf</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="rackStandColor">Shelf Bracket Color</label>
+      <select id="rackStandColor">
+        <option value="0x000000">Black</option>
+        <option value="0xffffff">White</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="rackShelfColor">Shelf Color</label>
+      <select id="rackShelfColor">
+        <option value="0x000000">Black</option>
+        <option value="0xffffff">White</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="measurementToggle" class="header-toggle-label">
+        <input type="checkbox" id="measurementToggle" class="header-toggle-input" /> Show Measurement
+      </label>
+    </div>
+    <div class="control-group">
+      <label for="addAnotherModel">Add Another Model</label>
+      <div class="horizontal-buttons d-flex gap-2">
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_600">661mm Wide</button>
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_900">1061mm Wide</button>
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_1200">1200mm Wide</button>
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_1500">1500mm Wide</button>
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_2000">2000mm Wide</button>
+        <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_3000">3000mm Wide</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <!-- <input type="checkbox" class="btn-check" id="selectedModel" autocomplete="off">
+      <label class="btn btn-outline-primary" for="selectedModel"><i class="fas fa-cube"></i></label> -->
+
+      <!-- <button id="selectedPrevModel" class="btn btn-outline-primary"><i class="fas fa-arrow-left"></i></button>
+      <button id="selectedNextModel" class="btn btn-outline-primary"><i class="fas fa-arrow-right"></i></button> -->
+    </div>
+
+    <div class="control-group mt-3">
+      <button id="captureButton" class="btn btn-outline-primary btn-sm">Capture Image</button>
+    </div>
+
+  </div>
+  <div class="controls right-controls">
+    <div class="model_items">
+
+    </div>
+    <div class="control-group moveLeftRightModel" style="display: none;">
+      <button id="moveLeftModel" class="btn btn-outline-primary"><i class="fas fa-arrow-left"></i></button>
+      <button id="moveRightModel" class="btn btn-outline-primary"><i class="fas fa-arrow-right"></i></button>
+    </div>
+  </div>
+  <!-- <button id="toggleControlsButton" class="btn btn-outline-secondary btn-sm">Toggle Controls</button> -->
+
+  <!-- </div> -->
+  <div id="cropper-container">
+    <div class="cropper-popup">
+      <div class="cropper-inner">
+        <img id="cropper-image" src="" alt="Image to crop">
+      </div>
+    </div>
+    <!-- Control Buttons -->
+    <div class="d-flex justify-content-between mt-2">
+      <button id="cropper-zoom-in" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-search-plus"></i> Scale Up
+      </button>
+      <button id="cropper-zoom-out" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-search-minus"></i> Scale Down
+      </button>
+      <button id="cropper-reset" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-sync-alt"></i> Restart
+      </button>
+    </div>
+
+
+    <div class="d-flex justify-content-between mt-2">
+      <button id="close-button" class="btn btn-outline-danger btn-sm">Close</button>
+      <button id="crop-button" class="btn btn-outline-primary btn-sm">Done</button>
+    </div>
+  </div>
+
+  <div id="container"></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./three/build/three.module.js",
+        "three/addons/": "./three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./main.js" async></script>
+
+  <script src="assets/plugins/bootstrap/js/bootstrap.min.js" defer></script>
+  <script src="assets/plugins/cropperjs/cropper.min.js" defer></script>
+  <script>
+    // Lazy load images using IntersectionObserver
+    document.addEventListener("DOMContentLoaded", function () {
+      const images = document.querySelectorAll('img[data-src]');
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.getAttribute('data-src'); // Set the actual image source
+            img.removeAttribute('data-src'); // Remove the data-src attribute
+            observer.unobserve(img); // Stop observing this image
+          }
+        });
+      });
+
+      images.forEach(img => {
+        observer.observe(img); // Start observing each image
+      });
+      const controlsDiv = document.querySelector('.controls');
+      const toggleControlsButton = document.getElementById('toggleControlsButton');
+
+      if (toggleControlsButton) {
+        // Add a button or some logic to hide/show the controls
+        toggleControlsButton.addEventListener('click', function () {
+          controlsDiv.classList.toggle('hidden');
+        });
+      }
+    });
+
+  </script>
+</body>
+
+</html>

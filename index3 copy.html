@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three.js Frame Customizer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+
+</head>
+
+<body>
+  <!-- Loader element with a progress bar -->
+  <div id="loader">
+    <div id="progress-bar">
+      <div id="progress-bar-fill"></div>
+    </div>
+    <div id="progress-text">Loading... 0%</div>
+  </div>
+  <div class="controls">
+    <div class="control-group">
+      <label for="frameSize">Unit Size</label>
+      <select id="frameSize">
+        <option value="Model_600">600mm Wide</option>
+        <option value="Model_900">900mm Wide</option>
+        <option value="Model_1200">1200mm Wide</option>
+        <option value="Model_1500">1500mm Wide</option>
+        <option value="Model_2000">2000mm Wide</option>
+        <option value="Model_3000">3000mm Wide</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="topDropdown">Top Options</label>
+      <select id="topDropdown">
+        <option value="Header">Header</option>
+        <option value="Header_Wooden_Shelf">Shelf</option>
+      </select>
+    </div>
+    <div class="topHeaderOptions">
+      <div class="control-group">
+        <label for="headerSizeDropdown">Header Height</label>
+        <select id="headerSizeDropdown">
+          <option value="Header_300">SEG Print Fabric 300mm High </option>
+          <option value="Header_500">SEG Printed Fabric 500mm High</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="headerRodToggle" class="header-toggle-label">
+          <input type="checkbox" id="headerRodToggle" class="header-toggle-input" /> Header Rod
+        </label>
+      </div>
+      <div class="control-group">
+        <label for="headerRodColorDropdown">Rod Color</label>
+        <select id="headerRodColorDropdown">
+          <option value="0x000000">Black</option>
+          <option value="0xffffff">White</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="headerToggle" class="header-toggle-label">
+          <input type="checkbox" id="headerToggle" class="header-toggle-input" checked /> Header
+        </label>
+      </div>
+      <div class="control-group">
+        <label for="headerOptions">Header Options</label>
+        <select id="headerOptions">
+          <option value="SEG">SEG</option>
+          <option value="ALG">Acrylic with logo</option>
+          <option value="ALG3D">Acrylic with Logo in 3D</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="topFrameFileUpload">Header SEG Image</label>
+        <div class="file-upload-wrapper">
+          <input type="file" id="topFrameFileUpload" accept="image/*" class="file-upload-input">
+          <label for="topFrameFileUpload" class="file-upload-label">Upload Header Image</label>
+        </div>
+      </div>
+      <div class="control-group headerFrameColorInputBox">
+        <label for="headerFrameColorInput">Header SEG Background</label>
+        <input type="color" id="headerFrameColorInput">
+      </div>
+      <div class="control-group headerFrameColorDropdownBox">
+        <label for="headerFrameColorDropdown">Header Acrylic Color</label>
+        <select id="headerFrameColorDropdown">
+          <option value="0x000000">Black</option>
+          <option value="0xffffff">White</option>
+        </select>
+      </div>
+    </div>
+    <div class="topShelfOptions">
+      <div class="control-group">
+        <label for="shelfToggle" class="header-toggle-label">
+          <input type="checkbox" id="shelfToggle" class="header-toggle-input" /> Shelf
+        </label>
+      </div>
+      <div class="control-group">
+        <label for="shelfTypeDropdown">Shelf Type</label>
+        <select id="shelfTypeDropdown">
+          <option value="Header_Wooden_Shelf">Wooden Shelf 18mm</option>
+          <option value="Header_Glass_Shelf">Glass Shelf 8mm</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="shelfTexture">Pick Shelf Style</label>
+        <div class="custom-dropdown" data-type="shelf">
+          <button class="dropdown-button">
+            <img src="" alt="Selected Texture" class="selected-image" />
+            <span>Select Shelf Style</span>
+          </button>
+          <!-- <button class="dropdown-button">Select Frame Style</button> -->
+          <div class="dropdown-content">
+            <!-- Color options -->
+            <div class="dropdown-item" data-type="color" data-color="0xffffff">
+              <div class="color-box" style="background-color: white;"></div>
+              <span>White Melamine 18mm</span>
+            </div>
+            <div class="dropdown-item" data-type="color" data-color="0x000000">
+              <div class="color-box" style="background-color: black;"></div>
+              <span>Black Melamine 18mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="control-group">
+      <label for="frameCount">Number of Frame</label>
+      <select id="frameCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div> -->
+    <div class="control-group">
+      <label for="frameTexture">Pick Frame Style</label>
+      <div class="custom-dropdown" data-type="frame">
+        <button class="dropdown-button">
+          <img src="" alt="Selected Texture" class="selected-image" />
+          <span>Select Frame Style</span>
+        </button>
+        <!-- <button class="dropdown-button">Select Frame Style</button> -->
+        <div class="dropdown-content">
+          <!-- Color options -->
+          <div class="dropdown-item" data-type="color" data-color="0xffffff">
+            <div class="color-box" style="background-color: white;"></div>
+            <span>Solid White Color</span>
+          </div>
+          <div class="dropdown-item" data-type="color" data-color="0x000000">
+            <div class="color-box" style="background-color: black;"></div>
+            <span>Solid Black Color</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Gold-Oak.jpg">
+            <img src="./assets/images/borders/Gold-Oak.jpg" alt="Gold-Oak" />
+            <span>Gold-Oak</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Mat-Red.jpg">
+            <img src="./assets/images/borders/Mat-Red.jpg" alt="Mat-Red" />
+            <span>Mat-Red</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Oak-1.jpg">
+            <img src="./assets/images/borders/Oak-1.jpg" alt="Oak-1" />
+            <span>Oak-1</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Oak-2.jpg">
+            <img src="./assets/images/borders/Oak-2.jpg" alt="Oak-2" />
+            <span>Oak-2</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Red-Walnut.jpg">
+            <img src="./assets/images/borders/Red-Walnut.jpg" alt="Red-Walnut" />
+            <span>Red-Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Sandal-Wood.jpg">
+            <img src="./assets/images/borders/Sandal-Wood.jpg" alt="Sandal-Wood" />
+            <span>Sandal-Wood</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Shabili.jpg">
+            <img src="./assets/images/borders/Shabili.jpg" alt="Shabili" />
+            <span>Shabili</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Walnut.jpg">
+            <img src="./assets/images/borders/Walnut.jpg" alt="Walnut" />
+            <span>Walnut</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Yellow-Cherry.jpg">
+            <img src="./assets/images/borders/Yellow-Cherry.jpg" alt="Yellow-Cherry" />
+            <span>Yellow-Cherry</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Yellow-Pear.jpg">
+            <img src="./assets/images/borders/Yellow-Pear.jpg" alt="Yellow-Pear" />
+            <span>Yellow-Pear</span>
+          </div>
+          <div class="dropdown-item" data-type="texture" data-texture="Black-Wallnut.jpg">
+            <img src="./assets/images/borders/Black-Wallnut.jpg" alt="Black-Wallnut" />
+            <span>Black-Wallnut</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="baseSelector">Base Frame</label>
+      <select id="baseSelector" class="">
+        <option value="none">Select Base Frame</option>
+        <option value="Base_Flat">Flat</option>
+        <option value="Base_Solid">Solid</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="baseColor">Base Color</label>
+      <select id="baseColor">
+        <option value="0x000000">Black</option>
+        <option value="0xffffff">White</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="mainFrameFileUpload">Upload SEG Image</label>
+      <div class="file-upload-wrapper">
+        <input type="file" id="mainFrameFileUpload" accept="image/*" class="file-upload-input">
+        <label for="mainFrameFileUpload" class="file-upload-label">Upload SEG Image</label>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="mainFrameColorInput">SEG Background</label>
+      <input type="color" id="mainFrameColorInput">
+    </div>
+
+  </div>
+  <div id="cropper-container">
+    <div class="cropper-popup">
+      <div class="cropper-inner">
+        <img id="cropper-image" src="" alt="Image to crop">
+      </div>
+    </div>
+    <!-- Control Buttons -->
+    <div class="d-flex justify-content-between mt-2">
+      <button id="cropper-zoom-in" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Zoom In">
+        <i class="fas fa-search-plus"></i>
+      </button>
+      <button id="cropper-zoom-out" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Zoom Out">
+        <i class="fas fa-search-minus"></i>
+      </button>
+      <!-- <button id="cropper-move-left" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+        title="Move Left">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <button id="cropper-move-right" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+        title="Move Right">
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <button id="cropper-move-up" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Move Up">
+        <i class="fas fa-arrow-up"></i>
+      </button>
+      <button id="cropper-move-down" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+        title="Move Down">
+        <i class="fas fa-arrow-down"></i>
+      </button>
+      <button id="cropper-rotate-left" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+        title="Rotate Left">
+        <i class="fas fa-undo"></i>
+      </button>
+      <button id="cropper-rotate-right" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+        title="Rotate Right">
+        <i class="fas fa-redo"></i>
+      </button>
+      <button id="cropper-scale-x" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Scale X">
+        <i class="fas fa-arrows-alt-h"></i>
+      </button>
+      <button id="cropper-scale-y" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Scale Y">
+        <i class="fas fa-arrows-alt-v"></i>
+      </button> -->
+      <button id="cropper-reset" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Reset">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+
+
+    <div class="d-flex justify-content-between mt-2">
+      <button id="close-button" class="btn btn-outline-danger btn-sm">Close</button>
+      <button id="crop-button" class="btn btn-outline-primary btn-sm">Crop</button>
+    </div>
+  </div>
+  <div id="container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./three/build/three.module.js",
+        "three/addons/": "./three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./main1.js"></script>
+
+</body>
+
+</html>

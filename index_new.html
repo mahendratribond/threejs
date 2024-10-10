@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>DAE Viewer with Dynamic Textures</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <div class="mb-3">
+            <label for="borderTextureDropdown">Frame Texture</label>
+            <div id="borderTextureDropdown" class="texture-slider">
+                <img src="./assets/images/borders/Light_Wood.jpg" class="texture-option"
+                    data-texture="./assets/images/borders/Light_Wood.jpg" />
+                <img src="./assets/images/borders/Dark_Wood.jpg" class="texture-option"
+                    data-texture="./assets/images/borders/Dark_Wood.jpg" />
+                <img src="./assets/images/borders/Lighter_Wood.jpg" class="texture-option"
+                    data-texture="./assets/images/borders/Lighter_Wood.jpg" />
+                <img src="./assets/images/borders/Red_Cherry_Wood.jpg" class="texture-option"
+                    data-texture="./assets/images/borders/Red_Cherry_Wood.jpg" />
+        <img src="./assets/images/borders/Black-Wallnut.jpg" class="texture-option" data-texture="Black-Wallnut.jpg" />
+        <img src="./assets/images/borders/Gold-Oak.jpg" class="texture-option" data-texture="Gold-Oak.jpg" />
+        <img src="./assets/images/borders/Mat-Red.jpg" class="texture-option" data-texture="Mat-Red.jpg" />
+        <img src="./assets/images/borders/Oak-1.jpg" class="texture-option" data-texture="Oak-1.jpg" />
+        <img src="./assets/images/borders/Oak-2.jpg" class="texture-option" data-texture="Oak-2.jpg" />
+        <img src="./assets/images/borders/Red-Walnut.jpg" class="texture-option" data-texture="Red-Walnut.jpg" />
+        <img src="./assets/images/borders/Sandal-Wood.jpg" class="texture-option" data-texture="Sandal-Wood.jpg" />
+        <img src="./assets/images/borders/Shabili.jpg" class="texture-option" data-texture="Shabili.jpg" />
+        <img src="./assets/images/borders/Walnut.jpg" class="texture-option" data-texture="Walnut.jpg" />
+        <img src="./assets/images/borders/Yellow-Cherry.jpg" class="texture-option" data-texture="Yellow-Cherry.jpg" />
+        <img src="./assets/images/borders/Yellow-Pear.jpg" class="texture-option" data-texture="Yellow-Pear.jpg" />
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./three/build/three.module.js",
+                "three/addons/": "./three/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import Stats from 'three/addons/libs/stats.module.js';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+        import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+
+        const container = document.getElementById('container');
+        const borderDropdown = document.getElementById('borderTextureDropdown');
+        const textureOptions = borderDropdown.getElementsByClassName('texture-option');
+
+        var frameTop1Names = ['Header_Graphic.1', 'Header_Graphic.2'];
+        var frameMainNames = ['Cube.1', 'Cube.2'];
+        var allFrameBorderNames = ['Header_Frame', 'Top_Ex', 'Bottom_Ex', 'Left_Ex', 'Right_Ex'];
+        var baseFrameNames = ['Base_Option_1', 'Base_Option_2'];
+
+        const baseColorOptions = {
+            Black: '#000000',
+            White: '#ffffff'
+        };
+
+        let renderer, scene, camera, stats;
+        let elf;
+
+        let params = {
+            scale: 0.4,
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            moveX: 0,
+            moveY: 0,
+            moveZ: 0,
+            selectedBaseFrame: baseFrameNames[1],
+            currentBaseColor: baseColorOptions.Black,
+            clear: clear,
+
+            exposure: 1,
+            blurriness: 0.3,
+            toneMapping: "AgX",
+        };
+
+        init();
+
+
+
+        async function init() {
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setAnimationLoop(animate);
+            container.appendChild(renderer.domElement);
+            // renderer.toneMappingExposure = params.exposure;
+
+
+            stats = new Stats();
+            container.appendChild(stats.dom);
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight);
+            camera.position.z = 120;
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 50;
+            controls.maxDistance = 200;
+
+            // scene.add(new THREE.AmbientLight(0xffffff));
+
+            // const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5); // Reduced intensity
+            // dirLight1.position.set(1, 0.75, 0.5);
+            // scene.add(dirLight1);
+
+            // const dirLight2 = new THREE.DirectionalLight(0xffffff, 1.5); // Reduced intensity
+            // dirLight2.position.set(-1, 0.75, -0.5);
+            // scene.add(dirLight2);
+
+
+            {
+                const radius = 50;
+                const height = 35;
+                const lightIntensity = 0.9;
+
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2;
+                    const x = Math.cos(angle) * radius;
+                    const z = Math.sin(angle) * radius;
+
+                    const directionalLight = new THREE.DirectionalLight(
+                        0xffffff,
+                        i % 2 == 0 ? lightIntensity : 1.5
+                    );
+                    directionalLight.position.set(x, height, z);
+
+                    const targetObject = new THREE.Object3D();
+                    targetObject.position.x = 0;
+                    targetObject.position.y = -20;
+                    // Set target to the position of the elf model
+                    scene.add(targetObject);
+
+                    directionalLight.target = targetObject;
+                    directionalLight.target.updateMatrixWorld();
+
+                    scene.add(directionalLight);
+
+                    const directionalLightHelper = new THREE.DirectionalLightHelper(
+                        directionalLight,
+                        5
+                    );
+                    // scene.add(directionalLightHelper);
+                }
+            }
+
+            const rgbeLoader = new RGBELoader();
+
+            // Load Collada file
+            const loader = new ColladaLoader();
+            // loader.load('./assets/models/texture600.dae', function (collada) {
+            //     elf = collada.scene;
+            //     elf.scale.set(0.4, 0.4, 0.4);
+            //     elf.position.y = -25;
+            //     scene.add(elf);
+            // });
+            let [backgroundTexture, collada] = await Promise.all([rgbeLoader.loadAsync("./assets/images/background/venice_sunset_1k.hdr"), loader.loadAsync("./assets/models/texture600.dae")]);
+            elf = collada.scene;
+            elf.scale.set(0.4, 0.4, 0.4);
+            elf.position.y = -25;
+            scene.add(elf);
+
+            backgroundTexture.mapping = THREE.EquirectangularReflectionMapping;
+            // scene.backgroundBlurriness = params.blurriness;
+            // scene.background = backgroundTexture;
+            // scene.environment = backgroundTexture;
+
+            window.addEventListener('resize', onWindowResize);
+
+            const gui = new GUI();
+            // gui.add(params, 'scale', 0.1, 5).onChange(updateScale);
+            // gui.add(params, 'rotateX', -Math.PI, Math.PI).onChange(value => updateRotation('rotateX', value));
+            // gui.add(params, 'rotateY', -Math.PI, Math.PI).onChange(value => updateRotation('rotateY', value));
+            // gui.add(params, 'rotateZ', -Math.PI, Math.PI).onChange(value => updateRotation('rotateZ', value));
+            // gui.add(params, 'moveX', -100, 100).onChange(value => updatePosition('moveX', value));
+            // gui.add(params, 'moveY', -100, 100).onChange(value => updatePosition('moveY', value));
+            // gui.add(params, 'moveZ', -100, 100).onChange(value => updatePosition('moveZ', value));
+
+            gui.add(params, 'selectedBaseFrame', baseFrameNames).name('Select Base Frame').onChange(function (value) {
+                // Call the function to update the visibility based on the selected frame
+                updateBaseFrameVisibility(value);
+            });
+
+            gui.add(params, 'currentBaseColor', baseColorOptions).name('Select Base Color').onChange(function (value) {
+                params.currentBaseColor = value;
+                changeBaseColor(params.currentBaseColor);
+            });
+
+            gui.add(params, 'clear');
+            gui.open();
+
+            window.addEventListener('keydown', onKeyDown);
+
+            // Set up the dropdowns
+            Array.from(textureOptions).forEach(function (option) {
+                option.addEventListener('click', function () {
+                    Array.from(textureOptions).forEach(function (opt) {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+
+                    const textureFile = this.getAttribute('data-texture');
+                    changeFrameTexture(textureFile); // Apply the selected texture to the border parts
+                });
+            });
+
+            updateBaseFrameVisibility(params.selectedBaseFrame)
+            changeBaseColor(params.currentBaseColor);
+        }
+
+        // Function to change base color
+        function changeBaseColor(color) {
+            if (!elf) return;
+
+            elf.traverse(function (child) {
+                if (child.isMesh && baseFrameNames.includes(child.name)) {
+                    child.material.color.set(color);
+                }
+            });
+        }
+
+        function updateBaseFrameVisibility(selectedFrame) {
+            if (!elf) return;
+
+            elf.traverse(function (child) {
+                if (baseFrameNames.includes(child.name)) {
+                    child.visible = (child.name === selectedFrame);
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            renderer.render(scene, camera);
+            stats.update();
+        }
+
+        function onKeyDown(event) {
+            if (!elf) return;
+
+            const step = 1;
+            const rotationStep = 0.1;
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    elf.position.y += step;
+                    break;
+                case 'ArrowDown':
+                    elf.position.y -= step;
+                    break;
+                case 'ArrowLeft':
+                    elf.position.x -= step;
+                    break;
+                case 'ArrowRight':
+                    elf.position.x += step;
+                    break;
+                case 'w':
+                    elf.position.y += step;
+                    break;
+                case 's':
+                    elf.position.y -= step;
+                    break;
+                case 'a':
+                    elf.position.x -= step;
+                    break;
+                case 'd':
+                    elf.position.x += step;
+                    break;
+                case 't':
+                    elf.rotation.y -= rotationStep;
+                    break;
+                case 'g':
+                    elf.rotation.y += rotationStep;
+                    break;
+                case 'r':
+                    elf.rotation.x -= rotationStep;
+                    break;
+                case 'f':
+                    elf.rotation.x += rotationStep;
+                    break;
+                case 'q':
+                    elf.rotation.z -= rotationStep;
+                    break;
+                case 'e':
+                    elf.rotation.z += rotationStep;
+                    break;
+                case '=':
+                case '+':
+                    elf.scale.multiplyScalar(1.1);
+                    break;
+                case '-':
+                    elf.scale.multiplyScalar(0.9);
+                    break;
+            }
+        }
+
+        function updateScale(value) {
+            if (elf) elf.scale.set(value, value, value);
+        }
+
+        function updateRotation(axis, value) {
+            if (elf) {
+                switch (axis) {
+                    case 'rotateX':
+                        elf.rotation.x = value;
+                        break;
+                    case 'rotateY':
+                        elf.rotation.y = value;
+                        break;
+                    case 'rotateZ':
+                        elf.rotation.z = value;
+                        break;
+                }
+            }
+        }
+
+        function updatePosition(axis, value) {
+            if (elf) {
+                switch (axis) {
+                    case 'moveX':
+                        elf.position.x = value;
+                        break;
+                    case 'moveY':
+                        elf.position.y = value;
+                        break;
+                    case 'moveZ':
+                        elf.position.z = value;
+                        break;
+                }
+            }
+        }
+
+        function updateBorderColor(borderColor) {
+            if (!elf) return;
+
+            elf.traverse(function (child) {
+                if (child.isMesh && isBorderPart(child)) {
+                    child.material.color.set(borderColor);
+                    child.material.needsUpdate = true;
+                }
+            });
+        }
+
+        function clear() {
+            // location.href = location.pathname;
+
+            if (elf) {
+                elf.scale.set(params.scale, params.scale, params.scale);
+                elf.rotation.set(params.rotateX, params.rotateY, params.rotateZ);
+                elf.position.set(params.moveX, params.moveY, params.moveZ);
+
+                elf.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material.color.set(params.borderColor);
+                        child.material.needsUpdate = true;
+                    }
+                });
+            }
+
+            Object.assign(params, {
+                scale: 0.4,
+                rotateX: 0,
+                rotateY: 0,
+                rotateZ: 0,
+                moveX: 0,
+                moveY: 0,
+                moveZ: 0,
+                borderColor: '#d6d6d6'
+            });
+        }
+
+        function isInnerPart(mesh) {
+            const innerNames = ['Cube.2', 'Cube.1']; // Replace with actual names or IDs of inner meshes
+            return innerNames.includes(mesh.name);
+        }
+
+        function isBorderPart(mesh) {
+            const borderNames = ['Cube', '_0001-20-001', '_0001-20-002', 'Solid2_1_.2', 'Solid2_1_.1']; // Replace with actual names or IDs of border meshes
+            return borderNames.includes(mesh.name);
+        }
+
+        function changeFrameTexture(image) {
+            if (!elf) return;
+
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(image, function (texture) {
+
+                texture.encoding = THREE.sRGBEncoding;
+                texture.colorSpace = "srgb";
+                texture.minFilter = 1008;
+                texture.magFilter = THREE.LinearFilter;
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+
+                elf.traverse(function (child) {
+                    if (allFrameBorderNames.includes(child.name)) {
+                        console.log('Applying border texture to:', child.name);
+
+                        if (!child.material) {
+                            const material = new THREE.MeshPhongMaterial({
+                                name: "newMat",
+                                specular: 3355443,
+                                map: texture,
+                                shininess: 0.5,
+                            });
+                            child.material = material;
+                        }
+                        else {
+                            child.material.map = texture;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+
+                });
+            }, undefined, function (error) {
+                console.error('An error occurred while loading the texture.', error);
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>

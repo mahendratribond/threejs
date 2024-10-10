@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>DAE Viewer with Textures</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body contenteditable="false" data-new-gr-c-s-check-loaded="14.1189.0" data-gr-ext-installed="">
+
+    <div id="container"></div>
+    <div id="info">
+
+    </div>
+
+    <script type="importmap">
+			{
+				"imports": {
+					"three": "./three/build/three.module.js",
+					"three/addons/": "./three/examples/jsm/"
+				}
+			}
+	</script>
+   <script type="module">
+
+        import * as THREE from 'three';
+        import Stats from 'three/addons/libs/stats.module.js';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+
+        const container = document.getElementById('container');
+
+        let renderer, scene, camera, stats;
+        let elf;
+
+        init();
+
+        function init() {
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setAnimationLoop(animate);
+            container.appendChild(renderer.domElement);
+
+            stats = new Stats();
+            container.appendChild(stats.dom);
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.z = 120;
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 50;
+            controls.maxDistance = 200;
+
+            scene.add(new THREE.AmbientLight(0xffffff));
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 3);
+            dirLight1.position.set(1, 0.75, 0.5);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 3);
+            dirLight2.position.set(-1, 0.75, -0.5);
+            scene.add(dirLight2);
+
+            // Load Collada file
+            const loader = new ColladaLoader();
+            loader.load('./texture.dae', function (collada) {
+                elf = collada.scene;
+                elf.scale.set(0.4, 0.4, 0.4); // Adjust scaling as needed
+                elf.position.y = -25; // Move the object down along the Y-axis
+                scene.add(elf);
+            });
+
+            window.addEventListener('resize', onWindowResize);
+
+            // GUI setup
+            const params = {
+                scale: 1,
+                rotateX: 0,
+                rotateY: 0,
+                rotateZ: 0,
+                moveX: 0,
+                moveY: 0,
+                moveZ: 0,
+                clear: () => { /* clear functionality */ }
+            };
+
+            const gui = new GUI();
+            gui.add(params, 'scale', 0.1, 5).onChange(updateScale);
+            gui.add(params, 'rotateX', -Math.PI, Math.PI).onChange(updateRotation);
+            gui.add(params, 'rotateY', -Math.PI, Math.PI).onChange(updateRotation);
+            gui.add(params, 'rotateZ', -Math.PI, Math.PI).onChange(updateRotation);
+            gui.add(params, 'moveX', -100, 100).onChange(updatePosition);
+            gui.add(params, 'moveY', -100, 100).onChange(updatePosition);
+            gui.add(params, 'moveZ', -100, 100).onChange(updatePosition);
+            gui.add(params, 'clear');
+            gui.open();
+
+            // Add keyboard event listener
+            window.addEventListener('keydown', onKeyDown);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            renderer.render(scene, camera);
+            stats.update();
+        }
+
+        function onKeyDown(event) {
+            if (!elf) return; // Ensure elf is loaded
+
+            const step = 1; // Adjust the step size as needed
+            const rotationStep = 0.1; // Adjust the rotation step as needed
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    elf.position.z -= step;
+                    break;
+                case 'ArrowDown':
+                    elf.position.z += step;
+                    break;
+                case 'ArrowLeft':
+                    elf.position.x -= step;
+                    break;
+                case 'ArrowRight':
+                    elf.position.x += step;
+                    break;
+                case 'w':
+                    elf.position.y += step;
+                    break;
+                case 's':
+                    elf.position.y -= step;
+                    break;
+                case 'a':
+                    elf.rotation.y -= rotationStep;
+                    break;
+                case 'd':
+                    elf.rotation.y += rotationStep;
+                    break;
+                case 'r':
+                    elf.rotation.x -= rotationStep;
+                    break;
+                case 'f':
+                    elf.rotation.x += rotationStep;
+                    break;
+                case 'q':
+                    elf.rotation.z -= rotationStep;
+                    break;
+                case 'e':
+                    elf.rotation.z += rotationStep;
+                    break;
+                case '+':
+                    elf.scale.multiplyScalar(1.1); // Increase size
+                    break;
+                case '-':
+                    elf.scale.multiplyScalar(0.9); // Decrease size
+                    break;
+            }
+        }
+
+        function updateScale(value) {
+            if (elf) elf.scale.set(value, value, value);
+        }
+
+        function updateRotation(value) {
+            if (elf) {
+                elf.rotation.x = params.rotateX;
+                elf.rotation.y = params.rotateY;
+                elf.rotation.z = params.rotateZ;
+            }
+        }
+
+        function updatePosition(value) {
+            if (elf) {
+                elf.position.x = params.moveX;
+                elf.position.y = params.moveY;
+                elf.position.z = params.moveZ;
+            }
+        }
+
+    </script>
+
+    <!-- <script type="module">
+
+        import * as THREE from 'three';
+
+        import Stats from 'three/addons/libs/stats.module.js';
+
+        import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+
+        let container, stats, clock;
+        let camera, scene, renderer, elf;
+
+        init();
+
+        function init() {
+
+            container = document.getElementById('container');
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(8, 10, 8);
+            camera.lookAt(0, 3, 0);
+
+            scene = new THREE.Scene();
+
+            clock = new THREE.Clock();
+
+            // loading manager
+
+            const loadingManager = new THREE.LoadingManager(function () {
+
+                scene.add(elf);
+    elf.scale.set(0.1, 0.1, 0.1); // Adjust scaling as needed
+
+            });
+
+            // collada
+
+            const loader = new ColladaLoader(loadingManager);
+            loader.load('./texture.dae', function (collada) {
+
+                elf = collada.scene;
+
+            });
+
+            //
+
+            const ambientLight = new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+            directionalLight.position.set(1, 1, 0).normalize();
+            scene.add(directionalLight);
+
+            //
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setAnimationLoop(animate);
+            container.appendChild(renderer.domElement);
+
+            //
+
+            stats = new Stats();
+            container.appendChild(stats.dom);
+
+            //
+
+            window.addEventListener('resize', onWindowResize);
+
+        }
+
+        function onWindowResize() {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+        }
+
+        function animate() {
+
+            render();
+            stats.update();
+
+        }
+
+        function render() {
+
+            const delta = clock.getDelta();
+
+            if (elf !== undefined) {
+
+                elf.rotation.z += delta * 0.5;
+
+            }
+
+            renderer.render(scene, camera);
+
+        }
+
+    </script> -->
+
+
+</body>
+
+</html>
