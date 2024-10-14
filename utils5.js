@@ -11,6 +11,8 @@ import {
     allFrameBorderNames,
     allOtherModelNames,
     hangerPartNames,
+    frameMainNames,
+    frameTop1Names,
     baseFrameNames,
     allModelNames,
     rackPartNames,
@@ -592,6 +594,16 @@ export async function setupMainModel(main_model) {
             }
 
         }
+
+        // if (frameTop1Names.includes(modelNode.name) || frameMainNames.includes(modelNode.name)) {
+        //     if (modelNode.material) {
+        //         console.log('modelNode.material', modelNode.material);
+                
+        //         const material = await commonMaterial(parseInt('0xffffff', 16))
+        //         modelNode.material = material
+        //         modelNode.material.needsUpdate = true;
+        //     }
+        // }
     });
 
 
@@ -1727,34 +1739,37 @@ export async function centerMainModel(main_model, allModelNames) {
     const models = [];
 
     // First pass: Calculate total width and collect visible models
-    allModelNames.forEach(modelName => {
-        const model = main_model.getObjectByName(modelName);
+    main_model.children.forEach(main_model_Name => {
+        allModelNames.forEach(modelName => {
+            const model = main_model_Name.getObjectByName(modelName);
 
-        if (model && model.visible) { // Only consider visible models
-            models.push(model);
+            if (model && model.visible) { // Only consider visible models
+                models.push(model);
 
-            // Ensure the bounding box is computed
-            model.traverse((child) => {
-                if (child.isMesh && child.geometry) {
-                    child.geometry.computeBoundingBox();
-                }
-            });
+                // Ensure the bounding box is computed
+                model.traverse((child) => {
+                    if (child.isMesh && child.geometry) {
+                        child.geometry.computeBoundingBox();
+                    }
+                });
 
-            // Get bounding box for the model
-            const boundingBox = new THREE.Box3().setFromObject(model);
-            const modelWidth = boundingBox.max.x - boundingBox.min.x;
+                // Get bounding box for the model
+                const boundingBox = new THREE.Box3().setFromObject(model);
+                const modelWidth = boundingBox.max.x - boundingBox.min.x;
 
-            // Get model-specific spacing (manual movement)
-            const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
-            totalWidth += modelWidth + spacing + modelSpacing;
-        }
+                // Get model-specific spacing (manual movement)
+                const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
+                totalWidth += modelWidth + spacing + modelSpacing;
+            }
+        });
     });
-
+    
     // Center the starting position by shifting based on half the total width
     currentX = -(totalWidth / 2);
 
     // Second pass: Position each model with spacing and manual offsets
-    models.forEach(model => {
+    // models.forEach(async model => {
+    for (const model of models) {
         // Get bounding box again for this model
         const boundingBox = new THREE.Box3().setFromObject(model);
         const modelWidth = boundingBox.max.x - boundingBox.min.x;
@@ -1770,17 +1785,22 @@ export async function centerMainModel(main_model, allModelNames) {
         if((currentX + modelWidth / 2) > 0){
             updateSpacing = modelSpacing
         }
-        model.position.set(currentX + modelWidth / 2 + updateSpacing, originalYPosition, 0); // Use original y position
+        model.parent.position.x = currentX + modelWidth / 2 + updateSpacing, originalYPosition;
+        
+        // model.position.set(currentX + modelWidth / 2 + updateSpacing, originalYPosition, 0); // Use original y position
 
         // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
         currentX += modelWidth + spacing + modelSpacing;
-    });
+    }
+    // });
 
     // Ensure the bounding box is computed
-    main_model.traverse((child) => {
-        if (child.isMesh && child.geometry) {
-            child.geometry.computeBoundingBox();
-        }
+    main_model.traverse((modelchild) => {
+        modelchild.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+                child.geometry.computeBoundingBox();
+            }
+        });
     });
 }
 
@@ -2515,13 +2535,13 @@ export async function cloneAccordionItem(modelName) {
     // Clone the accordion item
     const newAccordionItem = originalAccordionItem.cloneNode(true);
 
-    // Find the div containing the 'frameSize' dropdown
-    var frameSizeDiv = newAccordionItem.querySelector('select.frameSize');
+    // // Find the div containing the 'frameSize' dropdown
+    // var frameSizeDiv = newAccordionItem.querySelector('select.frameSize');
 
-    // Check if the dropdown exists and remove its parent div
-    if (frameSizeDiv) {
-        frameSizeDiv.closest('.control-group').remove();
-    }
+    // // Check if the dropdown exists and remove its parent div
+    // if (frameSizeDiv) {
+    //     frameSizeDiv.closest('.control-group').remove();
+    // }
 
     // Modify the data-model attribute and the text content
     newAccordionItem.setAttribute('data-model', modelName);
