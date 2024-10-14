@@ -423,8 +423,6 @@ async function init() {
     }
   });
 
-  console.log('params.lastInnerMaterial', params.lastInnerMaterial)
-
   if (!hanger_golf_club_model) {
     hanger_golf_club_model = await loadGLTFModel(
       glftLoader,
@@ -434,12 +432,12 @@ async function init() {
     await setupHangerGolfClubModel(hanger_golf_club_model);
   }
   if (!hanger_model) {
-    console.log("hanger_model lodeding");
+    // console.log("hanger_model lodeding");
     hanger_model = await loadGLTFModel(glftLoader, "hanger_model.glb");
-    console.log("hanger_model loded", hanger_model);
+    // console.log("hanger_model loded", hanger_model);
     // hanger_model = await loadModel(colladaLoader, 'hanger_model.dae');
     await setupHangerModel(hanger_model);
-    console.log("hanger_model update", hanger_model);
+    // console.log("hanger_model update", hanger_model);
   }
   if (!rack_glass_model) {
     rack_glass_model = await loadGLTFModel(glftLoader, "rack_glass_model.glb");
@@ -470,7 +468,7 @@ async function otherModelSetup() {
   }
   if (!header_rod_model) {
     header_rod_model = await loadGLTFModel(glftLoader, "header_rod_model.glb");
-    console.log('header_rod_model', header_rod_model)
+    // console.log('header_rod_model', header_rod_model)
     // header_rod_model = await loadModel(colladaLoader, 'header_rod_model.dae');
     params.rodSize = await getNodeSize(header_rod_model);
     // console.log('params.rodSize', params.rodSize)
@@ -530,8 +528,6 @@ async function otherModelSetup() {
     await updateMaterial(params.allBorderColor, "frame");
   }
 
-  console.log('modelGroup -------------------', modelGroup)
-
 }
 
 // Handle mouse move for hover
@@ -545,7 +541,7 @@ async function onMouseMove(event) {
   const visibleObjects = [];
 
   // Traverse the main model and find visible objects
-  main_model.traverse((child) => {
+  modelGroup.traverse((child) => {
     if (hangerNames.includes(child.name) && child.visible) {
       visibleObjects.push(child);
     }
@@ -553,9 +549,9 @@ async function onMouseMove(event) {
       visibleObjects.push(child);
     }
     // Check for allModelNames and allOtherModelNames as well
-    if (allModelNames.includes(child.name) && child.visible) {
-      visibleObjects.push(child);
-    }
+    // if (allModelNames.includes(child.name) && child.visible) {
+    //   visibleObjects.push(child);
+    // }
     // if (allOtherModelNames.includes(child.name) && child.visible) {
     //     visibleObjects.push(child);
     // }
@@ -569,15 +565,17 @@ async function onMouseMove(event) {
     }
   }
 
+  // console.log('finalVisibleObjects', finalVisibleObjects);
   // Find intersections with the main_model
   hangerIntersects = raycaster.intersectObjects(finalVisibleObjects, true);
-  // console.log('main_model', main_model);
+  // console.log('hangerIntersects', hangerIntersects);
 }
 
 // Handle mouse click for selection
 async function onMouseClick(event) {
   // console.log('hangerIntersects', hangerIntersects);
-  let defaultModel = main_model.getObjectByName(params.selectedGroupName);
+
+  // let defaultModel = modelGroup.getObjectByName(params.selectedGroupName);
   if (hangerIntersects.length > 0) {
     hideRemoveIcons();
     const intersectNode = hangerIntersects[0].object;
@@ -585,6 +583,15 @@ async function onMouseClick(event) {
       // console.log('intersectNode', intersectNode)
       selectedNode = intersectNode.parent;
       let iconName = selectedNode.name;
+
+      let tempNode, defaultModel
+      for (let val of allModelNames) {
+        tempNode = await findParentNodeByName(selectedNode, val, true);
+        if (tempNode) {
+          defaultModel = tempNode
+          break;
+        }
+      }
 
       if (iconName.startsWith("removeHanger-")) {
         let nodeName = iconName.replace("removeHanger-", "");
@@ -698,8 +705,8 @@ async function onMouseClick(event) {
 
 // Function to hide remove icons
 function hideRemoveIcons() {
-  if (main_model && selectedNode) {
-    main_model.traverse((child) => {
+  if (modelGroup && selectedNode) {
+    modelGroup.traverse((child) => {
       if (child.name && child.name.includes("remove")) {
         child.visible = false; // Hide remove icon
       }
@@ -796,7 +803,15 @@ async function enforceHangerBounds() {
 // Function to enforce boundaries on X-axis
 async function enforceRackBounds() {
   if (selectedNode) {
-    let defaultModel = main_model.getObjectByName(params.selectedGroupName);
+    let tempNode, defaultModel
+    for (let val of allModelNames) {
+      tempNode = await findParentNodeByName(selectedNode, val, true);
+      if (tempNode) {
+        defaultModel = tempNode
+        break;
+      }
+    }
+    // let defaultModel = main_model.getObjectByName(params.selectedGroupName);
     // let defaultModel = main_model.getObjectByName(params.defaultModel);
     let baseFrame = defaultModel.getObjectByName("Base_Solid");
     let leftSlottedFrame = defaultModel.getObjectByName("Left_Ex_Slotted");
@@ -831,60 +846,6 @@ async function enforceRackBounds() {
     }
 
     // console.log('adjustedMinY', adjustedMinY)
-    // console.log('nodeHeight', nodeHeight)
-    // console.log('leftSlottedFrameHeight', leftSlottedFrameHeight)
-    // console.log('baseFrameHeight', baseFrameHeight)
-    // console.log('baseFrameBox', baseFrameBox)
-    // console.log('nodeBoundingBox', nodeBoundingBox)
-  }
-}
-
-// Function to enforce boundaries on X-axis
-async function enforceRackBounds1() {
-  if (selectedNode) {
-    let defaultModel = main_model.getObjectByName(params.defaultModel);
-    let baseFrame = defaultModel.getObjectByName("Base_Solid");
-    let leftSlottedFrame = defaultModel.getObjectByName("Left_Ex_Slotted");
-    const baseFrameBox = new THREE.Box3().setFromObject(baseFrame);
-    const leftSlottedFrameBox = new THREE.Box3().setFromObject(
-      leftSlottedFrame
-    );
-
-    const min = leftSlottedFrameBox.min.clone();
-    const max = leftSlottedFrameBox.max.clone();
-    const leftSlottedFrameHeight = max.y - min.y;
-    const baseFrameHeight = baseFrameBox.max.y - baseFrameBox.min.y;
-
-    let minY = min.y;
-    let maxY = max.y;
-    // let minY = min.y - leftSlottedFrame.position.y;
-    // let maxY = max.y + leftSlottedFrame.position.y;
-    const nodeBoundingBox = new THREE.Box3().setFromObject(selectedNode);
-    const nodeHeight = nodeBoundingBox.max.y - nodeBoundingBox.min.y;
-
-    const margin = 0.5;
-
-    const adjustedMinY = minY; //- params.cameraPosition  //- 0.5;
-    const adjustedMaxY = maxY; //- params.cameraPosition // + margin;
-    // const adjustedMinY = minY - nodeHeight  - 0.5;
-    // const adjustedMaxY = maxY + nodeHeight  + margin;
-
-    const position = selectedNode.position;
-
-    // If the node is trying to move past the minY or maxY boundary, set its position to the boundary
-    if (position.y < adjustedMinY) {
-      position.y = adjustedMinY;
-    } else if (position.y > adjustedMaxY) {
-      position.y = adjustedMaxY;
-    }
-
-    // console.log('selectedNode', selectedNode)
-    // console.log('minY', minY)
-    // console.log('maxY', maxY)
-    // console.log('adjustedMinY', adjustedMinY)
-    // console.log('adjustedMaxY', adjustedMaxY)
-    // console.log('position', position.y)
-    // console.log('leftSlottedFrame', leftSlottedFrame)
     // console.log('nodeHeight', nodeHeight)
     // console.log('leftSlottedFrameHeight', leftSlottedFrameHeight)
     // console.log('baseFrameHeight', baseFrameHeight)
@@ -1790,7 +1751,10 @@ if (addRack) {
           ? await cleanModelName(params.selectedGroupName)
           : params.selectedGroupName;
 
-      let defaultModel = main_model.getObjectByName(params.selectedGroupName);
+      // let defaultModel = main_model.getObjectByName(params.selectedGroupName);
+      let defaultModelName = setting[params.selectedGroupName].defaultModel
+      let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
+      let defaultModel = selectedGroupName.getObjectByName(defaultModelName);
       let rack_model;
       if (rackType == "RackGlassShelf") {
         if (!rack_glass_model) {
@@ -1800,7 +1764,6 @@ if (addRack) {
           );
           // rack_glass_model = await loadModel(colladaLoader, 'rack_glass_model.dae');
           await setupGlassRackModel(
-            main_model,
             rack_glass_model,
             texture_background
           );
@@ -1813,7 +1776,7 @@ if (addRack) {
             "rack_wooden_model.glb"
           );
           // rack_wooden_model = await loadModel(colladaLoader, 'rack_wooden_model.dae');
-          await setupWoodenRackModel(main_model, rack_wooden_model);
+          await setupWoodenRackModel(rack_wooden_model);
         }
         rack_model = rack_wooden_model;
       }
@@ -1821,7 +1784,7 @@ if (addRack) {
       if (rack_model) {
         let rack_clone = rack_model.clone();
         let frame = defaultModel.getObjectByName("Frame");
-        let rack = rack_clone.getObjectByName(getCleanModelName);
+        let rack = rack_clone.getObjectByName(defaultModelName);
 
         if (rack) {
           rack.name = rackType;
@@ -1842,7 +1805,7 @@ if (addRack) {
             ); // Get center of frame
 
             const boundingBox =
-              params.calculateBoundingBox[getCleanModelName][frame.name];
+              params.calculateBoundingBox[defaultModelName][frame.name];
 
             // Now compute the bounding box relative to the world coordinates
             const rackBoundingBox = new THREE.Box3().setFromObject(rack);
@@ -1973,68 +1936,125 @@ if (addAnotherModel) {
       })
 
       modelGroup.add(newModel);
-      await centerMainModel(modelGroup);
+
       await addAnotherModels(
         allGroupNames,
         cameraOnLeft,
       );
 
-
+      await centerMainModel(modelGroup);
       await loaderShowHide(false);
       await showHideNodes(modelGroup, scene, camera);
     });
   });
 }
 
+// Move Left
 moveLeftModel.addEventListener("click", async () => {
-  let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
-  let defaultModel = setting[selectedGroupName].defaultModel
-  let main_model = modelGroup.getObjectByName(defaultModel);
+  const selectedGroupName = params.selectedGroupName;
+  const selectedModelGroup = modelGroup.getObjectByName(selectedGroupName);
 
-  if (main_model) {
+  if (selectedModelGroup) {
     // Check for collision before moving left
     const canMoveLeft = await checkForCollision(
       modelGroup,
-      defaultModel,
+      selectedModelGroup,
       -params.moveLeftRight
     );
 
     if (canMoveLeft) {
-      defaultModel.position.x -= params.moveLeftRight; // Adjust the value to control the speed of movement
-      if (!defaultModel.spacing) {
-        defaultModel.spacing = 0;
+      selectedModelGroup.position.x -= params.moveLeftRight; // Move selected model group left
+      if (!selectedModelGroup.spacing) {
+        selectedModelGroup.spacing = 0;
       }
-      defaultModel.spacing += params.moveLeftRight;
+      selectedModelGroup.spacing -= params.moveLeftRight;
       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
     } else {
       console.log("Collision detected! Cannot move further left.");
     }
+  } else {
+    console.log(`Group ${selectedGroupName} not found.`);
   }
 });
 
+// Move Right
 moveRightModel.addEventListener("click", async () => {
-  let defaultModel = main_model.getObjectByName(params.selectedGroupName);
+  const selectedGroupName = params.selectedGroupName;
+  const selectedModelGroup = modelGroup.getObjectByName(selectedGroupName);
 
-  if (defaultModel) {
+  if (selectedModelGroup) {
     // Check for collision before moving right
     const canMoveRight = await checkForCollision(
-      main_model,
-      defaultModel,
+      modelGroup,
+      selectedModelGroup,
       params.moveLeftRight
     );
 
     if (canMoveRight) {
-      defaultModel.position.x += params.moveLeftRight; // Adjust the value to control the speed of movement
-      if (!defaultModel.spacing) {
-        defaultModel.spacing = 0;
+      selectedModelGroup.position.x += params.moveLeftRight; // Move selected model group right
+      if (!selectedModelGroup.spacing) {
+        selectedModelGroup.spacing = 0;
       }
-      defaultModel.spacing += params.moveLeftRight;
+      selectedModelGroup.spacing += params.moveLeftRight;
       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
     } else {
       console.log("Collision detected! Cannot move further right.");
     }
+  } else {
+    console.log(`Group ${selectedGroupName} not found.`);
   }
 });
+
+
+// moveLeftModel.addEventListener("click", async () => {
+//   let defaultModelName = setting[params.selectedGroupName].defaultModel
+//   let defaultModel = modelGroup.getObjectByName(defaultModelName);
+
+//   if (defaultModel) {
+//     // Check for collision before moving left
+//     const canMoveLeft = await checkForCollision(
+//       modelGroup,
+//       defaultModel,
+//       -params.moveLeftRight
+//     );
+
+//     if (canMoveLeft) {
+//       defaultModel.position.x -= params.moveLeftRight; // Adjust the value to control the speed of movement
+//       if (!defaultModel.spacing) {
+//         defaultModel.spacing = 0;
+//       }
+//       defaultModel.spacing += params.moveLeftRight;
+//       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
+//     } else {
+//       console.log("Collision detected! Cannot move further left.");
+//     }
+//   }
+// });
+
+// moveRightModel.addEventListener("click", async () => {
+//   let defaultModelName = setting[params.selectedGroupName].defaultModel
+//   let defaultModel = modelGroup.getObjectByName(defaultModelName);
+
+//   if (defaultModel) {
+//     // Check for collision before moving right
+//     const canMoveRight = await checkForCollision(
+//       main_model,
+//       defaultModel,
+//       params.moveLeftRight
+//     );
+
+//     if (canMoveRight) {
+//       defaultModel.position.x += params.moveLeftRight; // Adjust the value to control the speed of movement
+//       if (!defaultModel.spacing) {
+//         defaultModel.spacing = 0;
+//       }
+//       defaultModel.spacing += params.moveLeftRight;
+//       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
+//     } else {
+//       console.log("Collision detected! Cannot move further right.");
+//     }
+//   }
+// });
 
 // // Add event listeners for move buttons
 // moveLeftModel.addEventListener("click", async () => {

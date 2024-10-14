@@ -1417,7 +1417,7 @@ export async function isActiveGroup(currentModelName) {
     if (activeParentGroup.name && params.selectedGroupName == activeParentGroup.name) {
         isActive = true;
     }
-    
+
     return isActive;
 }
 
@@ -1663,26 +1663,44 @@ export async function centerMainModel(modelGroup) {
 }
 
 // Function to check for collision
-export async function checkForCollision(main_model, movingModel, moveAmount) {
-    const movingModelBoundingBox = new THREE.Box3().setFromObject(movingModel);
+export async function checkForCollision(modelGroup, movingModelGroup, moveAmount) {
+    const movingModelBoundingBox = await computeBoundingBox(movingModelGroup, allModelNames);
     movingModelBoundingBox.translate(new THREE.Vector3(moveAmount, 0, 0)); // Move bounding box based on movement
 
-    // Check against all other models
-    for (let otherModelName of main_model.children) {
-        const otherModel = main_model.getObjectByName(otherModelName.name);
-
-        if (otherModel && otherModel !== movingModel && otherModel.visible) {
-            const otherModelBoundingBox = new THREE.Box3().setFromObject(otherModel);
-
+    // Check against all other model groups in the scene
+    for (let otherModelGroup of modelGroup.children) {
+        if (otherModelGroup !== movingModelGroup && otherModelGroup.visible) {
+            const otherModelBoundingBox = await computeBoundingBox(otherModelGroup, allModelNames);
             // Check if the bounding boxes intersect
             if (movingModelBoundingBox.intersectsBox(otherModelBoundingBox)) {
                 return false; // Collision detected
             }
         }
     }
-
     return true; // No collision, safe to move
 }
+
+// // Function to check for collision
+// export async function checkForCollision(main_model, movingModel, moveAmount) {
+//     const movingModelBoundingBox = new THREE.Box3().setFromObject(movingModel);
+//     movingModelBoundingBox.translate(new THREE.Vector3(moveAmount, 0, 0)); // Move bounding box based on movement
+
+//     // Check against all other models
+//     for (let otherModelName of main_model.children) {
+//         const otherModel = main_model.getObjectByName(otherModelName.name);
+
+//         if (otherModel && otherModel !== movingModel && otherModel.visible) {
+//             const otherModelBoundingBox = new THREE.Box3().setFromObject(otherModel);
+
+//             // Check if the bounding boxes intersect
+//             if (movingModelBoundingBox.intersectsBox(otherModelBoundingBox)) {
+//                 return false; // Collision detected
+//             }
+//         }
+//     }
+
+//     return true; // No collision, safe to move
+// }
 
 export async function clearMeasurementBoxes(scene) {
     const objectsToRemove = [];
