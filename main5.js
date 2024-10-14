@@ -80,6 +80,7 @@ import {
   getNextVisibleChild,
   getPrevVisibleChild,
   computeBoundingBox,
+  getMainParentNode,
   // getCustomDropdown,
   checkForCollision,
   setPositionCenter,
@@ -121,6 +122,7 @@ import {
   golfClubNames,
   rackPartNames,
   allModelNames,
+  allGroupNames,
   hangerNames,
   headerNames,
   rackNames,
@@ -363,33 +365,26 @@ async function init() {
   scene.add(modelGroup);
 
   main_model = await loadGLTFModel(glftLoader, params.defaultModel + ".glb");
-  main_model.name = "main_model";
+  main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
-  await updateFrameMaterial(
-    main_model,
-    "frame",
-    "color",
-    params.allBorderColor
-  );
-  // scene.add(main_model);
   modelGroup.add(main_model);
-  await showHideNodes(main_model, scene, camera);
+  await showHideNodes(modelGroup, scene, camera);
 
   for (let val of allModelNames) {
     let model_name = val + ".glb";
-    let already_added = main_model.getObjectByName(val);
+    let already_added = modelGroup.getObjectByName(val);
     if (!already_added) {
       let model_load = await loadGLTFModel(glftLoader, model_name);
       await setupMainModel(model_load);
       let model = model_load.getObjectByName(val);
       model.visible = false;
-      await updateFrameMaterial(model, "frame", "color", params.allBorderColor);
       main_model.add(model);
     }
   }
 
-  await showHideNodes(main_model, scene, camera);
-  backupMainModel = main_model.clone();
+  await updateFrameMaterial(modelGroup, "frame", "color", params.allBorderColor);
+  await showHideNodes(modelGroup, scene, camera);
+  // backupMainModel = main_model.clone();
 
   // Transform controls
   transformControls = new TransformControls(camera, renderer.domElement);
@@ -404,16 +399,14 @@ async function init() {
   window.addEventListener("resize", onWindowResize);
 
   await loaderShowHide(false);
-  // const boundingBox = await computeBoundingBox(main_model, allModelNames);
-  // const updatedCenter = boundingBox.getCenter(new THREE.Vector3());
-  // main_model.position.sub(updatedCenter);
-  await calculateBoundingBox(main_model);
+  await calculateBoundingBox(modelGroup);
   await otherModelSetup();
-  await updateFrameSize(main_model, scene, camera);
-  await showHideNodes(main_model, scene, camera);
-  await setupMainModel(main_model);
+  await updateFrameSize(modelGroup, scene, camera);
+  await showHideNodes(modelGroup, scene, camera);
+  await setupMainModel(modelGroup);
 
-  main_model.traverse(async function (modelNode) {
+
+  await traverseAsync(modelGroup, async (modelNode) => {
     if (allModelNames.includes(modelNode.name)) {
       modelNode.traverse(async function (child) {
         if (
@@ -421,15 +414,16 @@ async function init() {
           frameMainNames.includes(child.name)
         ) {
           if (child.isMesh && child.material) {
-            params.lastInnerMaterial[modelNode.name] =
-              params.lastInnerMaterial[modelNode.name] || {};
-            params.lastInnerMaterial[modelNode.name][child.name] =
-              child.material;
+            params.lastInnerMaterial = params.lastInnerMaterial || {};
+            params.lastInnerMaterial[modelNode.name] = params.lastInnerMaterial[modelNode.name] || {};
+            params.lastInnerMaterial[modelNode.name][child.name] = child.material;
           }
         }
       });
     }
   });
+
+  console.log('params.lastInnerMaterial', params.lastInnerMaterial)
 
   if (!hanger_golf_club_model) {
     hanger_golf_club_model = await loadGLTFModel(
@@ -471,10 +465,12 @@ async function otherModelSetup() {
   if (!arrow_model) {
     arrow_model = await loadGLTFModel(glftLoader, "arrow_model.glb");
     // header_rod_model = await loadModel(colladaLoader, 'arrow_model.dae');
-    await setupArrowModel(main_model, arrow_model);
+    await setupArrowModel(modelGroup, arrow_model);
+
   }
   if (!header_rod_model) {
     header_rod_model = await loadGLTFModel(glftLoader, "header_rod_model.glb");
+    console.log('header_rod_model', header_rod_model)
     // header_rod_model = await loadModel(colladaLoader, 'header_rod_model.dae');
     params.rodSize = await getNodeSize(header_rod_model);
     // console.log('params.rodSize', params.rodSize)
@@ -489,7 +485,7 @@ async function otherModelSetup() {
       header_glass_shelf_fixing_model
     );
     await setupGlassShelfFixingModel(
-      main_model,
+      modelGroup,
       header_rod_model,
       header_glass_shelf_fixing_model
     );
@@ -500,7 +496,7 @@ async function otherModelSetup() {
       "header_500_height_model.glb"
     );
     // header_500_height_model = await loadModel(colladaLoader, 'header_500_height_model.dae');
-    await setupHeader500HeightModel(main_model, header_500_height_model);
+    await setupHeader500HeightModel(modelGroup, header_500_height_model);
     await updateMaterial(params.allBorderColor, "frame");
   }
   if (!header_wooden_shelf_model) {
@@ -509,7 +505,7 @@ async function otherModelSetup() {
       "header_wooden_shelf_model.glb"
     );
     // header_wooden_shelf_model = await loadModel(colladaLoader, 'header_wooden_shelf_model.dae');
-    await setupHeaderWoodenShelfModel(main_model, header_wooden_shelf_model);
+    await setupHeaderWoodenShelfModel(modelGroup, header_wooden_shelf_model);
     await updateMaterial(params.defaultShelfColor, "shelf");
   }
   if (!header_glass_shelf_model) {
@@ -519,7 +515,7 @@ async function otherModelSetup() {
     );
     // header_glass_shelf_model = await loadModel(colladaLoader, 'header_glass_shelf_model.dae');
     await setupHeaderGlassShelfModel(
-      main_model,
+      modelGroup,
       header_glass_shelf_model,
       texture_background
     );
@@ -530,9 +526,12 @@ async function otherModelSetup() {
       "slotted_sides_model.glb"
     );
     // slotted_sides_model = await loadModel(colladaLoader, 'slotted_sides_model.dae');
-    await setupSlottedSidesModel(main_model, slotted_sides_model);
+    await setupSlottedSidesModel(modelGroup, slotted_sides_model);
     await updateMaterial(params.allBorderColor, "frame");
   }
+
+  console.log('modelGroup -------------------', modelGroup)
+
 }
 
 // Handle mouse move for hover
@@ -578,11 +577,7 @@ async function onMouseMove(event) {
 // Handle mouse click for selection
 async function onMouseClick(event) {
   // console.log('hangerIntersects', hangerIntersects);
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  let defaultModel = main_model.getObjectByName(defaultModelName);
+  let defaultModel = main_model.getObjectByName(params.selectedGroupName);
   if (hangerIntersects.length > 0) {
     hideRemoveIcons();
     const intersectNode = hangerIntersects[0].object;
@@ -731,7 +726,7 @@ async function enforceHangerBounds() {
       }
     }
 
-    // let defaultModelName = params.selectedModelName !== 'default' ? params.selectedModelName : params.defaultModel;
+    // let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
     // let defaultModel = main_model.getObjectByName(selectedHangerNode);
     if (defaultModel) {
       console.log("defaultModel", defaultModel);
@@ -801,11 +796,7 @@ async function enforceHangerBounds() {
 // Function to enforce boundaries on X-axis
 async function enforceRackBounds() {
   if (selectedNode) {
-    let defaultModelName =
-      params.selectedModelName !== "default"
-        ? params.selectedModelName
-        : params.defaultModel;
-    let defaultModel = main_model.getObjectByName(defaultModelName);
+    let defaultModel = main_model.getObjectByName(params.selectedGroupName);
     // let defaultModel = main_model.getObjectByName(params.defaultModel);
     let baseFrame = defaultModel.getObjectByName("Base_Solid");
     let leftSlottedFrame = defaultModel.getObjectByName("Left_Ex_Slotted");
@@ -982,8 +973,8 @@ async function onWindowResize() {
 }
 
 async function render() {
-  // await drawMeasurementBoxesWithLabels(main_model, scene, camera)
-  await updateMeasurementGroups(main_model, scene, camera);
+  // await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
+  await updateMeasurementGroups(modelGroup, scene, camera);
   await updateLabelOcclusion(scene, camera, raycaster, direction);
 
   controls.update();
@@ -994,18 +985,16 @@ async function render() {
 }
 
 async function setMainFrameCropedImage() {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
+  let selectedGroupName = params.selectedGroupName;
+  let defaultModel = setting[selectedGroupName].defaultModel;
 
-  if (mainFramCropedImage && mainFramCropedImage[defaultModelName]) {
+  if (mainFramCropedImage && mainFramCropedImage[selectedGroupName] && mainFramCropedImage[selectedGroupName][defaultModel]) {
     const mainFrameBackgroundColor = await getHex(
-      setting[params.selectedModelName].mainFrameBackgroundColor
+      setting[selectedGroupName].mainFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = mainFramCropedImage[defaultModelName].width;
-    tempCanvas.height = mainFramCropedImage[defaultModelName].height;
+    tempCanvas.width = mainFramCropedImage[selectedGroupName][defaultModel].width;
+    tempCanvas.height = mainFramCropedImage[selectedGroupName][defaultModel].height;
     const ctx = tempCanvas.getContext("2d");
 
     // Draw the background color
@@ -1013,7 +1002,7 @@ async function setMainFrameCropedImage() {
     ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
     // Draw the cropped image on top
-    ctx.drawImage(mainFramCropedImage[defaultModelName], 0, 0);
+    ctx.drawImage(mainFramCropedImage[selectedGroupName][defaultModel], 0, 0);
 
     tempCanvas.toBlob(async (blob) => {
       const url = URL.createObjectURL(blob);
@@ -1024,8 +1013,9 @@ async function setMainFrameCropedImage() {
     });
   } else {
     const mainFrameBackgroundColor = await getHex(
-      setting[params.selectedModelName].mainFrameBackgroundColor
+      setting[selectedGroupName].mainFrameBackgroundColor
     );
+    let main_model = modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameMainNames.includes(child.name)) {
         child.material.color.set(mainFrameBackgroundColor);
@@ -1036,24 +1026,23 @@ async function setMainFrameCropedImage() {
 }
 
 async function setTopFrameCropedImage() {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  let defaultHeaderSize = setting[params.selectedModelName].defaultHeaderSize;
+  let selectedGroupName = params.selectedGroupName;
+  let defaultModel = setting[selectedGroupName].defaultModel;
+  let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
 
   if (
     topFramCropedImage &&
-    topFramCropedImage[defaultModelName][defaultHeaderSize]
+    topFramCropedImage[selectedGroupName][defaultModel] &&
+    topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]
   ) {
     const topFrameBackgroundColor = await getHex(
-      setting[params.selectedModelName].topFrameBackgroundColor
+      setting[selectedGroupName].topFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width =
-      topFramCropedImage[defaultModelName][defaultHeaderSize].width;
+      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize].width;
     tempCanvas.height =
-      topFramCropedImage[defaultModelName][defaultHeaderSize].height;
+      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize].height;
     const ctx = tempCanvas.getContext("2d");
 
     // Draw the background color
@@ -1062,7 +1051,7 @@ async function setTopFrameCropedImage() {
 
     // Draw the cropped image on top
     ctx.drawImage(
-      topFramCropedImage[defaultModelName][defaultHeaderSize],
+      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize],
       0,
       0
     );
@@ -1076,8 +1065,9 @@ async function setTopFrameCropedImage() {
     });
   } else {
     const topFrameBackgroundColor = await getHex(
-      setting[params.selectedModelName].topFrameBackgroundColor
+      setting[selectedGroupName].topFrameBackgroundColor
     );
+    let main_model = modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameTop1Names.includes(child.name)) {
         child.material.color.set(topFrameBackgroundColor);
@@ -1088,11 +1078,10 @@ async function setTopFrameCropedImage() {
 }
 
 async function updateMainFrameImageTexture(texture) {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  const currentModel = main_model.getObjectByName(defaultModelName);
+  let selectedGroupName = params.selectedGroupName;
+  let defaultModel = setting[selectedGroupName].defaultModel;
+  let main_model = modelGroup.getObjectByName(selectedGroupName);
+  const currentModel = main_model.getObjectByName(defaultModel);
   const frame = currentModel.getObjectByName("Frame");
   if (frame) {
     frame.traverse(async function (child) {
@@ -1102,12 +1091,12 @@ async function updateMainFrameImageTexture(texture) {
 }
 
 async function updateTopFrameImageTexture(texture) {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  let defaultHeaderSize = setting[params.selectedModelName].defaultHeaderSize;
-  const currentModel = main_model.getObjectByName(defaultModelName);
+  let selectedGroupName = params.selectedGroupName;
+  let defaultModel = setting[selectedGroupName].defaultModel;
+  let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
+
+  let main_model = modelGroup.getObjectByName(selectedGroupName);
+  const currentModel = main_model.getObjectByName(defaultModel);
   // currentModel.traverse(function (modelNode) {
   const header = currentModel.getObjectByName(defaultHeaderSize);
   if (header) {
@@ -1187,7 +1176,7 @@ async function updateTexture(mesh, texture, frameNames) {
 }
 
 // Function to update texture or color on selection
-async function updateMaterial(value, dropdownType, selectedModel = "default") {
+async function updateMaterial(value, dropdownType, selectedModel = "main_model") {
   // console.log('value', value)
   let type, imageUrl, displayText;
   if (dropdownType === "frame") {
@@ -1230,7 +1219,7 @@ async function updateMaterial(value, dropdownType, selectedModel = "default") {
   // console.log('type', type)
   // console.log('displayText', displayText)
 
-  await updateFrameMaterial(main_model, dropdownType, type, value);
+  await updateFrameMaterial(modelGroup, dropdownType, type, value);
 
   // Update dropdown button with selected image/color and name
   const dropdownButton = customDropdownButton.querySelector(
@@ -1281,12 +1270,12 @@ if (frameSize) {
   // frameSize.addEventListener("change", async function (event) {
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("frameSize")) {
-      params.defaultModel = event.target.value;
+      setting[params.selectedGroupName].defaultModel = event.target.value;
       await loaderShowHide(true);
-      await updateFrameSize(main_model, scene, camera);
+      await updateFrameSize(modelGroup, scene, camera);
       await lightSetup();
       await loaderShowHide(false);
-      await centerMainModel(modelGroup, allModelNames);
+      await centerMainModel(modelGroup);
     }
   });
 }
@@ -1296,24 +1285,24 @@ if (topDropdown) {
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("topDropdown")) {
       console.log(
-        "setting[params.selectedModelName]",
-        setting[params.selectedModelName]
+        "setting[params.selectedGroupName]",
+        setting[params.selectedGroupName]
       );
-      console.log("params.selectedModelName", params.selectedModelName);
-      setting[params.selectedModelName].topOption = event.target.value;
-      setting[params.selectedModelName].headerRodToggle = false;
+      console.log("params.selectedGroupName", params.selectedGroupName);
+      setting[params.selectedGroupName].topOption = event.target.value;
+      setting[params.selectedGroupName].headerRodToggle = false;
       if (
-        setting[params.selectedModelName].topOption == "Header_Wooden_Shelf"
+        setting[params.selectedGroupName].topOption == "Header_Wooden_Shelf"
       ) {
-        setting[params.selectedModelName].headerRodToggle = true;
+        setting[params.selectedGroupName].headerRodToggle = true;
       }
 
       headerRodToggle.checked =
-        setting[params.selectedModelName].headerRodToggle;
+        setting[params.selectedGroupName].headerRodToggle;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
     // You can add similar event handlers for other elements here
   });
@@ -1323,7 +1312,7 @@ if (headerOptions) {
   headerOptions.value = params.headerOptions;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("headerOptions")) {
-      setting[params.selectedModelName].headerOptions = event.target.value;
+      setting[params.selectedGroupName].headerOptions = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
@@ -1336,11 +1325,11 @@ if (headerSizeDropdown) {
   headerSizeDropdown.value = params.defaultHeaderSize;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("headerSizeDropdown")) {
-      setting[params.selectedModelName].defaultHeaderSize = event.target.value;
+      setting[params.selectedGroupName].defaultHeaderSize = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1349,11 +1338,11 @@ if (headerRodToggle) {
   headerRodToggle.checked = params.headerRodToggle;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("headerRodToggle")) {
-      setting[params.selectedModelName].headerRodToggle = event.target.checked;
+      setting[params.selectedGroupName].headerRodToggle = event.target.checked;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1362,11 +1351,11 @@ if (headerRodColorDropdown) {
   headerRodColorDropdown.value = params.rodFrameColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("headerRodColorDropdown")) {
-      setting[params.selectedModelName].rodFrameColor = event.target.value;
+      setting[params.selectedGroupName].rodFrameColor = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1375,11 +1364,11 @@ if (shelfTypeDropdown) {
   shelfTypeDropdown.value = params.defaultShelfType;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("shelfTypeDropdown")) {
-      setting[params.selectedModelName].defaultShelfType = event.target.value;
+      setting[params.selectedGroupName].defaultShelfType = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1388,14 +1377,14 @@ if (slottedSidesToggle) {
   slottedSidesToggle.checked = params.slottedSidesToggle;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("slottedSidesToggle")) {
-      setting[params.selectedModelName].slottedSidesToggle =
+      setting[params.selectedGroupName].slottedSidesToggle =
         event.target.checked;
 
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1416,13 +1405,9 @@ if (topFrameFileUpload) {
           cropper.destroy();
         }
 
-        let defaultModelName =
-          params.selectedModelName !== "default"
-            ? params.selectedModelName
-            : params.defaultModel;
-        let currentModel = scene.getObjectByName(defaultModelName);
+        let currentModel = scene.getObjectByName(params.selectedGroupName);
         let defaultHeaderSize =
-          setting[params.selectedModelName].defaultHeaderSize;
+          setting[params.selectedGroupName].defaultHeaderSize;
         let currentHeader = currentModel.getObjectByName(defaultHeaderSize);
         const size = await getCurrentModelSize(
           currentHeader,
@@ -1461,11 +1446,7 @@ if (mainFrameFileUpload) {
           cropper.destroy();
         }
 
-        let defaultModelName =
-          params.selectedModelName !== "default"
-            ? params.selectedModelName
-            : params.defaultModel;
-        let currentModel = scene.getObjectByName(defaultModelName);
+        let currentModel = scene.getObjectByName(params.selectedGroupName);
         const size = await getCurrentModelSize(currentModel, "Cube1-Mat");
         // console.log(size)
 
@@ -1487,7 +1468,7 @@ if (headerFrameColorInput) {
   headerFrameColorInput.value = await getHex(params.topFrameBackgroundColor);
   document.addEventListener("input", async function (event) {
     if (event.target.classList.contains("headerFrameColorInput")) {
-      setting[params.selectedModelName].topFrameBackgroundColor =
+      setting[params.selectedGroupName].topFrameBackgroundColor =
         event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
@@ -1501,7 +1482,7 @@ if (headerFrameColorDropdown) {
   headerFrameColorDropdown.value = params.topFrameBackgroundColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("headerFrameColorDropdown")) {
-      setting[params.selectedModelName].topFrameBackgroundColor =
+      setting[params.selectedGroupName].topFrameBackgroundColor =
         event.target.value;
       await setTopFrameCropedImage();
     }
@@ -1512,7 +1493,7 @@ if (mainFrameColorInput) {
   mainFrameColorInput.value = await getHex(params.mainFrameBackgroundColor);
   document.addEventListener("input", async function (event) {
     if (event.target.classList.contains("mainFrameColorInput")) {
-      setting[params.selectedModelName].mainFrameBackgroundColor =
+      setting[params.selectedGroupName].mainFrameBackgroundColor =
         event.target.value;
       await setMainFrameCropedImage();
     }
@@ -1523,11 +1504,11 @@ if (baseSelectorDropdown) {
   baseSelectorDropdown.value = params.selectedBaseFrame;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("baseSelectorDropdown")) {
-      setting[params.selectedModelName].selectedBaseFrame = event.target.value;
+      setting[params.selectedGroupName].selectedBaseFrame = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1536,11 +1517,11 @@ if (baseColor) {
   baseColor.value = params.baseFrameColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("baseColor")) {
-      setting[params.selectedModelName].baseFrameColor = event.target.value;
+      setting[params.selectedGroupName].baseFrameColor = event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1549,12 +1530,12 @@ if (hangerClothesToggle) {
   hangerClothesToggle.checked = params.hangerClothesToggle;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("hangerClothesToggle")) {
-      setting[params.selectedModelName].hangerClothesToggle =
+      setting[params.selectedGroupName].hangerClothesToggle =
         event.target.checked;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1563,12 +1544,12 @@ if (hangerGolfClubsToggle) {
   hangerGolfClubsToggle.checked = params.hangerGolfClubsToggle;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("hangerGolfClubsToggle")) {
-      setting[params.selectedModelName].hangerGolfClubsToggle =
+      setting[params.selectedGroupName].hangerGolfClubsToggle =
         event.target.checked;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1577,12 +1558,12 @@ if (hangerStandColor) {
   hangerStandColor.value = params.defaultHangerStandColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("hangerStandColor")) {
-      setting[params.selectedModelName].defaultHangerStandColor =
+      setting[params.selectedGroupName].defaultHangerStandColor =
         event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1591,12 +1572,12 @@ if (rackShelfColor) {
   rackShelfColor.value = params.defaultRackShelfStandColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("rackShelfColor")) {
-      setting[params.selectedModelName].defaultRackShelfStandColor =
+      setting[params.selectedGroupName].defaultRackShelfStandColor =
         event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1605,12 +1586,12 @@ if (rackStandColor) {
   rackStandColor.value = params.defaultRackStandStandColor;
   document.addEventListener("change", async function (event) {
     if (event.target.classList.contains("rackStandColor")) {
-      setting[params.selectedModelName].defaultRackStandStandColor =
+      setting[params.selectedGroupName].defaultRackStandStandColor =
         event.target.value;
       await loaderShowHide(true);
       await otherModelSetup();
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     }
   });
 }
@@ -1623,29 +1604,27 @@ if (measurementToggle) {
     await loaderShowHide(true);
     await otherModelSetup();
     await loaderShowHide(false);
-    await showHideNodes(main_model, scene, camera);
+    await showHideNodes(modelGroup, scene, camera);
   });
 }
 
 if (cropButton) {
   cropButton.addEventListener("click", async function (event) {
+    console.log('cropper', cropper)
     if (cropper) {
-      let defaultModelName =
-        params.selectedModelName !== "default"
-          ? params.selectedModelName
-          : params.defaultModel;
-      let defaultHeaderSize =
-        setting[params.selectedModelName].defaultHeaderSize;
+      let selectedGroupName = params.selectedGroupName;
+      let defaultModel = setting[selectedGroupName].defaultModel;
+      let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
       if (params.fileUploadFlag == "MainFrame") {
         mainFramCropedImage = mainFramCropedImage || {};
-        mainFramCropedImage[defaultModelName] = cropper.getCroppedCanvas();
+        mainFramCropedImage[selectedGroupName] = mainFramCropedImage[selectedGroupName] || {};
+        mainFramCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
         await setMainFrameCropedImage();
       } else if (params.fileUploadFlag == "TopFrame") {
         topFramCropedImage = topFramCropedImage || {};
-        topFramCropedImage[defaultModelName] =
-          topFramCropedImage[defaultModelName] || {};
-        topFramCropedImage[defaultModelName][defaultHeaderSize] =
-          cropper.getCroppedCanvas();
+        topFramCropedImage[selectedGroupName] = topFramCropedImage[selectedGroupName] || {};
+        topFramCropedImage[selectedGroupName][defaultModel] = topFramCropedImage[selectedGroupName][defaultModel] || {};
+        topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
         await setTopFrameCropedImage();
       }
     }
@@ -1674,24 +1653,20 @@ if (addHanger) {
             glftLoader,
             "hanger_golf_club_model.glb"
           );
-          await setupHangerGolfClubModel(main_model, hanger_golf_club_model);
+          await setupHangerGolfClubModel(hanger_golf_club_model);
         }
         hangermodel = hanger_golf_club_model;
       } else {
         if (!hanger_model) {
           // hanger_model = await loadModel(colladaLoader, 'hanger_model.dae');
           hanger_model = await loadGLTFModel(glftLoader, "hanger_model.glb");
-          await setupHangerModel(main_model, hanger_model);
+          await setupHangerModel(hanger_model);
         }
         hangermodel = hanger_model;
       }
-
-      let defaultModelName =
-        params.selectedModelName !== "default"
-          ? params.selectedModelName
-          : params.defaultModel;
-
-      let defaultModel = main_model.getObjectByName(defaultModelName);
+      let defaultModelName = setting[params.selectedGroupName].defaultModel
+      let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
+      let defaultModel = selectedGroupName.getObjectByName(defaultModelName);
       if (hangermodel) {
         // console.log('hangermodel', hangermodel)
 
@@ -1702,7 +1677,7 @@ if (addHanger) {
             let frame = defaultModel.getObjectByName("Frame");
             let side = camera.position.z > 0 ? "Front" : "Back";
 
-            const hangerPrefix = defaultModelName + "_" + side + "_"; // Prefix to match keys
+            const hangerPrefix = params.selectedGroupName + "_" + side + "_"; // Prefix to match keys
             let hangerArrayKey = hangerPrefix + hangerType;
 
             let conditionFlag = await isHangerAdd(
@@ -1788,7 +1763,7 @@ if (addHanger) {
 
                 hangerArray[hangerArrayKey] += 1;
 
-                await showHideNodes(main_model, scene, camera);
+                await showHideNodes(modelGroup, scene, camera);
               } else {
                 alert("There is not enough space to add this hanger.");
               }
@@ -1810,16 +1785,12 @@ if (addRack) {
       await otherModelSetup();
 
       const rackType = event.target.getAttribute("data-rack");
-      let defaultModelName =
-        params.selectedModelName !== "default"
-          ? params.selectedModelName
-          : params.defaultModel;
       let getCleanModelName =
-        params.selectedModelName !== "default"
-          ? await cleanModelName(defaultModelName)
-          : params.defaultModel;
+        params.selectedGroupName !== "main_model"
+          ? await cleanModelName(params.selectedGroupName)
+          : params.selectedGroupName;
 
-      let defaultModel = main_model.getObjectByName(defaultModelName);
+      let defaultModel = main_model.getObjectByName(params.selectedGroupName);
       let rack_model;
       if (rackType == "RackGlassShelf") {
         if (!rack_glass_model) {
@@ -1917,7 +1888,7 @@ if (addRack) {
               });
             };
 
-            await showHideNodes(main_model, scene, camera);
+            await showHideNodes(modelGroup, scene, camera);
           }
         }
       }
@@ -1930,44 +1901,31 @@ if (addAnotherModel) {
   addAnotherModel.forEach((button) => {
     button.addEventListener("click", async function () {
 
-      //   ----------------------------------------------------------
-    //   let backupMainModel = main_model.clone();
-    //   let modelGroupLength = modelGroup.children.length;
-    //   let backupModelGroup = modelGroup.clone();
-    //   modelGroup.clear();
-    //   modelGroup.add(backupMainModel);
-    //   for (let i = 0; i < modelGroupLength; i++) {
-    //     const newModel = backupModelGroup.children[i].clone();
-    //     newModel.name = `main_model_${i + 1}`;
-    //     //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
-    //     const modelBoundingBox = new THREE.Box3().setFromObject(
-    //       newModel.children[0]
-    //     );
-    //     const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
-    //     const boundingBox = await computeBoundingBox(newModel, allModelNames);
-    //     const center = boundingBox.getCenter(new THREE.Vector3());
-    //     const cameraOnLeft = camera.position.x < center.x;
+      let defaultModel = modelGroup.getObjectByName('main_model');
+      const newModel = defaultModel.clone();
+      await cloneWithCustomProperties(defaultModel, newModel);
 
-    //     if (cameraOnLeft) {
-    //       newModel.position.x = boundingBox.max.x + modelWidth / 2;
-    //       allModelNames.push(newModel.children[0].name);
-    //     } else {
-    //       newModel.position.x = boundingBox.min.x - modelWidth / 2;
-    //       allModelNames.unshift(newModel.children[0].name);
-    //     }
-    //     modelGroup.add(newModel);
-    //   }
-    //   console.log(modelGroup);
-    //   return;
-      //   ----------------------------------------------------------
-      let FirstMainModel = modelGroup.getObjectByName("main_model");
-      const newModel = FirstMainModel.clone();
-      params.defaultModel = "Model_661";
-      await updateFrameSize(newModel, scene, camera);      
+      const nodesToRemove = [];
+      newModel.traverse((child) => {
+        if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+          // Mark node for removal
+          nodesToRemove.push(child);
+        }
+      });
+
+      // Remove nodes after traversal
+      nodesToRemove.forEach(node => {
+        if (node.parent) {
+          node.parent.remove(node); // Remove the node from its parent
+        }
+      });
+
+
+      // params.selectedModelName = "Model_661";
       let baseModelName = "Other_" + newModel.name;
       let modelName = baseModelName + "_1";
       let suffix = 1;
-      while (Array.from(modelGroup.children).some((child) => child.name === modelName)) {
+      while (modelGroup.getObjectByName(modelName)) {
         suffix++;
         modelName = `${baseModelName}_${suffix}`;
       }
@@ -1980,127 +1938,63 @@ if (addAnotherModel) {
       const center = boundingBox.getCenter(new THREE.Vector3());
       const cameraOnLeft = camera.position.x < center.x;
 
+      // console.log('cameraOnLeft', cameraOnLeft)
+
       if (cameraOnLeft) {
-        newModel.position.x = boundingBox.max.x - modelWidth / 2;
+        newModel.position.x = boundingBox.max.x + modelWidth / 2;
+        allGroupNames.push(newModel.name);
       } else {
         newModel.position.x = boundingBox.min.x - modelWidth / 2;
+        allGroupNames.unshift(newModel.name);
       }
+
+      setting[modelName] = JSON.parse(JSON.stringify(setting['main_model']));
+      setting[modelName].topFrameBackgroundColor = params.topFrameBackgroundColor;
+      setting[modelName].mainFrameBackgroundColor = params.mainFrameBackgroundColor;
+
+      await traverseAsync(newModel, async (mesh) => {
+        if (frameTop1Names.includes(mesh.name) || frameMainNames.includes(mesh.name)) {
+          let currentModelNode = await getMainParentNode(mesh, allModelNames);
+          if (params.lastInnerMaterial[currentModelNode.name] && params.lastInnerMaterial[currentModelNode.name][mesh.name]) {
+            // const material = await commonMaterial(parseInt('0xffffff', 16))
+            const material = params.lastInnerMaterial[currentModelNode.name][mesh.name]
+            mesh.material = material;
+            mesh.needsUpdate = true;
+          }
+        }
+
+        if (mesh.name && allModelNames.includes(mesh.name)) {
+          if (mesh.name === params.addedVisibleModelName) {
+            mesh.visible = true;  // Show the selected model
+          } else {
+            mesh.visible = false; // Hide other models
+          }
+        }
+      })
+
       modelGroup.add(newModel);
-      await centerMainModel(modelGroup, allModelNames);
+      await centerMainModel(modelGroup);
       await addAnotherModels(
-        newModel,
-        allModelNames,
+        allGroupNames,
         cameraOnLeft,
-        scene,
-        camera
       );
-      console.log(modelGroup);
-      return;
 
-      //   ----------------------------------------------------------
-
-      const modelType = this.getAttribute("data-type");
-      await loaderShowHide(true);
-      await otherModelSetup();
-
-      let defaultModel = main_model.getObjectByName(modelType);
-      if (defaultModel) {
-        let model = defaultModel.clone();
-        await cloneWithCustomProperties(defaultModel, model);
-        const nodesToRemove = [];
-        model.traverse((child) => {
-          if (
-            hangerNames.includes(child.name) ||
-            rackNames.includes(child.name)
-          ) {
-            // Mark node for removal
-            nodesToRemove.push(child);
-          }
-        });
-
-        // Remove nodes after traversal
-        nodesToRemove.forEach((node) => {
-          if (node.parent) {
-            node.parent.remove(node); // Remove the node from its parent
-          }
-        });
-
-        let baseModelName = "Other_" + modelType;
-        let modelName = baseModelName + "_1";
-        let suffix = 1;
-        while (main_model.getObjectByName(modelName)) {
-          modelName = `${baseModelName}_${suffix}`;
-          suffix++;
-        }
-
-        model.name = modelName;
-        const modelBoundingBox = new THREE.Box3().setFromObject(model);
-        const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
-
-        const boundingBox = await computeBoundingBox(main_model, allModelNames);
-        const center = boundingBox.getCenter(new THREE.Vector3());
-        const cameraOnLeft = camera.position.x < center.x;
-
-        if (cameraOnLeft) {
-          model.position.x = boundingBox.max.x + modelWidth / 2;
-          allModelNames.push(model.name);
-        } else {
-          model.position.x = boundingBox.min.x - modelWidth / 2;
-          allModelNames.unshift(model.name);
-        }
-
-        model.visible = true;
-
-        setting[modelName] = JSON.parse(JSON.stringify(setting["default"]));
-        setting[modelName].topFrameBackgroundColor =
-          params.topFrameBackgroundColor;
-        setting[modelName].mainFrameBackgroundColor =
-          params.mainFrameBackgroundColor;
-
-        await traverseAsync(model, async (mesh) => {
-          if (
-            frameTop1Names.includes(mesh.name) ||
-            frameMainNames.includes(mesh.name)
-          ) {
-            if (params.lastInnerMaterial[modelType][mesh.name]) {
-              // const material = await commonMaterial(parseInt('0xffffff', 16))
-              const material = params.lastInnerMaterial[modelType][mesh.name];
-              mesh.material = material;
-              mesh.needsUpdate = true;
-            }
-          }
-        });
-
-        main_model.add(model);
-
-        await centerMainModel(main_model, allModelNames);
-        await addAnotherModels(
-          model,
-          allModelNames,
-          cameraOnLeft,
-          scene,
-          camera
-        );
-      } else {
-      }
 
       await loaderShowHide(false);
-      await showHideNodes(main_model, scene, camera);
+      await showHideNodes(modelGroup, scene, camera);
     });
   });
 }
 
 moveLeftModel.addEventListener("click", async () => {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  let defaultModel = main_model.getObjectByName(defaultModelName);
+  let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
+  let defaultModel = setting[selectedGroupName].defaultModel
+  let main_model = modelGroup.getObjectByName(defaultModel);
 
-  if (defaultModel) {
+  if (main_model) {
     // Check for collision before moving left
     const canMoveLeft = await checkForCollision(
-      main_model,
+      modelGroup,
       defaultModel,
       -params.moveLeftRight
     );
@@ -2111,7 +2005,7 @@ moveLeftModel.addEventListener("click", async () => {
         defaultModel.spacing = 0;
       }
       defaultModel.spacing += params.moveLeftRight;
-      await drawMeasurementBoxesWithLabels(main_model, scene, camera);
+      await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
     } else {
       console.log("Collision detected! Cannot move further left.");
     }
@@ -2119,11 +2013,7 @@ moveLeftModel.addEventListener("click", async () => {
 });
 
 moveRightModel.addEventListener("click", async () => {
-  let defaultModelName =
-    params.selectedModelName !== "default"
-      ? params.selectedModelName
-      : params.defaultModel;
-  let defaultModel = main_model.getObjectByName(defaultModelName);
+  let defaultModel = main_model.getObjectByName(params.selectedGroupName);
 
   if (defaultModel) {
     // Check for collision before moving right
@@ -2139,7 +2029,7 @@ moveRightModel.addEventListener("click", async () => {
         defaultModel.spacing = 0;
       }
       defaultModel.spacing += params.moveLeftRight;
-      await drawMeasurementBoxesWithLabels(main_model, scene, camera);
+      await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
     } else {
       console.log("Collision detected! Cannot move further right.");
     }
@@ -2148,7 +2038,7 @@ moveRightModel.addEventListener("click", async () => {
 
 // // Add event listeners for move buttons
 // moveLeftModel.addEventListener("click", async () => {
-//     let defaultModelName = params.selectedModelName !== 'default' ? params.selectedModelName : params.defaultModel;
+//     let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
 //     let defaultModel = main_model.getObjectByName(defaultModelName);
 
 //     if (defaultModel) {
@@ -2158,12 +2048,12 @@ moveRightModel.addEventListener("click", async () => {
 //         }
 //         defaultModel.spacing -= params.moveLeftRight
 //         console.log('defaultModel', defaultModel)
-//         await drawMeasurementBoxesWithLabels(main_model, scene, camera)
+//         await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
 //     }
 // });
 
 // moveRightModel.addEventListener("click", async () => {
-//     let defaultModelName = params.selectedModelName !== 'default' ? params.selectedModelName : params.defaultModel;
+//     let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
 //     let defaultModel = main_model.getObjectByName(defaultModelName);
 //     if (defaultModel) {
 //         defaultModel.position.x += params.moveLeftRight; // Adjust the value to control the speed of movement
@@ -2171,7 +2061,7 @@ moveRightModel.addEventListener("click", async () => {
 //             defaultModel.spacing = 0
 //         }
 //         defaultModel.spacing += params.moveLeftRight
-//         await drawMeasurementBoxesWithLabels(main_model, scene, camera)
+//         await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
 //     }
 // });
 
@@ -2328,11 +2218,11 @@ accordionModel.addEventListener("show.bs.collapse", async function (event) {
   // Find the data-model attribute of the currently open accordion item
   const modelName = openedAccordionItem.getAttribute("data-model");
   if (modelName) {
-    params.selectedModelName = modelName;
+    params.selectedGroupName = modelName;
     await loaderShowHide(true);
     await otherModelSetup();
     await loaderShowHide(false);
-    await showHideNodes(main_model, scene, camera);
+    await showHideNodes(modelGroup, scene, camera);
   }
 });
 

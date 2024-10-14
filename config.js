@@ -1,4 +1,5 @@
 // Names for different frame parts 'Model_600', 'Model_900', 'Model_661', 'Model_1061', 
+export const allGroupNames = ['main_model'];
 export const allModelNames = ['Model_661', 'Model_1061', 'Model_1200', 'Model_1500', 'Model_2000', 'Model_3000'];
 export const allOtherModelNames = ['Other_Model_661', 'Other_Model_1061', 'Other_Model_1200', 'Other_Model_1500', 'Other_Model_2000', 'Other_Model_3000'];
 export const frameTop1Names = ['Header_Graphic1-Mat', 'Header_Graphic2-Mat'];
@@ -64,7 +65,8 @@ export const params = {
     font: null,
     lastInnerMaterial: {},
     // selectedModel: null,
-    selectedModelName: 'default',
+    selectedGroupName: allGroupNames[0],
+    addedVisibleModelName: allModelNames[0],
     // setting: {},
     // selectedModelBoxHelper: null,
     // selectedModelZAxis: 30,
@@ -74,9 +76,9 @@ export const params = {
 
 export const setting = {}
 
-setting[params.selectedModelName] = { ...params };
+setting[params.selectedGroupName] = { ...params };
 // This removes the key from params
-delete setting[params.selectedModelName]['rodSize'];  
-delete setting[params.selectedModelName]['glassShelfFixingSize'];  
-delete setting[params.selectedModelName]['calculateBoundingBox'];  
-delete setting[params.selectedModelName]['lastInnerMaterial'];  
+delete setting[params.selectedGroupName]['rodSize'];  
+delete setting[params.selectedGroupName]['glassShelfFixingSize'];  
+delete setting[params.selectedGroupName]['calculateBoundingBox'];  
+delete setting[params.selectedGroupName]['lastInnerMaterial'];  

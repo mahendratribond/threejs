@@ -14,6 +14,7 @@ import {
     frameMainNames,
     frameTop1Names,
     baseFrameNames,
+    allGroupNames,
     allModelNames,
     rackPartNames,
     hangerNames,
@@ -292,211 +293,6 @@ export async function getRodCount(modelSize) {
     return additionalRods;
 }
 
-export async function createRod1(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model) {
-    const rodSize = await getNodeSize(header_rod_model);
-
-    const additionalRods = await getRodCount(modelSize);
-
-    // console.log(modelSize)
-    const header = modelNode.getObjectByName('Header_300');
-
-    // Ensure both header and frame nodes exist
-    if (header) {
-        const headerSize = await getNodeSize(header); // Size of the current header
-
-        const headerBox = new THREE.Box3().setFromObject(header);
-
-        let rodY = headerBox.min.y + rodSize.y / 2;//(frameSize.y / 2 + rodSize.y / 2);
-        let lassShelfFixingY = params.glassShelfFixingSize.y / 2;//(frameSize.y / 2 + glassShelfFixingSize.y / 2);
-
-        // Function to create and position a rod
-        const createAndPositionRod = async (xOffset, rodName, shelfFixingName) => {
-            let rod = header_rod_model.clone();
-            console.log('rod.position', rod.position)
-            let rod_position_y = rod.position.y
-            rod.name = rodName;
-            modelNode.attach(rod);
-            rod = await setPositionCenter(rod);
-
-            rod.position.set(
-                header.position.x + xOffset, // Adjust based on offset
-                header.position.y / 2 + rodY,
-                rod.position.z
-            );
-            rod.visible = false
-
-            const rodBox = new THREE.Box3().setFromObject(rod);
-            console.log('rod.position', rod.position)
-            console.log('rodBox', rodBox)
-            console.log('lassShelfFixingY', lassShelfFixingY)
-
-            let shelf_fixing = header_glass_shelf_fixing_model.clone();
-
-            console.log('shelf_fixing.position', shelf_fixing.position)
-            shelf_fixing.name = shelfFixingName;
-            modelNode.attach(shelf_fixing);
-
-            shelf_fixing = await setPositionCenter(shelf_fixing);
-            shelf_fixing.position.set(
-                rod.position.x + 200, // Adjust based on offset
-                rod.position.y,
-                shelf_fixing.position.z
-            );
-            shelf_fixing.visible = false
-            console.log('shelf_fixing.position', shelf_fixing.position)
-
-        };
-
-        let margin = 50;
-
-        // Place the left and right rods first
-        await createAndPositionRod(-headerSize.x / 2 + rodSize.x + margin, "Rod", "Glass_Shelf_Fixing"); // Left Rod
-        await createAndPositionRod(headerSize.x / 2 - rodSize.x - margin, "Rod", "Glass_Shelf_Fixing"); // Right Rod
-
-        // Determine and place additional rods based on modelSize
-        if (additionalRods > 0) {
-            const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
-
-            // Place additional rods
-            for (let i = 1; i <= additionalRods; i++) {
-                let xOffset = -headerSize.x / 2 + i * spacing;
-                await createAndPositionRod(xOffset, "Rod", "Glass_Shelf_Fixing");
-            }
-        }
-
-    }
-}
-
-export async function createRod(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model) {
-    const rodSize = await getNodeSize(header_rod_model);
-
-    const additionalRods = await getRodCount(modelSize);
-
-    // console.log(modelSize)
-    const header = modelNode.getObjectByName('Header_300');
-
-    // Ensure both header and frame nodes exist
-    if (header) {
-        const headerSize = await getNodeSize(header); // Size of the current header
-
-        const headerBox = new THREE.Box3().setFromObject(header);
-
-        let rodY = headerBox.min.y + rodSize.y / 2;//(frameSize.y / 2 + rodSize.y / 2);
-        let lassShelfFixingY = params.glassShelfFixingSize.y / 2;//(frameSize.y / 2 + glassShelfFixingSize.y / 2);
-
-        // Function to create and position a rod
-        const createAndPositionRod = async (xOffset, rodName, shelfFixingName) => {
-            let rod = header_rod_model.clone();
-            rod.name = rodName;
-            rod = await setPositionCenter(rod);
-            rod.position.set(
-                header.position.x + xOffset, // Adjust based on offset
-                rod.position.y + rodY,
-                rod.position.z
-            );
-            rod.visible = false
-            modelNode.attach(rod);
-
-            const rodBox = new THREE.Box3().setFromObject(rod);
-
-            let shelf_fixing = header_glass_shelf_fixing_model.clone();
-            shelf_fixing.name = shelfFixingName;
-
-            // console.log('shelf_fixing.position', shelf_fixing.position)
-            shelf_fixing = await setPositionCenter(shelf_fixing);
-            // console.log('shelf_fixing.position update', shelf_fixing.position)
-            // shelf_fixing.position.y += headerBox.min.y + rodSize.y + lassShelfFixingY
-            shelf_fixing.position.set(
-                rod.position.x, // Adjust based on offset
-                shelf_fixing.position.y + headerBox.min.y + rodSize.y + lassShelfFixingY,
-                shelf_fixing.position.z
-            );
-            shelf_fixing.visible = false
-            modelNode.attach(shelf_fixing);
-        };
-
-        let margin = 50;
-
-        // Place the left and right rods first
-        await createAndPositionRod(-headerSize.x / 2 + rodSize.x + margin, "Rod", "Glass_Shelf_Fixing"); // Left Rod
-        await createAndPositionRod(headerSize.x / 2 - rodSize.x - margin, "Rod", "Glass_Shelf_Fixing"); // Right Rod
-
-        // Determine and place additional rods based on modelSize
-        if (additionalRods > 0) {
-            const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
-
-            // Place additional rods
-            for (let i = 1; i <= additionalRods; i++) {
-                let xOffset = -headerSize.x / 2 + i * spacing;
-                await createAndPositionRod(xOffset, "Rod", "Glass_Shelf_Fixing");
-            }
-        }
-
-    }
-}
-
-export async function createRod2(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model) {
-    const rodSize = await getNodeSize(header_rod_model);
-
-    const additionalRods = await getRodCount(modelSize);
-
-    // console.log(modelSize)
-    const header = modelNode.getObjectByName('Header_300');
-
-    // Ensure both header and frame nodes exist
-    if (header) {
-        const headerSize = await getNodeSize(header); // Size of the current header
-
-        const headerBox = new THREE.Box3().setFromObject(header);
-
-        let rodY = headerBox.min.y + params.cameraPosition + rodSize.y / 2;//(frameSize.y / 2 + rodSize.y / 2);
-        let lassShelfFixingY = params.glassShelfFixingSize.y / 2;//(frameSize.y / 2 + glassShelfFixingSize.y / 2);
-
-        // Function to create and position a rod
-        const createAndPositionRod = async (xOffset, rodName, shelfFixingName) => {
-            let rod = header_rod_model.clone();
-            rod.name = rodName;
-            rod.position.set(
-                header.position.x + xOffset, // Adjust based on offset
-                rod.position.y + rodY,
-                rod.position.z
-            );
-            rod.visible = false
-            modelNode.attach(rod);
-
-            const rodBox = new THREE.Box3().setFromObject(rod);
-
-            let shelf_fixing = header_glass_shelf_fixing_model.clone();
-            shelf_fixing.name = shelfFixingName;
-            shelf_fixing.position.set(
-                rod.position.x, // Adjust based on offset
-                shelf_fixing.position.y + lassShelfFixingY,
-                shelf_fixing.position.z
-            );
-            shelf_fixing.visible = false
-            modelNode.attach(shelf_fixing);
-        };
-
-        let margin = 50;
-
-        // Place the left and right rods first
-        await createAndPositionRod(-headerSize.x / 2 + rodSize.x + margin, "Rod", "Glass_Shelf_Fixing"); // Left Rod
-        await createAndPositionRod(headerSize.x / 2 - rodSize.x - margin, "Rod", "Glass_Shelf_Fixing"); // Right Rod
-
-        // Determine and place additional rods based on modelSize
-        if (additionalRods > 0) {
-            const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
-
-            // Place additional rods
-            for (let i = 1; i <= additionalRods; i++) {
-                let xOffset = -headerSize.x / 2 + i * spacing;
-                await createAndPositionRod(xOffset, "Rod", "Glass_Shelf_Fixing");
-            }
-        }
-
-    }
-}
-
 export async function loadModel(modelLoader, model_name) {
     let model_load = await modelLoader.loadAsync(model_name);
     let model = model_load.scene;
@@ -598,7 +394,7 @@ export async function setupMainModel(main_model) {
         // if (frameTop1Names.includes(modelNode.name) || frameMainNames.includes(modelNode.name)) {
         //     if (modelNode.material) {
         //         console.log('modelNode.material', modelNode.material);
-                
+
         //         const material = await commonMaterial(parseInt('0xffffff', 16))
         //         modelNode.material = material
         //         modelNode.material.needsUpdate = true;
@@ -609,83 +405,6 @@ export async function setupMainModel(main_model) {
 
 
     // console.log(main_model)
-}
-
-export async function cloneWithCustomProperties(source, target) {
-    for (let key in source) {
-        if (source.hasOwnProperty(key) && !target.hasOwnProperty(key)) {
-            target[key] = source[key];
-        }
-    }
-}
-
-export async function setupArrowModel(main_model, arrow_model) {
-    // console.log('arrow_model', arrow_model)
-    if (arrow_model) {
-        await arrow_model.traverse(async function (child) {
-            if (child.material) {
-                const material = await commonMaterial(parseInt('0x888888', 16))
-                child.material = material
-                child.material.needsUpdate = true;
-            }
-        });
-        // arrow_model.scale.set(0.1, 0.1, 0.1)
-        arrow_model = await setPositionCenter(arrow_model);
-
-        await main_model.traverse(async function (modelNode) {
-            if (allModelNames.includes(modelNode.name)) {
-                const modelBox = new THREE.Box3().setFromObject(modelNode);
-                const cone_model = arrow_model.getObjectByName('Cone');
-                let cone = cone_model.clone();
-
-                cone = await setPositionCenter(cone);
-                cone.scale.set(0.1, 0.1, 0.1)
-                const coneBox = new THREE.Box3().setFromObject(cone);
-                const coneHeight = coneBox.max.y - coneBox.min.y
-                // console.log('arrowHeight', coneHeight)
-                // rod.name = rodName;
-                // cone.scale.set(0.5, 0.5, 0.5)
-                cone.position.set(
-                    modelNode.position.x, // Adjust based on offset
-                    modelBox.max.y + coneHeight / 2 + 210,
-                    // modelBox.min.y - coneHeight / 2 - 10,
-                    0
-                );
-                cone.rotation.x = Math.PI
-                cone.visible = false
-                modelNode.attach(cone);
-
-            }
-        });
-    }
-}
-
-export async function setupGlassShelfFixingModel(main_model, header_rod_model, header_glass_shelf_fixing_model) {
-    let modelSize;
-    if (header_glass_shelf_fixing_model) {
-        header_glass_shelf_fixing_model = await updateModelName(header_glass_shelf_fixing_model, '__Glass_Shelf_Fixing', 'Glass_Shelf_Fixing')
-    }
-    if (header_rod_model) {
-        await header_rod_model.traverse(async function (child) {
-            if (child.material && rodFrameTextureNames.includes(child.name)) {
-                const material = await commonMaterial(parseInt(params.rodFrameColor, 16))
-                child.material = material
-                child.material.needsUpdate = true;
-            }
-        });
-    }
-
-    await main_model.traverse(async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            modelSize = await getModelSize(modelNode.name);
-
-            if (header_rod_model && header_glass_shelf_fixing_model) {
-                await createRod(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model)
-            }
-
-        }
-    });
-
 }
 
 export async function cleanModelName(modelName) {
@@ -736,6 +455,158 @@ export async function updateMainModelName(model) {
         })
     }
     return model;
+}
+
+export async function cloneWithCustomProperties(source, target) {
+    for (let model of allModelNames) {
+        let sourceModel = source.getObjectByName(model);
+        let targetModel = target.getObjectByName(model);
+        for (let key in sourceModel) {
+            if (sourceModel.hasOwnProperty(key) && !targetModel.hasOwnProperty(key)) {
+                targetModel[key] = sourceModel[key];
+            }
+        }
+    }
+}
+
+export async function setupArrowModel(main_model, arrow_model) {
+    // console.log('arrow_model', arrow_model)
+    if (arrow_model) {
+        await arrow_model.traverse(async function (child) {
+            if (child.material) {
+                const material = await commonMaterial(parseInt('0x888888', 16))
+                child.material = material
+                child.material.needsUpdate = true;
+            }
+        });
+        // arrow_model.scale.set(0.1, 0.1, 0.1)
+        arrow_model = await setPositionCenter(arrow_model);
+
+        await main_model.traverse(async function (modelNode) {
+            if (allModelNames.includes(modelNode.name)) {
+                const modelBox = new THREE.Box3().setFromObject(modelNode);
+                const cone_model = arrow_model.getObjectByName('Cone');
+                let cone = cone_model.clone();
+
+                cone = await setPositionCenter(cone);
+                cone.scale.set(0.1, 0.1, 0.1)
+                const coneBox = new THREE.Box3().setFromObject(cone);
+                const coneHeight = coneBox.max.y - coneBox.min.y
+                // console.log('arrowHeight', coneHeight)
+                // rod.name = rodName;
+                // cone.scale.set(0.5, 0.5, 0.5)
+                cone.position.set(
+                    modelNode.position.x, // Adjust based on offset
+                    modelBox.max.y + coneHeight / 2 + 210,
+                    // modelBox.min.y - coneHeight / 2 - 10,
+                    0
+                );
+                cone.rotation.x = Math.PI
+                cone.visible = false
+                modelNode.attach(cone);
+
+            }
+        });
+    }
+}
+
+export async function createRod(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model) {
+    // const rodSize = await getNodeSize(header_rod_model);
+
+    const additionalRods = await getRodCount(modelSize);
+
+    // console.log(modelSize)
+    const header = modelNode.getObjectByName('Header_300');
+
+    // Ensure both header and frame nodes exist
+    if (header) {
+
+        const headerBox = new THREE.Box3().setFromObject(header);
+        const headerSize = await getNodeSize(header); // Size of the current header
+
+        let rodY = headerBox.min.y + params.rodSize.y / 2;//(frameSize.y / 2 + rodSize.y / 2);
+        let lassShelfFixingY = params.glassShelfFixingSize.y / 2;//(frameSize.y / 2 + glassShelfFixingSize.y / 2);
+
+        // Function to create and position a rod
+        const createAndPositionRod = async (xOffset, rodName, shelfFixingName) => {
+            let rod = header_rod_model.clone();
+            rod.name = rodName;
+            modelNode.add(rod);
+            rod = await setPositionCenter(rod);
+            rod.position.set(
+                header.position.x + xOffset, // Adjust based on offset
+                rod.position.y + rodY,
+                rod.position.z
+            );
+            rod.visible = false
+
+
+            const rodBox = new THREE.Box3().setFromObject(rod);
+
+            let shelf_fixing = header_glass_shelf_fixing_model.clone();
+            shelf_fixing.name = shelfFixingName;
+            modelNode.add(shelf_fixing);
+            // console.log('shelf_fixing.position', shelf_fixing.position)
+            shelf_fixing = await setPositionCenter(shelf_fixing);
+            // console.log('shelf_fixing.position update', shelf_fixing.position)
+            // shelf_fixing.position.y += headerBox.min.y + rodSize.y + lassShelfFixingY
+            shelf_fixing.position.set(
+                rod.position.x, // Adjust based on offset
+                shelf_fixing.position.y + headerBox.min.y + params.rodSize.y + lassShelfFixingY,
+                shelf_fixing.position.z
+            );
+            shelf_fixing.visible = false
+
+        };
+
+        let margin = 50;
+
+        // Place the left and right rods first
+        await createAndPositionRod(-headerSize.x / 2 + params.rodSize.x + margin, "Rod", "Glass_Shelf_Fixing"); // Left Rod
+        await createAndPositionRod(headerSize.x / 2 - params.rodSize.x - margin, "Rod", "Glass_Shelf_Fixing"); // Right Rod
+
+        // Determine and place additional rods based on modelSize
+        if (additionalRods > 0) {
+            const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
+
+            // Place additional rods
+            for (let i = 1; i <= additionalRods; i++) {
+                let xOffset = -headerSize.x / 2 + i * spacing;
+                await createAndPositionRod(xOffset, "Rod", "Glass_Shelf_Fixing");
+            }
+        }
+
+    }
+
+    return modelNode;
+}
+
+export async function setupGlassShelfFixingModel(main_model, header_rod_model, header_glass_shelf_fixing_model) {
+    let modelSize;
+    if (header_glass_shelf_fixing_model) {
+        header_glass_shelf_fixing_model = await updateModelName(header_glass_shelf_fixing_model, '__Glass_Shelf_Fixing', 'Glass_Shelf_Fixing')
+    }
+    if (header_rod_model) {
+        await header_rod_model.traverse(async function (child) {
+            if (child.material && rodFrameTextureNames.includes(child.name)) {
+                const material = await commonMaterial(parseInt(params.rodFrameColor, 16))
+                child.material = material
+                child.material.needsUpdate = true;
+            }
+        });
+    }
+
+    await main_model.traverse(async function (modelNode) {
+        if (allModelNames.includes(modelNode.name)) {
+            modelSize = await getModelSize(modelNode.name);
+
+            if (header_rod_model && header_glass_shelf_fixing_model) {
+                await createRod(modelNode, modelSize, header_rod_model, header_glass_shelf_fixing_model)
+            }
+
+        }
+    });
+
 }
 
 export async function setupHeader500HeightModel(main_model, header_500_height_model) {
@@ -1208,9 +1079,10 @@ export async function setupModel(main_model, header_500_height_model, header_woo
 
 export async function updateFrameSize(main_model, scene, camera) {
     if (main_model) {
-        main_model.traverse(function (modelNode) {
-            if (allModelNames.includes(modelNode.name) && modelNode.name && !modelNode.name.startsWith('Other_')) {
-                if (modelNode.name === params.defaultModel) {
+        let model = main_model.getObjectByName(params.selectedGroupName);
+        model.traverse(function (modelNode) {
+            if (modelNode.name && allModelNames.includes(modelNode.name)) {
+                if (modelNode.name === setting[params.selectedGroupName].defaultModel) {
                     modelNode.visible = true;  // Show the selected model
                 } else {
                     modelNode.visible = false; // Hide other models
@@ -1221,7 +1093,7 @@ export async function updateFrameSize(main_model, scene, camera) {
     }
 
     await showHideNodes(main_model, scene, camera)
-    await centerMainModel(main_model, allModelNames)
+    await centerMainModel(main_model)
 
 }
 
@@ -1232,17 +1104,24 @@ export async function traverseAsync(modelNode, callback) {
     return Promise.all(promises);
 }
 
-export async function showHideNodes(main_model, scene, camera) {
-    console.log('main_model', main_model);
-    if (main_model) {
+export async function showHideNodes(modelGroup, scene, camera) {
+    // console.log('modelGroup', modelGroup);
+    // let currentModelNode = params.selectedGroupName;
+    let current_setting = setting[params.selectedGroupName];
 
-        // const boundingBox = await computeBoundingBox(main_model, allModelNames);
-        // const updatedCenter = boundingBox.getCenter(new THREE.Vector3());
-        // main_model.position.sub(updatedCenter);
+    if (modelGroup) {
+        await traverseAsync(modelGroup, async (child) => {
+            if (child.name === "Cone") {
+                child.visible = false;
+            }
+        })
+        let main_model = modelGroup.getObjectByName(params.selectedGroupName);
+        // console.log('main_model', main_model)
         await traverseAsync(main_model, async (child) => {
-            let currentModelNode = await getMainParentNode(child);;
-
-            let current_setting = await getSetting(currentModelNode.name);
+            let currentModelNode = await getMainParentNode(child, allModelNames, false);
+            // console.log('currentModelNode', currentModelNode)
+            // console.log('child', child)
+            // console.log('child.name', child.name)
 
             let isSlottedSides = currentModelNode.isSlottedSides || false;
             let isShelf = currentModelNode.isShelf || false;
@@ -1250,7 +1129,7 @@ export async function showHideNodes(main_model, scene, camera) {
 
             child.updateMatrixWorld();
             if (child.name === "Cone") {
-                child.visible = await isActiveModel(currentModelNode) && Object.keys(setting).length > 1;
+                child.visible = await isActiveGroup(currentModelNode) && Object.keys(setting).length > 1;
             }
             if (child.name === "Left_Ex" || child.name === "Right_Ex") {
                 if (isSlottedSides && current_setting.slottedSidesToggle) {
@@ -1352,7 +1231,6 @@ export async function showHideNodes(main_model, scene, camera) {
         if (params.topOption == 'Header') {
             await traverseAsync(main_model, async (modelNode) => {
                 if (allModelNames.includes(modelNode.name)) {
-                    let current_setting = await getSetting(modelNode.name);
                     await Promise.all(headerNames.map(async (headerName) => {
                         const header = modelNode.getObjectByName(headerName);
                         if (header) {
@@ -1366,15 +1244,16 @@ export async function showHideNodes(main_model, scene, camera) {
                 }
             });
 
-            setting[params.selectedModelName].headerUpDown = setting[params.selectedModelName].headerRodToggle
+            setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle
 
         }
 
     }
 
-    let current_setting = setting[params.selectedModelName]
-    const parentElement = document.querySelector(`div.accordion-item[data-model="${params.selectedModelName}"]`);
+    console.log('modelGroup', modelGroup);
 
+
+    const parentElement = document.querySelector(`div.accordion-item[data-model="${params.selectedGroupName}"]`);
     if (parentElement) {
         let topDropdown = parentElement.querySelector('.topDropdown')
         if (topDropdown) {
@@ -1441,7 +1320,7 @@ export async function showHideNodes(main_model, scene, camera) {
         if (rackStandColor) {
             rackStandColor.value = current_setting.defaultRackStandStandColor
         }
-        
+
 
         if (current_setting.topOption == 'Shelf') {
             parentElement.querySelectorAll('.topHeaderOptions').forEach(element => {
@@ -1524,40 +1403,28 @@ export async function showHideNodes(main_model, scene, camera) {
         }
     }
     // setTimeout(async function () {
-    await drawMeasurementBoxesWithLabels(main_model, scene, camera)
+    await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
     // }, 100)
 
 }
 
 
 // Function to find the next visible child
-export async function isActiveModel(currentModelName) {
+export async function isActiveGroup(currentModelName) {
     let isActive = false;
 
-    if (currentModelName.name && params.selectedModelName == currentModelName.name) {
+    let activeParentGroup = await getMainParentNode(currentModelName, allGroupNames, false);
+    if (activeParentGroup.name && params.selectedGroupName == activeParentGroup.name) {
         isActive = true;
     }
-    else if (currentModelName.name && !currentModelName.name.startsWith('Other_') && params.selectedModelName == 'default') {
-        isActive = true;
-    }
+    
     return isActive;
 }
 
-// Function to find the next visible child
-export async function getSetting(currentModelName) {
-    let set = {};
-    if (currentModelName && currentModelName.startsWith('Other_')) {
-        set = setting[currentModelName]
-    }
-    else {
-        set = setting['default']
-    }
-    return set;
-}
 
 // Function to find the next visible child
-export async function setSetting(selectedModelName, key, value) {
-    setting[selectedModelName][key] = value
+export async function setSetting(selectedGroupName, key, value) {
+    setting[selectedGroupName][key] = value
 }
 
 // Function to find the next visible child
@@ -1615,12 +1482,12 @@ export async function loaderShowHide(isShow = false) {
     }
 }
 
-export async function getMainParentNode(child, isVisible = true) {
+export async function getMainParentNode(child, nodeNames, isVisible = true) {
     let tempNode;
     let currentModelNode = {}
 
     // Create an array of promises from allModelNames
-    let findParentPromises = allModelNames.map(async (val) => {
+    let findParentPromises = nodeNames.map(async (val) => {
         tempNode = await findParentNodeByName(child, val, isVisible);
         if (tempNode) {
             return tempNode;
@@ -1639,17 +1506,9 @@ export async function updateFrameMaterial(main_model, dropdownType, type, value)
     main_model.traverse(async function (child) {
         // console.log('child.name', child.name)
         if (allFrameBorderNames.includes(child.name) && dropdownType === 'frame') {
-            let currentModelNode = await getMainParentNode(child, false);
-
-            let isActive = await isActiveModel(currentModelNode);
-            if (params.selectedModelName == 'default' && currentModelNode.name && !currentModelNode.name.startsWith('Other_')) {
-                isActive = true;
-            }
-            else if (currentModelNode.name && currentModelNode.name == params.selectedModelName) {
-                isActive = true;
-            }
-
-
+            // let currentModelNode = params.selectedGroupName;
+            let currentModelNode = await getMainParentNode(child, allModelNames, false);
+            let isActive = await isActiveGroup(currentModelNode);
             if (isActive) {
                 // console.log('currentModelNode.name', currentModelNode.name)
                 if (type === "texture") {
@@ -1730,7 +1589,7 @@ export async function updateFrameMaterial(main_model, dropdownType, type, value)
     });
 }
 
-export async function centerMainModel(main_model, allModelNames) {
+export async function centerMainModel(modelGroup) {
     const spacing = 1; // Base space between models
     let currentX = 0; // Start positioning from 0 along the x-axis
 
@@ -1739,11 +1598,10 @@ export async function centerMainModel(main_model, allModelNames) {
     const models = [];
 
     // First pass: Calculate total width and collect visible models
-    main_model.children.forEach(main_model_Name => {
-        allModelNames.forEach(modelName => {
-            const model = main_model_Name.getObjectByName(modelName);
-
-            if (model && model.visible) { // Only consider visible models
+    allGroupNames.forEach(modelName => {
+        const main_model = modelGroup.getObjectByName(modelName);
+        main_model.children.forEach(model => {
+            if (allModelNames.includes(model.name) && model && model.visible) { // Only consider visible models
                 models.push(model);
 
                 // Ensure the bounding box is computed
@@ -1763,7 +1621,7 @@ export async function centerMainModel(main_model, allModelNames) {
             }
         });
     });
-    
+
     // Center the starting position by shifting based on half the total width
     currentX = -(totalWidth / 2);
 
@@ -1782,11 +1640,11 @@ export async function centerMainModel(main_model, allModelNames) {
 
         // Position the model along the x-axis with added spacing and manual offset
         let updateSpacing = 0
-        if((currentX + modelWidth / 2) > 0){
+        if ((currentX + modelWidth / 2) > 0) {
             updateSpacing = modelSpacing
         }
         model.parent.position.x = currentX + modelWidth / 2 + updateSpacing, originalYPosition;
-        
+
         // model.position.set(currentX + modelWidth / 2 + updateSpacing, originalYPosition, 0); // Use original y position
 
         // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
@@ -1795,142 +1653,13 @@ export async function centerMainModel(main_model, allModelNames) {
     // });
 
     // Ensure the bounding box is computed
-    main_model.traverse((modelchild) => {
+    modelGroup.traverse((modelchild) => {
         modelchild.traverse((child) => {
             if (child.isMesh && child.geometry) {
                 child.geometry.computeBoundingBox();
             }
         });
     });
-}
-
-
-
-export async function centerMainModel2(main_model, allModelNames) {
-    const spacing = 1; // Space between models
-    let currentX = 0; // Start positioning from 0 along the x-axis
-
-    // Get total width of all models to center the group
-    let totalWidth = 0;
-    const models = [];
-
-    // First pass: Calculate total width and collect visible models
-    allModelNames.forEach(modelName => {
-        const model = main_model.getObjectByName(modelName);
-
-        if (model && model.visible) { // Only consider visible models
-            models.push(model);
-
-            // Ensure the bounding box is computed
-            model.traverse((child) => {
-                if (child.isMesh && child.geometry) {
-                    child.geometry.computeBoundingBox();
-                }
-            });
-
-            // Get bounding box for the model
-            const boundingBox = new THREE.Box3().setFromObject(model);
-            const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-            // Accumulate total width (including spacing)
-            totalWidth += modelWidth + spacing;
-        }
-    });
-
-    // Center the starting position by shifting based on half the total width
-    currentX = -(totalWidth / 2);
-
-    // Second pass: Position each model
-    models.forEach(model => {
-        // Get bounding box again for this model
-        const boundingBox = new THREE.Box3().setFromObject(model);
-        const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-        // Get the original y position
-        const originalYPosition = model.position.y; // Maintain the original y position
-
-        // Position the model along the x-axis
-        model.position.set(currentX + modelWidth / 2, originalYPosition, 0); // Use original y position
-
-        // Move to the next position along the x-axis
-        currentX += modelWidth + spacing;
-    });
-
-    // Ensure the bounding box is computed
-    // main_model.traverse((child) => {
-    //     if (child.isMesh && child.geometry) {
-    //         child.geometry.computeBoundingBox();
-    //     }
-    // });
-}
-
-export async function centerMainModel1(main_model, allModelNames) {
-    const spacing = 1; // Space between models
-    let currentX = 0; // Start positioning from 0 along the x-axis
-
-    // Get total width of all models to center the group
-    let totalWidth = 0;
-    const models = [];
-
-    // First pass: Calculate total width and collect visible models
-    allModelNames.forEach(modelName => {
-        const model = main_model.getObjectByName(modelName);
-
-        if (model && model.visible) { // Only consider visible models
-            models.push(model);
-
-            let model_spacing = 0
-            if (model.spacing) {
-                model_spacing = model.spacing
-            }
-
-            // Ensure the bounding box is computed
-            model.traverse((child) => {
-                if (child.isMesh && child.geometry) {
-                    child.geometry.computeBoundingBox();
-                }
-            });
-
-            // Get bounding box for the model
-            const boundingBox = new THREE.Box3().setFromObject(model);
-            const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-            // Accumulate total width (including spacing)
-            totalWidth += modelWidth + spacing + model_spacing;
-        }
-    });
-
-    // Center the starting position by shifting based on half the total width
-    currentX = -(totalWidth / 2);
-
-    // Second pass: Position each model
-    models.forEach(model => {
-        let model_spacing = 0
-        if (model.spacing) {
-            model_spacing = model.spacing
-        }
-        console.log('model', model)
-        console.log('model_spacing', model_spacing)
-        // Get bounding box again for this model
-        const boundingBox = new THREE.Box3().setFromObject(model);
-        const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-        // Get the original y position
-        const originalYPosition = model.position.y; // Maintain the original y position
-
-        // Position the model along the x-axis
-        model.position.set(currentX + modelWidth / 2 + model_spacing, originalYPosition, 0); // Use original y position
-
-        // Move to the next position along the x-axis
-        currentX += modelWidth + spacing + model_spacing;
-    });
-
-    // Ensure the bounding box is computed
-    // main_model.traverse((child) => {
-    //     if (child.isMesh && child.geometry) {
-    //         child.geometry.computeBoundingBox();
-    //     }
-    // });
 }
 
 // Function to check for collision
@@ -2448,7 +2177,7 @@ export async function findParentNodeByName(node, parentName, isVisible = null) {
 }
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModels(main_model, mergedArray, cameraOnLeft, scene, camera) {
+export async function addAnotherModels(mergedArray, cameraOnLeft) {
     const rightControls = document.querySelector('.model_items');
 
     let index = rightControls.children.length; // Get the current number of existing cards to maintain correct numbering
@@ -2524,7 +2253,7 @@ export async function addAnotherModels(main_model, mergedArray, cameraOnLeft, sc
 
 export async function cloneAccordionItem(modelName) {
     // Find the original accordion item
-    const originalAccordionItem = document.querySelector('.accordion-item[data-model="default"]');
+    const originalAccordionItem = document.querySelector('.accordion-item[data-model="main_model"]');
 
     // Check if the original accordion item exists
     if (!originalAccordionItem) {
