@@ -1975,6 +1975,7 @@ moveLeftModel.addEventListener("click", async () => {
   } else {
     console.log(`Group ${selectedGroupName} not found.`);
   }
+
 });
 
 // Move Right

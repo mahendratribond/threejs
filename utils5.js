@@ -1616,6 +1616,78 @@ export async function centerMainModel(modelGroup) {
                 const modelWidth = boundingBox.max.x - boundingBox.min.x;
 
                 // Get model-specific spacing (manual movement)
+                const modelSpacing = Math.abs(main_model.spacing || 0); // Use positive spacing value
+                totalWidth += modelWidth + spacing + modelSpacing;
+            }
+        });
+    });
+
+    // Center the starting position by shifting based on half the total width
+    currentX = -(totalWidth / 2);
+
+    console.log('totalWidth:', totalWidth);
+
+    // Second pass: Position each model with spacing and manual offsets
+    for (const model of models) {
+        // Get bounding box again for this model
+        const boundingBox = new THREE.Box3().setFromObject(model);
+        const modelWidth = boundingBox.max.x - boundingBox.min.x;
+
+        // Get the original y position (to preserve vertical alignment)
+        const originalYPosition = model.position.y;
+
+        // Get model-specific spacing (manual movement)
+        const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
+
+        // Position the model along the x-axis with added spacing and manual offset
+        const newPositionX = currentX + modelWidth / 2 + modelSpacing;
+        model.position.set(newPositionX, originalYPosition, model.position.z); // Use original y and z positions
+
+        // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
+        currentX += modelWidth + spacing + modelSpacing;
+    }
+
+    // Recompute bounding boxes for all models in the group
+    modelGroup.traverse((modelchild) => {
+        modelchild.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+                child.geometry.computeBoundingBox();
+            }
+        });
+    });
+
+    console.log('modelGroup:', modelGroup);
+    console.log('models:', models);
+}
+
+
+export async function centerMainModel1(modelGroup) {
+    const spacing = 1; // Base space between models
+    let currentX = 0; // Start positioning from 0 along the x-axis
+
+    // Get total width of all models to center the group
+    let totalWidth = 0;
+    const models = [];
+
+    // First pass: Calculate total width and collect visible models
+    allGroupNames.forEach(modelName => {
+        const main_model = modelGroup.getObjectByName(modelName);
+        main_model.children.forEach(model => {
+            if (allModelNames.includes(model.name) && model && model.visible) { // Only consider visible models
+                models.push(model);
+
+                // Ensure the bounding box is computed
+                model.traverse((child) => {
+                    if (child.isMesh && child.geometry) {
+                        child.geometry.computeBoundingBox();
+                    }
+                });
+
+                // Get bounding box for the model
+                const boundingBox = new THREE.Box3().setFromObject(model);
+                const modelWidth = boundingBox.max.x - boundingBox.min.x;
+
+                // Get model-specific spacing (manual movement)
                 const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
                 totalWidth += modelWidth + spacing + modelSpacing;
             }
