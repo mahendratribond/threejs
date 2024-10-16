@@ -375,3 +375,22 @@ body.loaded .loader-wrapper {
 .controls .accordion-body {
 	padding: 10px;
 }
+.accordion-container {
+  position: relative; /* To position the close button inside the container */
+}
+
+.model-close-button{
+	position: absolute;
+  top: -2px;   /* Adjust as needed to fine-tune position */
+  left: -2px;  /* Adjust as needed to fine-tune position */
+  background: red;
+  border: none;
+  border-radius:100%;
+  font-size: 14px; /* Adjust size of the close button */
+  color: #000; /* Adjust color of the close button */
+  cursor: pointer;
+  padding:2px 6px;
+}
+.model-close-button:hover {
+  color: white; /* Change color when hovered, if needed */
+}

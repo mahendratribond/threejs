@@ -976,9 +976,10 @@ async function setMainFrameCropedImage() {
     const mainFrameBackgroundColor = await getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
     );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
+    let main_model = modelGroup.getObjectByName(selectedGroupName);     
     main_model.traverse(async function (child) {
       if (frameMainNames.includes(child.name)) {
+        child.material = child.material.clone();
         child.material.color.set(mainFrameBackgroundColor);
         child.material.needsUpdate = true;
       }
@@ -1031,6 +1032,7 @@ async function setTopFrameCropedImage() {
     let main_model = modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameTop1Names.includes(child.name)) {
+        child.material = child.material.clone();
         child.material.color.set(topFrameBackgroundColor);
         child.material.needsUpdate = true;
       }
