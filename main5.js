@@ -123,6 +123,7 @@ import {
   rackPartNames,
   allModelNames,
   allGroupNames,
+  allGroupModelName,
   hangerNames,
   headerNames,
   rackNames,
@@ -298,7 +299,7 @@ manager.onProgress = (url, itemsLoaded, itemsTotal) => {
 
 // Hide the loader once all items are loaded
 manager.onLoad = () => {
-  // loaderElement.style.display = 'none';
+  // loaderElement.style.display = 'none';  
   console.log("All assets loaded");
 };
 
@@ -1890,7 +1891,7 @@ if (addAnotherModel) {
       let baseModelName = "Other_" + newModel.name;
       let modelName = baseModelName + "_1";
       let suffix = 1;
-      while (modelGroup.getObjectByName(modelName)) {
+      while (allGroupModelName.includes(modelName)) {
         suffix++;
         modelName = `${baseModelName}_${suffix}`;
       }
@@ -1908,9 +1909,11 @@ if (addAnotherModel) {
       if (cameraOnLeft) {
         newModel.position.x = boundingBox.max.x + modelWidth / 2;
         allGroupNames.push(newModel.name);
+        allGroupModelName.push(newModel.name);
       } else {
         newModel.position.x = boundingBox.min.x - modelWidth / 2;
         allGroupNames.unshift(newModel.name);
+        allGroupModelName.unshift(newModel.name);
       }
 
       setting[modelName] = JSON.parse(JSON.stringify(setting['main_model']));
@@ -1939,10 +1942,7 @@ if (addAnotherModel) {
 
       modelGroup.add(newModel);
 
-      await addAnotherModels(
-        allGroupNames,
-        cameraOnLeft,
-      );
+      await addAnotherModels(allGroupNames, cameraOnLeft, modelGroup);
 
       await centerMainModel(modelGroup);
       await loaderShowHide(false);

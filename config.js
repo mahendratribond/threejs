@@ -16,6 +16,7 @@ export const rackNames = ['RackWoodenShelf', 'RackGlassShelf'];
 export const rackPartNames = ['Rack_Wooden_Shelf', 'Rack_Glass_Shelf', 'Rack_Stand_LH', 'Rack_Stand_RH', 'Rack_Glass_Shelf'];
 export const golfClubNames = ["Hanger_Golf_Club_Iron", "Hanger_Golf_Club_Driver"];
 export const hangerStandBaseNodes = ['Top_Ex'];
+export const allGroupModelName = ['main_model'];
 
 
 // Parameters for Three.js configuration

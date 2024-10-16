@@ -2775,40 +2775,47 @@ export async function findParentNodeByName(node, parentName, isVisible = null) {
   return null;
 }
 
-// export async function addCloseButton(modelName) {
-//     let dataModel = document.getAttribute("data-model", modelName);
-//     console.log(dataModel);
-    
-//   const accordionHeader = document.querySelector(
-//     `${modelName} #headingMainModel .accordion-button`
-//   );
+export async function addCloseButton(modelName, accordionItem, modelGroup, mergedArray) {
+  const closeButtonDiv = document.createElement("div");
+  closeButtonDiv.classList.add("control-group");
+  const closeButton = document.createElement("button");
+  closeButton.classList.add("btn", "btn-danger", "btn-sm", "model-close-button");
+  closeButton.type = "button";
+  closeButton.innerHTML = "Delete";
+  closeButtonDiv.appendChild(closeButton);
 
-//   // Create the close button element
-//   const closeButton = document.createElement("button");
-//   closeButton.classList.add("model-close-button");
-//   closeButton.type = "button";
-//   closeButton.setAttribute("aria-label", "Close");
-//   closeButton.innerHTML = "&times;";
+  // Append the close button to the accordion header
+  const accordionHeader = accordionItem.querySelector(".accordion-body");
+  accordionHeader.appendChild(closeButtonDiv);
 
-//   // Insert the close button after the "Main Model" button
-//   accordionHeader.parentElement.appendChild(closeButton);
-
-//   // You can add the event listener for closing functionality here
-//   closeButton.addEventListener("click", () => {
-//     // Logic to close the accordion or perform any action
-//     console.log("Close button clicked");
-//   });
-// }
+  // You can add the event listener for closing functionality here
+  closeButton.addEventListener("click", async () => {
+    const confirmDelete = confirm("Do you want to delete the model?");
+    if (confirmDelete) {
+        const modelToRemove = modelGroup.getObjectByName(modelName);
+        if (modelToRemove) {
+        modelGroup.remove(modelToRemove);
+        }
+        const index = mergedArray.indexOf(modelName);
+        if (index > -1) {
+        mergedArray.splice(index, 1); // Removes 1 element at the specified index
+        }
+        accordionItem.remove();
+    }
+    await centerMainModel(modelGroup);
+  });
+  
+}    
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModels(mergedArray, cameraOnLeft) {
+export async function addAnotherModels(mergedArray, cameraOnLeft, modelGroup) {
   const rightControls = document.querySelector(".model_items");
 
   let index = rightControls.children.length; // Get the current number of existing cards to maintain correct numbering
 
   // Loop through the mergedArray and append cards for visible models
   await mergedArray.forEach(async (modelName) => {
-    if (modelName.startsWith("Other_") && !document.querySelector(`.accordion-item[data-model="${modelName}"]`)) {
+    if ( modelName.startsWith("Other_") && !document.querySelector(`.accordion-item[data-model="${modelName}"]`)) {
       // Clone the accordion item
       const accordionItem = await cloneAccordionItem(modelName);
 
@@ -2830,8 +2837,8 @@ export async function addAnotherModels(mergedArray, cameraOnLeft) {
         // Set the parent for the new accordion item
         accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
         accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
-        // await addCloseButton(modelName);
-
+        await addCloseButton(modelName, accordionItem, modelGroup, mergedArray);
+        
         // Append the new accordion item to the container
         // accordionContainer.appendChild(accordionItem);
         if (cameraOnLeft) {
