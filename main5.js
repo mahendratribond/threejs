@@ -374,6 +374,7 @@ async function init() {
   await setupMainModel(main_model);
   modelGroup.add(main_model);
   await showHideNodes(modelGroup, scene, camera);
+  await loadHangerModels();
 
   for (let val of allModelNames) {
     let model_name = val + ".glb";
@@ -441,7 +442,6 @@ async function init() {
   //   await setupHangerModel(hanger_model);
   //   // console.log("hanger_model update", hanger_model);
   // }
-  await loadHangerModels();
   
   if (!rack_glass_model) {
     rack_glass_model = await loadGLTFModel(glftLoader, "rack_glass_model.glb");
