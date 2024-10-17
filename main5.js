@@ -462,14 +462,14 @@ async function init() {
 
 async function loadHangerModels(){
   if (!hanger_rail_step) {
-    hanger_rail_step = await loadGLTFModel(glftLoader, "__Hanger_Rail_Step.glb");
+    hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
     // console.log("hanger_rail_step loded", hanger_rail_step);
     await setupHangerModel(hanger_rail_step);
     // console.log("hanger_rail_step update", hanger_rail_step);
   }
   hanger_model = hanger_rail_step;
   if (!hanger_rail_single) {
-    hanger_rail_single = await loadGLTFModel(glftLoader, "__Hanger_Rail_Single.glb");
+    hanger_rail_single = await loadGLTFModel(glftLoader, "Hanger_Rail_Single.glb");
     // console.log("hanger_rail_single loded", hanger_rail_single);
     await setupHangerModel(hanger_rail_single);
     hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single"); 
