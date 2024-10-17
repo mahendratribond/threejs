@@ -185,6 +185,7 @@ const addRack = document.querySelectorAll(".addRack");
 
 const measurementToggle = document.getElementById("measurementToggle");
 const captureButton = document.getElementById("captureButton");
+const takeScreenShot = document.getElementById("takeScreenShot");
 
 const cropperContainer = document.getElementById("cropper-container");
 const cropperImage = document.getElementById("cropper-image");
@@ -2204,6 +2205,110 @@ if (captureButton) {
     renderer.render(scene, camera);
   });
 }
+// ----------------------------------------------------------------------------------------------------------
+if (takeScreenShot) {
+  takeScreenShot.addEventListener("click", async function () {
+    const camPosition  = [camera.position.x ,camera.position.y,camera.position.z];
+    // Save the original size of the renderer for high-res images
+    const originalWidth = renderer.domElement.width;
+    const originalHeight = renderer.domElement.height;
+    const scaleFactor = 3; // Increase resolution
+    renderer.setSize(
+      originalWidth * scaleFactor,
+      originalHeight * scaleFactor,
+      false
+    );
+    camera.aspect =
+      (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
+    camera.updateProjectionMatrix();
+
+    // Get the model's bounding box to determine its size
+    const boundingBox = new THREE.Box3().setFromObject(modelGroup);
+    const size = boundingBox.getSize(new THREE.Vector3());
+    const center = boundingBox.getCenter(new THREE.Vector3());
+
+    console.log("Model Size:", size); // Check if the size values are reasonable
+    console.log("Model Center:", center);
+    
+    // Adjust camera distance based on model size (add a safety check for large values)
+    let maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim === 0 || isNaN(maxDim)) {
+      maxDim = 1; // Fallback if the model size is too small or undefined
+    }
+
+    const cameraDistance = Math.min(maxDim * 2, size.x * 0.7); // Limit max camera distance
+
+    // Define four dynamic angles based on the model's size
+    const angles = [
+      {
+        x: cameraDistance,
+        y: cameraDistance > 1000 ? 1000 : cameraDistance,
+        z: cameraDistance * 0.7,
+      }, // Front-Top-Right
+      {
+        x: -cameraDistance,
+        y: cameraDistance > 1000 ? 1000 : cameraDistance,
+        z: -cameraDistance * 0.7,
+      }, // Back-Top-Left
+      {
+        x: 0,
+        y: cameraDistance > 1000 ? 1000 : cameraDistance,
+        z: cameraDistance,
+      }, // Front-Top-Center
+      {
+        x: 0,
+        y: cameraDistance > 1000 ? 1000 : cameraDistance,
+        z: -cameraDistance,
+      }, // Back-Top-Center
+      {
+        x: cameraDistance,
+        y: cameraDistance > 1000 ? 1000 : cameraDistance,
+        z: 0,
+      }, // Right-Top-Center
+    ];
+
+    angles.forEach((angle) => {
+      captureScreenshot(angle.x, angle.y, angle.z);
+    });
+    
+    // Revert the renderer back to its original size
+    renderer.setSize(originalWidth, originalHeight, false);
+    camera.aspect = originalWidth / originalHeight;
+    camera.position.x = camPosition[0];
+    camera.position.y = camPosition[1];
+    camera.position.z = camPosition[2];
+    camera.updateProjectionMatrix();
+
+    // Re-render the scene at the original size
+    renderer.render(scene, camera);
+    
+    function captureScreenshot(angleX, angleY, angleZ) {
+      console.log(`${angleX} ${angleY}  ${angleZ}`);
+      // Rotate the camera around the model
+      camera.position.set(angleX, angleY, angleZ);
+      camera.lookAt(scene.position); // Ensure camera is looking at the model's position
+      renderer.render(scene, camera);
+
+      // Capture the screenshot from the current camera angle
+      const screenshotData = renderer.domElement.toDataURL(); // Get screenshot as data URL
+
+      // Optionally, download the screenshot
+      downloadScreenshot(
+        screenshotData,
+        `screenshot_angle_${angleX}_${angleY}_${angleZ}.png`
+      );
+    }
+
+    // Helper function to download the screenshot
+    function downloadScreenshot(dataUrl, filename) {
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = filename;
+      link.click();
+    }
+  });
+}
+// ----------------------------------------------------------------------------------------------------------
 
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {
