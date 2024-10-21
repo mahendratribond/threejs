@@ -107,6 +107,7 @@ import {
   setupModel,
   loadModel,
   getHex,
+  setupSupportBaseModel,
 } from "./utils5.js";
 
 import {
@@ -186,6 +187,7 @@ const addRack = document.querySelectorAll(".addRack");
 const measurementToggle = document.getElementById("measurementToggle");
 const captureButton = document.getElementById("captureButton");
 const takeScreenShot = document.getElementById("takeScreenShot");
+// const Save = document.getElementById("Save");
 
 const cropperContainer = document.getElementById("cropper-container");
 const cropperImage = document.getElementById("cropper-image");
@@ -259,6 +261,9 @@ let cropper,
   rack_glass_model,
   arrow_model,
   modelGroup,
+  support_base_middle,
+  support_base_side,
+  // previousData,
   backupMainModel;
 const lights = [];
 const lightHelpers = [];
@@ -413,6 +418,42 @@ async function init() {
   await setupMainModel(modelGroup);
 
 
+
+  if (!hanger_rail_step) {
+    hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
+    await setupHangerModel(hanger_rail_step);
+    hanger_model = hanger_rail_step;
+    let loader = document.querySelector(".Hanger_Rail_Step_loader");
+    await removeLoader(loader);
+  }
+  if (!hanger_rail_single) {
+    hanger_rail_single = await loadGLTFModel(glftLoader, "Hanger_Rail_Single.glb");
+    await setupHangerModel(hanger_rail_single);
+    hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+    hanger_model.add(hanger_rail_single);
+    let loader = document.querySelector(".Hanger_Rail_Single_loader");
+    await removeLoader(loader);
+  }
+
+  if (!hanger_rail_d_500) {
+    hanger_rail_d_500 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_500mm.glb");
+    await setupHangerModel(hanger_rail_d_500);
+    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm");
+    hanger_model.add(hanger_rail_d_500);
+    let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
+    await removeLoader(loader);
+  }
+
+  if (!hanger_rail_d_1000) {
+    hanger_rail_d_1000 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_1000mm.glb");
+    await setupHangerModel(hanger_rail_d_1000);
+    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm");
+    hanger_model.add(hanger_rail_d_1000);
+    let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
+    await removeLoader(loader);
+  }
+
+
   await traverseAsync(modelGroup, async (modelNode) => {
     if (allModelNames.includes(modelNode.name)) {
       modelNode.traverse(async function (child) {
@@ -434,6 +475,10 @@ async function init() {
     hanger_golf_club_model = await loadGLTFModel(glftLoader, "hanger_golf_club_model.glb");
     // hanger_golf_club_model = await loadModel(colladaLoader, 'hanger_golf_club_model.dae');
     await setupHangerGolfClubModel(hanger_golf_club_model);
+    let Golfloader = document.querySelector(".Hanger_Golf_Club_Driver_loader");
+    removeLoader(Golfloader);
+    let Golfloader2 = document.querySelector(".Hanger_Golf_Club_Iron_loader");
+    removeLoader(Golfloader2);
   }
   // if (!hanger_model) {
   //   // console.log("hanger_model lodeding");
@@ -443,7 +488,7 @@ async function init() {
   //   await setupHangerModel(hanger_model);
   //   // console.log("hanger_model update", hanger_model);
   // }
-  
+
   if (!rack_glass_model) {
     rack_glass_model = await loadGLTFModel(glftLoader, "rack_glass_model.glb");
     // rack_glass_model = await loadModel(colladaLoader, 'rack_glass_model.dae');
@@ -458,41 +503,75 @@ async function init() {
 
   labelRenderer = await initLabelRenderer();
   document.body.appendChild(labelRenderer.domElement);
+  
+  // await fetch("modelData.json").then((response) => {
+  //   if (!response.ok) {
+  //     throw new Error("Network response was not ok");
+  //   }
+  //   return response.json();
+  // }).then((data) => {
+  //   previousData = data;
+  //   // Object.keys(data.params).forEach((key) => {
+  //   //   if (params.hasOwnProperty(key)) {
+  //   //     params[key] = data.params[key]; // Update matching keys
+  //   //   }
+  // })
+  // .catch((error) => {
+  //   console.error("There was a problem with the fetch operation:", error);
+  // });
+  // console.log("previousData", previousData);
 }
 
 
 async function loadHangerModels(){
   if (!hanger_rail_step) {
     hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
-    // console.log("hanger_rail_step loded", hanger_rail_step);
     await setupHangerModel(hanger_rail_step);
-    // console.log("hanger_rail_step update", hanger_rail_step);
+    hanger_model = hanger_rail_step;
+    let loader = document.querySelector(".Hanger_Rail_Step_loader");
+    removeLoader(loader);
   }
-  hanger_model = hanger_rail_step;
   if (!hanger_rail_single) {
     hanger_rail_single = await loadGLTFModel(glftLoader, "Hanger_Rail_Single.glb");
-    // console.log("hanger_rail_single loded", hanger_rail_single);
     await setupHangerModel(hanger_rail_single);
-    hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single"); 
-    // console.log("hanger_rail_single update", hanger_rail_single);
+    hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+    hanger_model.add(hanger_rail_single);
+    let loader = document.querySelector(".Hanger_Rail_Single_loader");
+    removeLoader(loader);
   }
-  hanger_model.add(hanger_rail_single);
+
   if (!hanger_rail_d_500) {
     hanger_rail_d_500 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_500mm.glb");
-    // console.log("hanger_rail_d_500 loded", hanger_rail_d_500);
     await setupHangerModel(hanger_rail_d_500);
-    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm"); 
-    // console.log("hanger_rail_d_500 update", hanger_rail_d_500);
+    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm");
+    hanger_model.add(hanger_rail_d_500);
+    let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
+    removeLoader(loader);
   }
-  hanger_model.add(hanger_rail_d_500);
+
   if (!hanger_rail_d_1000) {
     hanger_rail_d_1000 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_1000mm.glb");
-    // console.log("hanger_rail_d_1000 loded", hanger_rail_d_1000);
     await setupHangerModel(hanger_rail_d_1000);
-    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm"); 
-    // console.log("hanger_rail_d_1000 update", hanger_rail_d_1000);
+    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm");
+    hanger_model.add(hanger_rail_d_1000);
+    let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
+    removeLoader(loader);
   }
-  hanger_model.add(hanger_rail_d_1000);
+}
+
+function removeLoader(loader) {
+  let button = loader.closest("button");
+  // Select the loader image and the loader div
+  let loaderImage = loader;
+  let loaderDiv = button.querySelector(".loaderBack");
+  setTimeout(() => {
+    // Hide the loader image and loader div
+    loaderImage.style.display = "none"; // Hides the loader image
+    loaderDiv.style.display = "none"; // Hides the loader div
+
+    // Enable the button
+    button.disabled = false;
+  }, 1500); // Delay of 1500ms
 }
 
 
@@ -564,6 +643,22 @@ async function otherModelSetup() {
     // slotted_sides_model = await loadModel(colladaLoader, 'slotted_sides_model.dae');
     await setupSlottedSidesModel(modelGroup, slotted_sides_model);
     await updateMaterial(params.allBorderColor, "frame");
+  }
+
+  if (!support_base_middle || !support_base_side) {
+    support_base_middle = await loadGLTFModel(
+      glftLoader,
+      "support_base_middle.glb"
+    );
+    support_base_side = await loadGLTFModel(
+      glftLoader,
+      "support_base_sides.glb"
+    );
+    await setupSupportBaseModel(
+      modelGroup,
+      support_base_middle,
+      support_base_side
+    );
   }
 
 }
@@ -1684,9 +1779,9 @@ if (addHanger) {
         //   await setupHangerModel(hanger_rail_d_1000);
         // }
         // hangerraild1000 = hanger_rail_d_1000;
-        if (!hanger_model) {
-          await loadHangerModels();
-        }
+        // if (!hanger_model) {
+        //   await loadHangerModels();
+        // }
         hangermodel = hanger_model;
       }
       let defaultModelName = setting[params.selectedGroupName].defaultModel
@@ -2309,6 +2404,41 @@ if (takeScreenShot) {
   });
 }
 // ----------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
+// if (Save) {
+//   Save.addEventListener("click", function () {
+//   function saveDataAsJSON() {
+//     // Extract relevant data from modelGroup (position, rotation, scale, etc.)
+//     console.log(modelGroup);
+//     // Combine modelGroup data with params and other variables
+//     const dataToSave = {
+//       modelGroup: modelGroup,
+//       params: params,
+//       allGroupNames: allGroupNames,
+//       allGroupModelName: allGroupModelName,
+//       setting: setting[params.selectedGroupName],
+//     };
+
+//     // Convert the combined data to JSON
+//     const jsonData = JSON.stringify(dataToSave); // Pretty print with 2 spaces
+
+//     // Trigger file download
+//     downloadJSON(jsonData, "modelData.json");
+//   }
+
+//   function downloadJSON(data, filename) {
+//     const blob = new Blob([data], { type: "application/json" });
+//     const link = document.createElement("a");
+//     link.href = URL.createObjectURL(blob);
+//     link.download = filename;
+//     link.click();
+//   }
+
+//   saveDataAsJSON();
+//   });
+// }
+// ----------------------------------------------------------------------------------------------------------
+
 
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {

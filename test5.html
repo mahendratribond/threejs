@@ -260,7 +260,8 @@
               <label for="baseSelectorDropdown">Base Style</label>
               <select class="baseSelectorDropdown" class="">
                 <option value="none">Select Base Style</option>
-                <option value="Base_Flat">Flat</option>
+                <!-- <option value="Base_Flat">Flat</option> -->
+                <option value="support_base_sides">Flat</option>
                 <option value="Base_Solid">Solid</option>
               </select>
             </div>
@@ -284,16 +285,37 @@
             </div>
             <div class="control-group">
               <label for="addHanger">Fixtures</label>
-              <div class="horizontal-buttons d-flex gap-2">
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Step">Step Arm</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Single">Pond Arm</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_500mm">Rail-D 500mm</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_1000mm">Rail-D
-                  1000mm</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Iron">Golf Arm
-                  Iron</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Driver">Golf Arm
-                  Driver</button>
+              <div class="horizontal-buttons d-flex gap-2 add-hangers">
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Step" disabled>
+                Step Arm
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Rail_Step_loader">
+              </button>
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Single" disabled>
+                Pond Arm
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Rail_Single_loader">
+              </button>
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_500mm" disabled>
+                Rail-D 500mm
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Rail_D_500mm_loader">
+              </button>
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_D_1000mm" disabled>
+                Rail-D 1000mm
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Rail_D_1000mm_loader">
+              </button>
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Iron" disabled>
+                Golf Arm Iron
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Golf_Club_Iron_loader">
+              </button>
+              <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Driver" disabled>
+                Golf Arm Driver
+                <div class="loaderBack"></div>
+                <img src="./assets/images/loader.gif" class="Hanger_Golf_Club_Driver_loader">
+              </button>
               </div>
             </div>
             <div class="control-group">
@@ -378,6 +400,9 @@
     <div class="control-group mt-3">
       <button id="takeScreenShot" class="btn btn-outline-primary btn-sm">take screenShot</button>
     </div>
+    <!-- <div class="control-group mt-3">
+      <button id="Save" class="btn btn-outline-primary btn-sm">Save</button>
+    </div> -->
 
   </div>
   <div class="controls right-controls">

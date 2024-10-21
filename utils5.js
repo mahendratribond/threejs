@@ -307,6 +307,16 @@ export async function getRodCount(modelSize) {
   return additionalRods;
 }
 
+export async function getSupportBaseCount(modelSize) {
+  let additionalMiddleBase = 0;
+  if (modelSize >= 3000) {
+    additionalMiddleBase = 2; // 4 rods total
+  } else if (modelSize >= 1500) {
+    additionalMiddleBase = 1; // 3 rods total
+  }
+  return additionalMiddleBase;
+}
+
 export async function loadModel(modelLoader, model_name) {
   let model_load = await modelLoader.loadAsync(model_name);
   let model = model_load.scene;
@@ -598,6 +608,82 @@ export async function createRod(
 
   return modelNode;
 }
+export async function createSupportBase(
+  modelNode,
+  modelSize,
+  support_base_middle,
+  support_base_side
+) {
+  const additionalSupportBase = await getSupportBaseCount(modelSize);
+  const base = modelNode.getObjectByName("Base_Solid");
+  // Ensure both header and frame nodes exist
+  if (base) {
+    const baseBox = new THREE.Box3().setFromObject(modelNode);
+    const baseSize = await getNodeSize(modelNode); // Size of the current base
+    let positionY;
+
+    const bbox = new THREE.Box3();
+    bbox.expandByObject(support_base_side);
+    const modelWidth = bbox.min.y;
+    // let baseY = baseBox.min.y + params.rodSize.y / 4; //(frameSize.y / 2 + rodSize.y / 2);
+    let baseY = baseBox.min.y - modelWidth; //(frameSize.y / 2 + rodSize.y / 2);
+    // Function to create and position a rod
+    const createAndPositionBaseSide = async (xOffset, supportBaseName) => {
+      let supportSide = support_base_side.clone();
+      supportSide.name = supportBaseName;
+      modelNode.add(supportSide);
+      supportSide = await setPositionCenter(supportSide);
+      supportSide.position.set(
+        supportSide.position.x + xOffset, // Adjust based on offset
+        supportSide.position.y + baseY,
+        supportSide.position.z
+      );
+      positionY = supportSide.position.y;
+      supportSide.visible = false;
+      
+      const rodBox = new THREE.Box3().setFromObject(supportSide);
+    };
+    const createAndPositionBaseMiddle = async (xOffset, supportBaseName, positionY) => {
+      let supportSide = support_base_middle.clone();
+      supportSide.name = supportBaseName;
+      modelNode.add(supportSide);
+      supportSide = await setPositionCenter(supportSide);
+      supportSide.position.set(
+        supportSide.position.x + xOffset, // Adjust based on offset
+        supportSide.position.y = positionY,
+        supportSide.position.z
+      );
+      supportSide.visible = false;
+
+      const rodBox = new THREE.Box3().setFromObject(supportSide);
+    };
+
+    let margin = 30;
+
+    // Place the left and right rods first
+    await createAndPositionBaseSide(
+      -baseSize.x / 2 + margin,
+      "support_base_sides"
+    ); // Left Rod
+    await createAndPositionBaseSide(
+      baseSize.x / 2 - margin,
+      "support_base_sides"
+    ); // Right Rod
+    
+    // Determine and place additional rods based on modelSize
+    if (additionalSupportBase > 0) {
+      const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
+
+      // Place additional rods
+      for (let i = 1; i <= additionalSupportBase; i++) {
+        let xOffset = -baseSize.x / 2 + i * spacing;
+        await createAndPositionBaseMiddle(xOffset, "support_base_sides", positionY);
+      }
+    }
+  }
+
+  return modelNode;
+}
 
 export async function setupGlassShelfFixingModel(
   main_model,
@@ -634,6 +720,42 @@ export async function setupGlassShelfFixingModel(
           modelSize,
           header_rod_model,
           header_glass_shelf_fixing_model
+        );
+      }
+    }
+  });
+}
+export async function setupSupportBaseModel(
+  main_model,
+  support_base_middle,
+  support_base_side
+) {
+  let modelSize;
+  if (support_base_middle) {
+    support_base_middle = await updateModelName(
+      support_base_middle,
+      "base_3_middle",
+      "support_base_middle"
+    );
+  }
+  if (support_base_side) {
+    support_base_side = await updateModelName(
+      support_base_side,
+      "base_3_sides",
+      "support_base_sides"
+    );
+  }
+  
+  await main_model.traverse(async function (modelNode) {
+    if (allModelNames.includes(modelNode.name)) {
+      modelSize = await getModelSize(modelNode.name);
+
+      if (support_base_middle && support_base_side) {
+        await createSupportBase(
+          modelNode,
+          modelSize,
+          support_base_middle,
+          support_base_side
         );
       }
     }
