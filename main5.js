@@ -187,7 +187,7 @@ const addRack = document.querySelectorAll(".addRack");
 const measurementToggle = document.getElementById("measurementToggle");
 const captureButton = document.getElementById("captureButton");
 const takeScreenShot = document.getElementById("takeScreenShot");
-// const Save = document.getElementById("Save");
+const Save = document.getElementById("Save");
 
 const cropperContainer = document.getElementById("cropper-container");
 const cropperImage = document.getElementById("cropper-image");
@@ -263,7 +263,7 @@ let cropper,
   modelGroup,
   support_base_middle,
   support_base_side,
-  // previousData,
+  previousData,
   backupMainModel;
 const lights = [];
 const lightHelpers = [];
@@ -309,7 +309,7 @@ manager.onProgress = (url, itemsLoaded, itemsTotal) => {
 
 // Hide the loader once all items are loaded
 manager.onLoad = () => {
-  // loaderElement.style.display = 'none';  
+  // loaderElement.style.display = 'none';
   console.log("All assets loaded");
 };
 
@@ -394,7 +394,12 @@ async function init() {
     }
   }
 
-  await updateFrameMaterial(modelGroup, "frame", "color", params.allBorderColor);
+  await updateFrameMaterial(
+    modelGroup,
+    "frame",
+    "color",
+    params.allBorderColor
+  );
   await showHideNodes(modelGroup, scene, camera);
   // backupMainModel = main_model.clone();
 
@@ -417,8 +422,6 @@ async function init() {
   await showHideNodes(modelGroup, scene, camera);
   await setupMainModel(modelGroup);
 
-
-
   if (!hanger_rail_step) {
     hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
     await setupHangerModel(hanger_rail_step);
@@ -427,32 +430,45 @@ async function init() {
     await removeLoader(loader);
   }
   if (!hanger_rail_single) {
-    hanger_rail_single = await loadGLTFModel(glftLoader, "Hanger_Rail_Single.glb");
+    hanger_rail_single = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_Single.glb"
+    );
     await setupHangerModel(hanger_rail_single);
-    hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+    hanger_rail_single =
+      hanger_rail_single.getObjectByName("Hanger_Rail_Single");
     hanger_model.add(hanger_rail_single);
     let loader = document.querySelector(".Hanger_Rail_Single_loader");
     await removeLoader(loader);
   }
 
   if (!hanger_rail_d_500) {
-    hanger_rail_d_500 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_500mm.glb");
+    hanger_rail_d_500 = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_D_500mm.glb"
+    );
     await setupHangerModel(hanger_rail_d_500);
-    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm");
+    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName(
+      "Hanger_Rail_D_500mm"
+    );
     hanger_model.add(hanger_rail_d_500);
     let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
     await removeLoader(loader);
   }
 
   if (!hanger_rail_d_1000) {
-    hanger_rail_d_1000 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_1000mm.glb");
+    hanger_rail_d_1000 = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_D_1000mm.glb"
+    );
     await setupHangerModel(hanger_rail_d_1000);
-    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm");
+    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName(
+      "Hanger_Rail_D_1000mm"
+    );
     hanger_model.add(hanger_rail_d_1000);
     let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
     await removeLoader(loader);
   }
-
 
   await traverseAsync(modelGroup, async (modelNode) => {
     if (allModelNames.includes(modelNode.name)) {
@@ -463,8 +479,10 @@ async function init() {
         ) {
           if (child.isMesh && child.material) {
             params.lastInnerMaterial = params.lastInnerMaterial || {};
-            params.lastInnerMaterial[modelNode.name] = params.lastInnerMaterial[modelNode.name] || {};
-            params.lastInnerMaterial[modelNode.name][child.name] = child.material;
+            params.lastInnerMaterial[modelNode.name] =
+              params.lastInnerMaterial[modelNode.name] || {};
+            params.lastInnerMaterial[modelNode.name][child.name] =
+              child.material;
           }
         }
       });
@@ -472,7 +490,10 @@ async function init() {
   });
 
   if (!hanger_golf_club_model) {
-    hanger_golf_club_model = await loadGLTFModel(glftLoader, "hanger_golf_club_model.glb");
+    hanger_golf_club_model = await loadGLTFModel(
+      glftLoader,
+      "hanger_golf_club_model.glb"
+    );
     // hanger_golf_club_model = await loadModel(colladaLoader, 'hanger_golf_club_model.dae');
     await setupHangerGolfClubModel(hanger_golf_club_model);
     let Golfloader = document.querySelector(".Hanger_Golf_Club_Driver_loader");
@@ -495,7 +516,10 @@ async function init() {
     await setupGlassRackModel(rack_glass_model, texture_background);
   }
   if (!rack_wooden_model) {
-    rack_wooden_model = await loadGLTFModel(glftLoader, "rack_wooden_model.glb");
+    rack_wooden_model = await loadGLTFModel(
+      glftLoader,
+      "rack_wooden_model.glb"
+    );
     // rack_wooden_model = await loadModel(colladaLoader, 'rack_wooden_model.dae');
     // console.log('hanger_model', hanger_model)
     await setupWoodenRackModel(rack_wooden_model);
@@ -503,27 +527,43 @@ async function init() {
 
   labelRenderer = await initLabelRenderer();
   document.body.appendChild(labelRenderer.domElement);
-  
-  // await fetch("modelData.json").then((response) => {
-  //   if (!response.ok) {
-  //     throw new Error("Network response was not ok");
-  //   }
-  //   return response.json();
-  // }).then((data) => {
-  //   previousData = data;
-  //   // Object.keys(data.params).forEach((key) => {
-  //   //   if (params.hasOwnProperty(key)) {
-  //   //     params[key] = data.params[key]; // Update matching keys
-  //   //   }
-  // })
-  // .catch((error) => {
-  //   console.error("There was a problem with the fetch operation:", error);
-  // });
+  // await fetch("modelData.json")
+  //   .then((response) => {
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //     return response.json();
+  //   })
+  //   .then((data) => {
+  //     previousData = data;
+  //     Object.keys(data.params).forEach((key) => {
+  //       if (params.hasOwnProperty(key)) {
+  //         params[key] = data.params[key]; // Update matching keys
+  //       }
+  //     });
+  //     for (let val of data.allGroupNames) {
+  //       while (!allGroupNames.includes(val)) {
+  //         allGroupNames.push(val);
+  //       }
+  //     }
+  //     for (let val of data.allGroupModelName) {
+  //       while (!allGroupModelName.includes(val)) {
+  //         allGroupModelName.push(val);
+  //       }
+  //     }
+  //     Object.keys(data.setting).forEach((key) => {
+  //       if (allGroupNames.includes(key)) {
+  //         setting[key] = data.setting[key];
+  //       }
+  //     });
+  //   })
+  //   .catch((error) => {
+  //     console.error("There was a problem with the fetch operation:", error);
+  //   });
   // console.log("previousData", previousData);
 }
 
-
-async function loadHangerModels(){
+async function loadHangerModels() {
   if (!hanger_rail_step) {
     hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
     await setupHangerModel(hanger_rail_step);
@@ -532,27 +572,41 @@ async function loadHangerModels(){
     removeLoader(loader);
   }
   if (!hanger_rail_single) {
-    hanger_rail_single = await loadGLTFModel(glftLoader, "Hanger_Rail_Single.glb");
+    hanger_rail_single = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_Single.glb"
+    );
     await setupHangerModel(hanger_rail_single);
-    hanger_rail_single = hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+    hanger_rail_single =
+      hanger_rail_single.getObjectByName("Hanger_Rail_Single");
     hanger_model.add(hanger_rail_single);
     let loader = document.querySelector(".Hanger_Rail_Single_loader");
     removeLoader(loader);
   }
 
   if (!hanger_rail_d_500) {
-    hanger_rail_d_500 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_500mm.glb");
+    hanger_rail_d_500 = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_D_500mm.glb"
+    );
     await setupHangerModel(hanger_rail_d_500);
-    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm");
+    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName(
+      "Hanger_Rail_D_500mm"
+    );
     hanger_model.add(hanger_rail_d_500);
     let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
     removeLoader(loader);
   }
 
   if (!hanger_rail_d_1000) {
-    hanger_rail_d_1000 = await loadGLTFModel(glftLoader, "Hanger_Rail_D_1000mm.glb");
+    hanger_rail_d_1000 = await loadGLTFModel(
+      glftLoader,
+      "Hanger_Rail_D_1000mm.glb"
+    );
     await setupHangerModel(hanger_rail_d_1000);
-    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm");
+    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName(
+      "Hanger_Rail_D_1000mm"
+    );
     hanger_model.add(hanger_rail_d_1000);
     let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
     removeLoader(loader);
@@ -574,14 +628,12 @@ function removeLoader(loader) {
   }, 1500); // Delay of 1500ms
 }
 
-
 // Handle mouse move for hover
 async function otherModelSetup() {
   if (!arrow_model) {
     arrow_model = await loadGLTFModel(glftLoader, "arrow_model.glb");
     // header_rod_model = await loadModel(colladaLoader, 'arrow_model.dae');
     await setupArrowModel(modelGroup, arrow_model);
-
   }
   if (!header_rod_model) {
     header_rod_model = await loadGLTFModel(glftLoader, "header_rod_model.glb");
@@ -660,7 +712,6 @@ async function otherModelSetup() {
       support_base_side
     );
   }
-
 }
 
 // Handle mouse move for hover
@@ -717,11 +768,11 @@ async function onMouseClick(event) {
       selectedNode = intersectNode.parent;
       let iconName = selectedNode.name;
 
-      let tempNode, defaultModel
+      let tempNode, defaultModel;
       for (let val of allModelNames) {
         tempNode = await findParentNodeByName(selectedNode, val, true);
         if (tempNode) {
-          defaultModel = tempNode
+          defaultModel = tempNode;
           break;
         }
       }
@@ -936,11 +987,11 @@ async function enforceHangerBounds() {
 // Function to enforce boundaries on X-axis
 async function enforceRackBounds() {
   if (selectedNode) {
-    let tempNode, defaultModel
+    let tempNode, defaultModel;
     for (let val of allModelNames) {
       tempNode = await findParentNodeByName(selectedNode, val, true);
       if (tempNode) {
-        defaultModel = tempNode
+        defaultModel = tempNode;
         break;
       }
     }
@@ -1082,13 +1133,19 @@ async function setMainFrameCropedImage() {
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
 
-  if (mainFramCropedImage && mainFramCropedImage[selectedGroupName] && mainFramCropedImage[selectedGroupName][defaultModel]) {
+  if (
+    mainFramCropedImage &&
+    mainFramCropedImage[selectedGroupName] &&
+    mainFramCropedImage[selectedGroupName][defaultModel]
+  ) {
     const mainFrameBackgroundColor = await getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = mainFramCropedImage[selectedGroupName][defaultModel].width;
-    tempCanvas.height = mainFramCropedImage[selectedGroupName][defaultModel].height;
+    tempCanvas.width =
+      mainFramCropedImage[selectedGroupName][defaultModel].width;
+    tempCanvas.height =
+      mainFramCropedImage[selectedGroupName][defaultModel].height;
     const ctx = tempCanvas.getContext("2d");
 
     // Draw the background color
@@ -1109,7 +1166,7 @@ async function setMainFrameCropedImage() {
     const mainFrameBackgroundColor = await getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
     );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);     
+    let main_model = modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameMainNames.includes(child.name)) {
         child.material = child.material.clone();
@@ -1135,9 +1192,13 @@ async function setTopFrameCropedImage() {
     );
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width =
-      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize].width;
+      topFramCropedImage[selectedGroupName][defaultModel][
+        defaultHeaderSize
+      ].width;
     tempCanvas.height =
-      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize].height;
+      topFramCropedImage[selectedGroupName][defaultModel][
+        defaultHeaderSize
+      ].height;
     const ctx = tempCanvas.getContext("2d");
 
     // Draw the background color
@@ -1272,7 +1333,11 @@ async function updateTexture(mesh, texture, frameNames) {
 }
 
 // Function to update texture or color on selection
-async function updateMaterial(value, dropdownType, selectedModel = "main_model") {
+async function updateMaterial(
+  value,
+  dropdownType,
+  selectedModel = "main_model"
+) {
   // console.log('value', value)
   let type, imageUrl, displayText;
   if (dropdownType === "frame") {
@@ -1706,21 +1771,26 @@ if (measurementToggle) {
 
 if (cropButton) {
   cropButton.addEventListener("click", async function (event) {
-    console.log('cropper', cropper)
+    console.log("cropper", cropper);
     if (cropper) {
       let selectedGroupName = params.selectedGroupName;
       let defaultModel = setting[selectedGroupName].defaultModel;
       let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
       if (params.fileUploadFlag == "MainFrame") {
         mainFramCropedImage = mainFramCropedImage || {};
-        mainFramCropedImage[selectedGroupName] = mainFramCropedImage[selectedGroupName] || {};
-        mainFramCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
+        mainFramCropedImage[selectedGroupName] =
+          mainFramCropedImage[selectedGroupName] || {};
+        mainFramCropedImage[selectedGroupName][defaultModel] =
+          cropper.getCroppedCanvas();
         await setMainFrameCropedImage();
       } else if (params.fileUploadFlag == "TopFrame") {
         topFramCropedImage = topFramCropedImage || {};
-        topFramCropedImage[selectedGroupName] = topFramCropedImage[selectedGroupName] || {};
-        topFramCropedImage[selectedGroupName][defaultModel] = topFramCropedImage[selectedGroupName][defaultModel] || {};
-        topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
+        topFramCropedImage[selectedGroupName] =
+          topFramCropedImage[selectedGroupName] || {};
+        topFramCropedImage[selectedGroupName][defaultModel] =
+          topFramCropedImage[selectedGroupName][defaultModel] || {};
+        topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] =
+          cropper.getCroppedCanvas();
         await setTopFrameCropedImage();
       }
     }
@@ -1736,7 +1806,12 @@ if (addHanger) {
     if (event.target.closest(".addHanger")) {
       const hangerType = event.target.getAttribute("data-hanger");
 
-      let hangermodel, hangerrailstep, hangerrailsingle, hangerraild500, hangerraild1000, hanger;
+      let hangermodel,
+        hangerrailstep,
+        hangerrailsingle,
+        hangerraild500,
+        hangerraild1000,
+        hanger;
       await loaderShowHide(true);
       await otherModelSetup();
 
@@ -1784,8 +1859,10 @@ if (addHanger) {
         // }
         hangermodel = hanger_model;
       }
-      let defaultModelName = setting[params.selectedGroupName].defaultModel
-      let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
+      let defaultModelName = setting[params.selectedGroupName].defaultModel;
+      let selectedGroupName = modelGroup.getObjectByName(
+        params.selectedGroupName
+      );
       let defaultModel = selectedGroupName.getObjectByName(defaultModelName);
       if (hangermodel) {
         // console.log('hangermodel', hangermodel)
@@ -1911,8 +1988,10 @@ if (addRack) {
           : params.selectedGroupName;
 
       // let defaultModel = main_model.getObjectByName(params.selectedGroupName);
-      let defaultModelName = setting[params.selectedGroupName].defaultModel
-      let selectedGroupName = modelGroup.getObjectByName(params.selectedGroupName);
+      let defaultModelName = setting[params.selectedGroupName].defaultModel;
+      let selectedGroupName = modelGroup.getObjectByName(
+        params.selectedGroupName
+      );
       let defaultModel = selectedGroupName.getObjectByName(defaultModelName);
       let rack_model;
       if (rackType == "RackGlassShelf") {
@@ -1922,10 +2001,7 @@ if (addRack) {
             "rack_glass_model.glb"
           );
           // rack_glass_model = await loadModel(colladaLoader, 'rack_glass_model.dae');
-          await setupGlassRackModel(
-            rack_glass_model,
-            texture_background
-          );
+          await setupGlassRackModel(rack_glass_model, texture_background);
         }
         rack_model = rack_glass_model;
       } else if (rackType == "RackWoodenShelf") {
@@ -2022,26 +2098,27 @@ if (addRack) {
 if (addAnotherModel) {
   addAnotherModel.forEach((button) => {
     button.addEventListener("click", async function () {
-
-      let defaultModel = modelGroup.getObjectByName('main_model');
+      let defaultModel = modelGroup.getObjectByName("main_model");
       const newModel = defaultModel.clone();
       await cloneWithCustomProperties(defaultModel, newModel);
 
       const nodesToRemove = [];
       newModel.traverse((child) => {
-        if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+        if (
+          hangerNames.includes(child.name) ||
+          rackNames.includes(child.name)
+        ) {
           // Mark node for removal
           nodesToRemove.push(child);
         }
       });
 
       // Remove nodes after traversal
-      nodesToRemove.forEach(node => {
+      nodesToRemove.forEach((node) => {
         if (node.parent) {
           node.parent.remove(node); // Remove the node from its parent
         }
       });
-
 
       // params.selectedModelName = "Model_661";
       let baseModelName = "Other_" + newModel.name;
@@ -2053,7 +2130,10 @@ if (addAnotherModel) {
       }
       newModel.name = modelName;
       //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
-      const modelBoundingBox = await computeBoundingBox(newModel, allModelNames);
+      const modelBoundingBox = await computeBoundingBox(
+        newModel,
+        allModelNames
+      );
       const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
 
       const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
@@ -2072,16 +2152,25 @@ if (addAnotherModel) {
         allGroupModelName.unshift(newModel.name);
       }
 
-      setting[modelName] = JSON.parse(JSON.stringify(setting['main_model']));
-      setting[modelName].topFrameBackgroundColor = params.topFrameBackgroundColor;
-      setting[modelName].mainFrameBackgroundColor = params.mainFrameBackgroundColor;
+      setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
+      setting[modelName].topFrameBackgroundColor =
+        params.topFrameBackgroundColor;
+      setting[modelName].mainFrameBackgroundColor =
+        params.mainFrameBackgroundColor;
 
       await traverseAsync(newModel, async (mesh) => {
-        if (frameTop1Names.includes(mesh.name) || frameMainNames.includes(mesh.name)) {
+        if (
+          frameTop1Names.includes(mesh.name) ||
+          frameMainNames.includes(mesh.name)
+        ) {
           let currentModelNode = await getMainParentNode(mesh, allModelNames);
-          if (params.lastInnerMaterial[currentModelNode.name] && params.lastInnerMaterial[currentModelNode.name][mesh.name]) {
+          if (
+            params.lastInnerMaterial[currentModelNode.name] &&
+            params.lastInnerMaterial[currentModelNode.name][mesh.name]
+          ) {
             // const material = await commonMaterial(parseInt('0xffffff', 16))
-            const material = params.lastInnerMaterial[currentModelNode.name][mesh.name]
+            const material =
+              params.lastInnerMaterial[currentModelNode.name][mesh.name];
             mesh.material = material;
             mesh.needsUpdate = true;
           }
@@ -2089,12 +2178,12 @@ if (addAnotherModel) {
 
         if (mesh.name && allModelNames.includes(mesh.name)) {
           if (mesh.name === params.addedVisibleModelName) {
-            mesh.visible = true;  // Show the selected model
+            mesh.visible = true; // Show the selected model
           } else {
             mesh.visible = false; // Hide other models
           }
         }
-      })
+      });
 
       modelGroup.add(newModel);
 
@@ -2133,7 +2222,6 @@ moveLeftModel.addEventListener("click", async () => {
   } else {
     console.log(`Group ${selectedGroupName} not found.`);
   }
-
 });
 
 // Move Right
@@ -2163,7 +2251,6 @@ moveRightModel.addEventListener("click", async () => {
     console.log(`Group ${selectedGroupName} not found.`);
   }
 });
-
 
 // moveLeftModel.addEventListener("click", async () => {
 //   let defaultModelName = setting[params.selectedGroupName].defaultModel
@@ -2303,7 +2390,11 @@ if (captureButton) {
 // ----------------------------------------------------------------------------------------------------------
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
-    const camPosition  = [camera.position.x ,camera.position.y,camera.position.z];
+    const camPosition = [
+      camera.position.x,
+      camera.position.y,
+      camera.position.z,
+    ];
     // Save the original size of the renderer for high-res images
     const originalWidth = renderer.domElement.width;
     const originalHeight = renderer.domElement.height;
@@ -2324,7 +2415,7 @@ if (takeScreenShot) {
 
     console.log("Model Size:", size); // Check if the size values are reasonable
     console.log("Model Center:", center);
-    
+
     // Adjust camera distance based on model size (add a safety check for large values)
     let maxDim = Math.max(size.x, size.y, size.z);
     if (maxDim === 0 || isNaN(maxDim)) {
@@ -2365,7 +2456,7 @@ if (takeScreenShot) {
     angles.forEach((angle) => {
       captureScreenshot(angle.x, angle.y, angle.z);
     });
-    
+
     // Revert the renderer back to its original size
     renderer.setSize(originalWidth, originalHeight, false);
     camera.aspect = originalWidth / originalHeight;
@@ -2376,7 +2467,7 @@ if (takeScreenShot) {
 
     // Re-render the scene at the original size
     renderer.render(scene, camera);
-    
+
     function captureScreenshot(angleX, angleY, angleZ) {
       console.log(`${angleX} ${angleY}  ${angleZ}`);
       // Rotate the camera around the model
@@ -2405,40 +2496,38 @@ if (takeScreenShot) {
 }
 // ----------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------------
-// if (Save) {
-//   Save.addEventListener("click", function () {
-//   function saveDataAsJSON() {
-//     // Extract relevant data from modelGroup (position, rotation, scale, etc.)
-//     console.log(modelGroup);
-//     // Combine modelGroup data with params and other variables
-//     const dataToSave = {
-//       modelGroup: modelGroup,
-//       params: params,
-//       allGroupNames: allGroupNames,
-//       allGroupModelName: allGroupModelName,
-//       setting: setting[params.selectedGroupName],
-//     };
+if (Save) {
+  Save.addEventListener("click", function () {
+  function saveDataAsJSON() {
+    // Extract relevant data from modelGroup (position, rotation, scale, etc.)
+    console.log(modelGroup);
+    // Combine modelGroup data with params and other variables
+    const dataToSave = {
+      params: params,
+      allGroupNames: allGroupNames,
+      allGroupModelName: allGroupModelName,
+      setting: setting,
+    };
 
-//     // Convert the combined data to JSON
-//     const jsonData = JSON.stringify(dataToSave); // Pretty print with 2 spaces
+    // Convert the combined data to JSON
+    const jsonData = JSON.stringify(dataToSave); // Pretty print with 2 spaces
 
-//     // Trigger file download
-//     downloadJSON(jsonData, "modelData.json");
-//   }
+    // Trigger file download
+    downloadJSON(jsonData, "modelData.json");
+  }
 
-//   function downloadJSON(data, filename) {
-//     const blob = new Blob([data], { type: "application/json" });
-//     const link = document.createElement("a");
-//     link.href = URL.createObjectURL(blob);
-//     link.download = filename;
-//     link.click();
-//   }
+  function downloadJSON(data, filename) {
+    const blob = new Blob([data], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  }
 
-//   saveDataAsJSON();
-//   });
-// }
+  saveDataAsJSON();
+  });
+}
 // ----------------------------------------------------------------------------------------------------------
-
 
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {

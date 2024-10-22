@@ -1,0 +1,690 @@
+{
+  "params": {
+    "allBorderColor": "0xffffff",
+    "rodFrameColor": "0xffffff",
+    "baseFrameColor": "0xffffff",
+    "topFrameBackgroundColor": "0xffffff",
+    "mainFrameBackgroundColor": "0xffffff",
+    "defaultShelfColor": "0xffffff",
+    "defaultHangerStandColor": "0xffffff",
+    "defaultRackShelfStandColor": "0xffffff",
+    "defaultRackStandStandColor": "0xffffff",
+    "defaultClothingColor": "0x888888",
+    "defaultRackColor": "0xffffff",
+    "measurementLineColor": 0,
+    "measurementTextColor": 16777215,
+    "exposure": 0.5,
+    "blurriness": 0.5,
+    "toneMapping": "AgX",
+    "selectedBaseFrame": "Base_Solid",
+    "defaultModel": "Model_661",
+    "fileUploadFlag": "",
+    "headerOptions": "SEG",
+    "cameraPosition": 800,
+    "defaultHeaderSize": "Header_300",
+    "topOption": "Header",
+    "headerRodToggle": false,
+    "defaultShelfType": "Header_Glass_Shelf",
+    "rodSize": { "x": 50, "y": 50, "z": 50 },
+    "glassShelfFixingSize": { "x": 8, "y": 13, "z": 8 },
+    "calculateBoundingBox": {
+      "Model_661": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -330.5571515066887,
+            "y": -751.3349991440773,
+            "z": -50.400001525877315
+          },
+          "max": {
+            "x": 330.442893118699,
+            "y": 501.165002822876,
+            "z": 50.40000000596205
+          }
+        }
+      },
+      "Model_1061": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -530.4428841437541,
+            "y": -751.3350162506105,
+            "z": -50.40000000595888
+          },
+          "max": {
+            "x": 530.5571566395535,
+            "y": 501.165002822876,
+            "z": 50.40000000596205
+          }
+        }
+      },
+      "Model_1200": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -600.0571469601718,
+            "y": -751.3349991440774,
+            "z": -50.400001525877315
+          },
+          "max": {
+            "x": 599.942888572182,
+            "y": 501.165002822876,
+            "z": 50.40000000596205
+          }
+        }
+      },
+      "Model_1500": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -750.0571418258905,
+            "y": -751.3349991440774,
+            "z": -50.400001525877315
+          },
+          "max": {
+            "x": 749.9428834379008,
+            "y": 501.1650035424208,
+            "z": 50.40000000596205
+          }
+        }
+      },
+      "Model_2000": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -1000.0571368233893,
+            "y": -751.3349991440774,
+            "z": -50.400001525877315
+          },
+          "max": {
+            "x": 999.9428631766107,
+            "y": 501.16501209955516,
+            "z": 50.40000000596205
+          }
+        }
+      },
+      "Model_3000": {
+        "Frame": {
+          "isBox3": true,
+          "min": {
+            "x": -1500.0571368233893,
+            "y": -751.3349991440775,
+            "z": -50.400001525877315
+          },
+          "max": {
+            "x": 1499.9428631766107,
+            "y": 501.1650292138261,
+            "z": 50.40000000596205
+          }
+        }
+      }
+    },
+    "headerUpDown": false,
+    "measurementToggle": false,
+    "measurementLineDistance": 100,
+    "measurementLineLength": 5,
+    "measurementLineHeight": 40,
+    "slottedSidesToggle": false,
+    "fontSize": 32,
+    "hangerClothesToggle": true,
+    "hangerGolfClubsToggle": true,
+    "frameTopExMargin": 20,
+    "moveLeftRight": 10,
+    "font": null,
+    "lastInnerMaterial": {
+      "Model_661": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "624fcc3d-5278-45b6-b24a-469269cae910",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "624fcc3d-5278-45b6-b24a-469269cae910",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      },
+      "Model_1061": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "a7d34690-4f7d-43f0-a69e-cd13dd3a308d",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "a7d34690-4f7d-43f0-a69e-cd13dd3a308d",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      },
+      "Model_1200": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "e7ee130c-c15e-4ef7-a8af-7e6f84e11d5a",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "e7ee130c-c15e-4ef7-a8af-7e6f84e11d5a",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      },
+      "Model_1500": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "1b4b1156-d077-4abe-bc65-4e369f802ad8",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "1b4b1156-d077-4abe-bc65-4e369f802ad8",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      },
+      "Model_2000": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "eac44d9c-cc0d-449d-ba58-121cfae2f5fc",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "eac44d9c-cc0d-449d-ba58-121cfae2f5fc",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      },
+      "Model_3000": {
+        "Header_Graphic1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Header_Graphic2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "c8e9ee93-75aa-4ced-96cb-c8b5656c7f6b",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube1-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "d67caad3-f66c-49ed-a06c-602e431b1f62",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        },
+        "Cube2-Mat": {
+          "metadata": {
+            "version": 4.6,
+            "type": "Material",
+            "generator": "Material.toJSON"
+          },
+          "uuid": "d67caad3-f66c-49ed-a06c-602e431b1f62",
+          "type": "MeshStandardMaterial",
+          "name": "Mat",
+          "color": 15198183,
+          "roughness": 0.5,
+          "metalness": 0,
+          "emissive": 0,
+          "envMapRotation": [0, 0, 0, "XYZ"],
+          "envMapIntensity": 1,
+          "blendColor": 0
+        }
+      }
+    },
+    "selectedGroupName": "Other_main_model_2",
+    "addedVisibleModelName": "Model_661"
+  },
+  "allGroupNames": ["Other_main_model_2", "main_model"],
+  "allGroupModelName": [
+    "Other_main_model_2",
+    "Other_main_model_1",
+    "main_model"
+  ],
+  "setting": {
+    "main_model": {
+      "allBorderColor": "0xffffff",
+      "rodFrameColor": "0xffffff",
+      "baseFrameColor": "0x000000",
+      "topFrameBackgroundColor": "0xffffff",
+      "mainFrameBackgroundColor": "0xffffff",
+      "defaultShelfColor": "0xffffff",
+      "defaultHangerStandColor": "0xffffff",
+      "defaultRackShelfStandColor": "0xffffff",
+      "defaultRackStandStandColor": "0xffffff",
+      "defaultClothingColor": "0x888888",
+      "defaultRackColor": "0xffffff",
+      "measurementLineColor": 0,
+      "measurementTextColor": 16777215,
+      "exposure": 0.5,
+      "blurriness": 0.5,
+      "toneMapping": "AgX",
+      "selectedBaseFrame": "Base_Support_Sides",
+      "defaultModel": "Model_1061",
+      "fileUploadFlag": "",
+      "headerOptions": "SEG",
+      "cameraPosition": 800,
+      "defaultHeaderSize": "Header_300",
+      "topOption": "Shelf",
+      "headerRodToggle": false,
+      "defaultShelfType": "Header_Glass_Shelf",
+      "headerUpDown": false,
+      "measurementToggle": false,
+      "measurementLineDistance": 100,
+      "measurementLineLength": 5,
+      "measurementLineHeight": 40,
+      "slottedSidesToggle": false,
+      "fontSize": 32,
+      "hangerClothesToggle": true,
+      "hangerGolfClubsToggle": true,
+      "frameTopExMargin": 20,
+      "moveLeftRight": 10,
+      "font": null,
+      "selectedGroupName": "main_model",
+      "addedVisibleModelName": "Model_661"
+    },
+    "Other_main_model_1": {
+      "allBorderColor": "0xffffff",
+      "rodFrameColor": "0xffffff",
+      "baseFrameColor": "0x000000",
+      "topFrameBackgroundColor": "0xffffff",
+      "mainFrameBackgroundColor": "0xffffff",
+      "defaultShelfColor": "0xffffff",
+      "defaultHangerStandColor": "0xffffff",
+      "defaultRackShelfStandColor": "0xffffff",
+      "defaultRackStandStandColor": "0xffffff",
+      "defaultClothingColor": "0x888888",
+      "defaultRackColor": "0xffffff",
+      "measurementLineColor": 0,
+      "measurementTextColor": 16777215,
+      "exposure": 0.5,
+      "blurriness": 0.5,
+      "toneMapping": "AgX",
+      "selectedBaseFrame": "Base_Support_Sides",
+      "defaultModel": "Model_1061",
+      "fileUploadFlag": "",
+      "headerOptions": "SEG",
+      "cameraPosition": 800,
+      "defaultHeaderSize": "Header_300",
+      "topOption": "Shelf",
+      "headerRodToggle": false,
+      "defaultShelfType": "Header_Glass_Shelf",
+      "headerUpDown": false,
+      "measurementToggle": false,
+      "measurementLineDistance": 100,
+      "measurementLineLength": 5,
+      "measurementLineHeight": 40,
+      "slottedSidesToggle": false,
+      "fontSize": 32,
+      "hangerClothesToggle": true,
+      "hangerGolfClubsToggle": true,
+      "frameTopExMargin": 20,
+      "moveLeftRight": 10,
+      "font": null,
+      "selectedGroupName": "main_model",
+      "addedVisibleModelName": "Model_661"
+    },
+    "Other_main_model_2": {
+      "allBorderColor": "0xffffff",
+      "rodFrameColor": "0xffffff",
+      "baseFrameColor": "0x000000",
+      "topFrameBackgroundColor": "0xffffff",
+      "mainFrameBackgroundColor": "0xffffff",
+      "defaultShelfColor": "0xffffff",
+      "defaultHangerStandColor": "0xffffff",
+      "defaultRackShelfStandColor": "0xffffff",
+      "defaultRackStandStandColor": "0xffffff",
+      "defaultClothingColor": "0x888888",
+      "defaultRackColor": "0xffffff",
+      "measurementLineColor": 0,
+      "measurementTextColor": 16777215,
+      "exposure": 0.5,
+      "blurriness": 0.5,
+      "toneMapping": "AgX",
+      "selectedBaseFrame": "Base_Support_Sides",
+      "defaultModel": "Model_1061",
+      "fileUploadFlag": "",
+      "headerOptions": "SEG",
+      "cameraPosition": 800,
+      "defaultHeaderSize": "Header_300",
+      "topOption": "Header",
+      "headerRodToggle": true,
+      "defaultShelfType": "Header_Glass_Shelf",
+      "headerUpDown": true,
+      "measurementToggle": false,
+      "measurementLineDistance": 100,
+      "measurementLineLength": 5,
+      "measurementLineHeight": 40,
+      "slottedSidesToggle": false,
+      "fontSize": 32,
+      "hangerClothesToggle": true,
+      "hangerGolfClubsToggle": true,
+      "frameTopExMargin": 20,
+      "moveLeftRight": 10,
+      "font": null,
+      "selectedGroupName": "main_model",
+      "addedVisibleModelName": "Model_661"
+    }
+  }
+}

@@ -663,11 +663,11 @@ export async function createSupportBase(
     // Place the left and right rods first
     await createAndPositionBaseSide(
       -baseSize.x / 2 + margin,
-      "support_base_sides"
+      "Base_Support_Sides"
     ); // Left Rod
     await createAndPositionBaseSide(
       baseSize.x / 2 - margin,
-      "support_base_sides"
+      "Base_Support_Sides"
     ); // Right Rod
     
     // Determine and place additional rods based on modelSize
@@ -677,7 +677,7 @@ export async function createSupportBase(
       // Place additional rods
       for (let i = 1; i <= additionalSupportBase; i++) {
         let xOffset = -baseSize.x / 2 + i * spacing;
-        await createAndPositionBaseMiddle(xOffset, "support_base_sides", positionY);
+        await createAndPositionBaseMiddle(xOffset, "Base_Support_Sides", positionY);
       }
     }
   }
@@ -735,14 +735,14 @@ export async function setupSupportBaseModel(
     support_base_middle = await updateModelName(
       support_base_middle,
       "base_3_middle",
-      "support_base_middle"
+      "Base_Support_Sides"
     );
   }
   if (support_base_side) {
     support_base_side = await updateModelName(
       support_base_side,
       "base_3_sides",
-      "support_base_sides"
+      "Base_Support_Sides"
     );
   }
   
@@ -1591,7 +1591,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
         child.material &&
         child.material.color &&
         child.name &&
-        child.name.startsWith("Base_Option")
+        (child.name.startsWith("Base_Option") || child.name === "Base_Support_Sides") 
       ) {
         child.material = child.material.clone();
         child.material.color.set(await getHex(current_setting.baseFrameColor));
