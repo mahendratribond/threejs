@@ -12,6 +12,7 @@ import {
   rodFrameTextureNames,
   allFrameBorderNames,
   allOtherModelNames,
+  allGroupModelName,
   hangerPartNames,
   frameMainNames,
   frameTop1Names,
@@ -572,9 +573,9 @@ export async function createRod(
       shelf_fixing.position.set(
         rod.position.x, // Adjust based on offset
         shelf_fixing.position.y +
-          headerBox.min.y +
-          params.rodSize.y +
-          lassShelfFixingY,
+        headerBox.min.y +
+        params.rodSize.y +
+        lassShelfFixingY,
         shelf_fixing.position.z
       );
       shelf_fixing.visible = false;
@@ -640,7 +641,7 @@ export async function createSupportBase(
       );
       positionY = supportSide.position.y;
       supportSide.visible = false;
-      
+
       const rodBox = new THREE.Box3().setFromObject(supportSide);
     };
     const createAndPositionBaseMiddle = async (xOffset, supportBaseName, positionY) => {
@@ -669,7 +670,7 @@ export async function createSupportBase(
       baseSize.x / 2 - margin,
       "Base_Support_Sides"
     ); // Right Rod
-    
+
     // Determine and place additional rods based on modelSize
     if (additionalSupportBase > 0) {
       const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
@@ -745,7 +746,7 @@ export async function setupSupportBaseModel(
       "Base_Support_Sides"
     );
   }
-  
+
   await main_model.traverse(async function (modelNode) {
     if (allModelNames.includes(modelNode.name)) {
       modelSize = await getModelSize(modelNode.name);
@@ -1591,7 +1592,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
         child.material &&
         child.material.color &&
         child.name &&
-        (child.name.startsWith("Base_Option") || child.name === "Base_Support_Sides") 
+        (child.name.startsWith("Base_Option") || child.name === "Base_Support_Sides")
       ) {
         child.material = child.material.clone();
         child.material.color.set(await getHex(current_setting.baseFrameColor));
@@ -1905,11 +1906,6 @@ export async function isActiveGroup(currentModelName) {
   }
 
   return isActive;
-}
-
-// Function to find the next visible child
-export async function setSetting(selectedGroupName, key, value) {
-  setting[selectedGroupName][key] = value;
 }
 
 // Function to find the next visible child
@@ -2914,30 +2910,117 @@ export async function addCloseButton(modelName, accordionItem, modelGroup, merge
   closeButton.addEventListener("click", async () => {
     const confirmDelete = confirm("Do you want to delete the model?");
     if (confirmDelete) {
-        const modelToRemove = modelGroup.getObjectByName(modelName);
-        if (modelToRemove) {
+      const modelToRemove = modelGroup.getObjectByName(modelName);
+      if (modelToRemove) {
         modelGroup.remove(modelToRemove);
-        }
-        const index = mergedArray.indexOf(modelName);
-        if (index > -1) {
+      }
+      const index = mergedArray.indexOf(modelName);
+      if (index > -1) {
         mergedArray.splice(index, 1); // Removes 1 element at the specified index
-        }
-        accordionItem.remove();
+      }
+      accordionItem.remove();
     }
     await centerMainModel(modelGroup);
   });
-  
-}    
+
+}
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModels(mergedArray, cameraOnLeft, modelGroup) {
+export async function addAnotherModels(allGroupNames, modelGroup, camera, modelName = null) {
+  let defaultModel = modelGroup.getObjectByName("main_model");
+  console.log('defaultModel', defaultModel);
+  
+  const newModel = defaultModel.clone();
+  await cloneWithCustomProperties(defaultModel, newModel);
+
+  const nodesToRemove = [];
+  newModel.traverse((child) => {
+    if (
+      hangerNames.includes(child.name) ||
+      rackNames.includes(child.name)
+    ) {
+      // Mark node for removal
+      nodesToRemove.push(child);
+    }
+  });
+
+  // Remove nodes after traversal
+  nodesToRemove.forEach((node) => {
+    if (node.parent) {
+      node.parent.remove(node); // Remove the node from its parent
+    }
+  });
+
+  newModel.name = modelName;
+  //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
+  const modelBoundingBox = await computeBoundingBox(
+    newModel,
+    allModelNames
+  );
+  const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
+
+  const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
+  const center = boundingBox.getCenter(new THREE.Vector3());
+  const cameraOnLeft = camera.position.x < center.x;
+
+  // console.log('cameraOnLeft', cameraOnLeft)
+
+  if (cameraOnLeft) {
+    newModel.position.x = boundingBox.max.x + modelWidth / 2;
+    allGroupNames.push(newModel.name);
+    allGroupModelName.push(newModel.name);
+  } else {
+    newModel.position.x = boundingBox.min.x - modelWidth / 2;
+    allGroupNames.unshift(newModel.name);
+    allGroupModelName.unshift(newModel.name);
+  }
+
+  setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
+  setting[modelName].topFrameBackgroundColor =
+    params.topFrameBackgroundColor;
+  setting[modelName].mainFrameBackgroundColor =
+    params.mainFrameBackgroundColor;
+
+  await traverseAsync(newModel, async (mesh) => {
+    if (
+      frameTop1Names.includes(mesh.name) ||
+      frameMainNames.includes(mesh.name)
+    ) {
+      let currentModelNode = await getMainParentNode(mesh, allModelNames);
+      if (
+        params.lastInnerMaterial[currentModelNode.name] &&
+        params.lastInnerMaterial[currentModelNode.name][mesh.name]
+      ) {
+        // const material = await commonMaterial(parseInt('0xffffff', 16))
+        const material =
+          params.lastInnerMaterial[currentModelNode.name][mesh.name];
+        mesh.material = material;
+        mesh.needsUpdate = true;
+      }
+    }
+
+    if (mesh.name && allModelNames.includes(mesh.name)) {
+      if (mesh.name === params.addedVisibleModelName) {
+        mesh.visible = true; // Show the selected model
+      } else {
+        mesh.visible = false; // Hide other models
+      }
+    }
+  });
+
+  modelGroup.add(newModel);
+  await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
+}
+
+// Function to dynamically generate and append cards for visible models
+export async function addAnotherModelView(mergedArray, cameraOnLeft, modelGroup) {
   const rightControls = document.querySelector(".model_items");
 
   let index = rightControls.children.length; // Get the current number of existing cards to maintain correct numbering
 
   // Loop through the mergedArray and append cards for visible models
   await mergedArray.forEach(async (modelName) => {
-    if ( modelName.startsWith("Other_") && !document.querySelector(`.accordion-item[data-model="${modelName}"]`)) {
+    if (modelName.startsWith("Other_") && !document.querySelector(`.accordion-item[data-model="${modelName}"]`)) {
       // Clone the accordion item
       const accordionItem = await cloneAccordionItem(modelName);
 
@@ -2960,7 +3043,7 @@ export async function addAnotherModels(mergedArray, cameraOnLeft, modelGroup) {
         accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
         accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
         await addCloseButton(modelName, accordionItem, modelGroup, mergedArray);
-        
+
         // Append the new accordion item to the container
         // accordionContainer.appendChild(accordionItem);
         if (cameraOnLeft) {
@@ -3055,6 +3138,59 @@ export async function cloneAccordionItem(modelName) {
   });
   // Return the new accordion item
   return newAccordionItem;
+}
+
+export async function saveModelData(dataToSave) {
+
+  console.log('dataToSave', dataToSave)
+  const model_data = JSON.stringify(dataToSave); // Pretty print with 2 spaces
+  console.log('model_data', model_data)
+  // Send model state to the backend
+  fetch('api.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'save_model_data', id: dataToSave.id, name: 'Test', model_data: model_data }), // Ensure data is stringified
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log("Model data saved successfully!");
+      } else {
+        console.error("Error saving model data:", data.error);
+      }
+    })
+    .catch(error => console.error("Fetch error:", error));
+}
+
+export async function getModelData(id) {
+  try {
+    // Send model state to the backend
+    const response = await fetch('api.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'get_model_data', id: id }), // Ensure data is stringified
+    });
+
+    const data = await response.json(); // Wait for the JSON response
+
+    if (data.success) {
+      console.log("Model fetch successfully!");
+      if (data.data.model_data) {
+        data.data.model_data = JSON.parse(data.data.model_data)
+      }
+      return data.data; // Return the fetched data
+    } else {
+      console.error("No data found:");
+      return null; // Return null if no data is found
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return null; // Return null on error
+  }
 }
 
 // Utility function to set opacity for a model and its children

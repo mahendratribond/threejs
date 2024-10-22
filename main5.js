@@ -79,6 +79,7 @@ import {
   setupGlassRackModel,
   getNextVisibleChild,
   getPrevVisibleChild,
+  addAnotherModelView,
   computeBoundingBox,
   getMainParentNode,
   // getCustomDropdown,
@@ -98,9 +99,11 @@ import {
   loaderShowHide,
   traverseAsync,
   getRemoveIcon,
+  saveModelData,
   checkMeshType,
   loadGLTFModel,
   showHideNodes,
+  getModelData,
   getModelSize,
   isHangerAdd,
   getNodeSize,
@@ -116,7 +119,9 @@ import {
   hangerStandBaseNodes,
   allFrameBorderNames,
   allOtherModelNames,
+  allGroupModelName,
   hangerPartNames,
+  updateVariable,
   frameTop1Names,
   frameMainNames,
   baseFrameNames,
@@ -124,7 +129,6 @@ import {
   rackPartNames,
   allModelNames,
   allGroupNames,
-  allGroupModelName,
   hangerNames,
   headerNames,
   rackNames,
@@ -527,6 +531,47 @@ async function init() {
 
   labelRenderer = await initLabelRenderer();
   document.body.appendChild(labelRenderer.domElement);
+  // Get the current URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get('id'); // Extract the 'id' parameter
+
+  if (id) {
+    previousData = await getModelData(id)
+    if (previousData) {
+      let lastInnerMaterial = params.lastInnerMaterial
+      let model_data = previousData.model_data
+      // Update state with fetched data using the generic update function
+      updateVariable('params', model_data.params);
+      // updateVariable('allGroupNames', model_data.allGroupNames);
+      // updateVariable('allGroupModelName', model_data.allGroupModelName);
+      updateVariable('setting', model_data.setting);
+
+      // mainFramCropedImage = model_data.mainFramCropedImage
+      // topFramCropedImage = model_data.topFramCropedImage
+
+      // console.log('allGroupNames', allGroupNames)
+      await showHideNodes(modelGroup, scene, camera);
+
+
+
+      for (let newName of model_data.allGroupNames) {
+        params.lastInnerMaterial = lastInnerMaterial;
+        if (newName.startsWith('Other_')) {
+          await addAnotherModels(allGroupNames, modelGroup, camera, newName);
+        }
+      }
+
+
+      // console.log('modelGroup', modelGroup)
+
+      await centerMainModel(modelGroup);
+      await loaderShowHide(false);
+      await showHideNodes(modelGroup, scene, camera);
+
+    }
+
+  }
+
   // await fetch("modelData.json")
   //   .then((response) => {
   //     if (!response.ok) {
@@ -2095,9 +2140,28 @@ if (addRack) {
   });
 }
 
+if (Save) {
+  Save.addEventListener("click", async function () {
+    const modelId = previousData && previousData.id ? previousData.id : 0;
+
+    const dataToSave = {
+      id: modelId,
+      params: params,
+      allGroupNames: allGroupNames,
+      allGroupModelName: allGroupModelName,
+      setting: setting,
+      topFramCropedImage: topFramCropedImage,
+      mainFramCropedImage: mainFramCropedImage,
+    };
+
+    await saveModelData(dataToSave);
+  });
+}
+
 if (addAnotherModel) {
   addAnotherModel.forEach((button) => {
     button.addEventListener("click", async function () {
+
       let defaultModel = modelGroup.getObjectByName("main_model");
       const newModel = defaultModel.clone();
       await cloneWithCustomProperties(defaultModel, newModel);
@@ -2186,8 +2250,7 @@ if (addAnotherModel) {
       });
 
       modelGroup.add(newModel);
-
-      await addAnotherModels(allGroupNames, cameraOnLeft, modelGroup);
+      await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
 
       await centerMainModel(modelGroup);
       await loaderShowHide(false);
@@ -2494,40 +2557,6 @@ if (takeScreenShot) {
     }
   });
 }
-// ----------------------------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------------
-if (Save) {
-  Save.addEventListener("click", function () {
-  function saveDataAsJSON() {
-    // Extract relevant data from modelGroup (position, rotation, scale, etc.)
-    console.log(modelGroup);
-    // Combine modelGroup data with params and other variables
-    const dataToSave = {
-      params: params,
-      allGroupNames: allGroupNames,
-      allGroupModelName: allGroupModelName,
-      setting: setting,
-    };
-
-    // Convert the combined data to JSON
-    const jsonData = JSON.stringify(dataToSave); // Pretty print with 2 spaces
-
-    // Trigger file download
-    downloadJSON(jsonData, "modelData.json");
-  }
-
-  function downloadJSON(data, filename) {
-    const blob = new Blob([data], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-  }
-
-  saveDataAsJSON();
-  });
-}
-// ----------------------------------------------------------------------------------------------------------
 
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {
