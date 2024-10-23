@@ -398,12 +398,12 @@ async function init() {
     }
   }
 
-  await updateFrameMaterial(
-    modelGroup,
-    "frame",
-    "color",
-    params.allBorderColor
-  );
+  // await updateFrameMaterial(
+  //   modelGroup,
+  //   "frame",
+  //   "color",
+  //   params.frameBorderColor
+  // );
   await showHideNodes(modelGroup, scene, camera);
   // backupMainModel = main_model.clone();
 
@@ -426,53 +426,53 @@ async function init() {
   await showHideNodes(modelGroup, scene, camera);
   await setupMainModel(modelGroup);
 
-  if (!hanger_rail_step) {
-    hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
-    await setupHangerModel(hanger_rail_step);
-    hanger_model = hanger_rail_step;
-    let loader = document.querySelector(".Hanger_Rail_Step_loader");
-    await removeLoader(loader);
-  }
-  if (!hanger_rail_single) {
-    hanger_rail_single = await loadGLTFModel(
-      glftLoader,
-      "Hanger_Rail_Single.glb"
-    );
-    await setupHangerModel(hanger_rail_single);
-    hanger_rail_single =
-      hanger_rail_single.getObjectByName("Hanger_Rail_Single");
-    hanger_model.add(hanger_rail_single);
-    let loader = document.querySelector(".Hanger_Rail_Single_loader");
-    await removeLoader(loader);
-  }
+  // if (!hanger_rail_step) {
+  //   hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
+  //   await setupHangerModel(hanger_rail_step);
+  //   hanger_model = hanger_rail_step;
+  //   let loader = document.querySelector(".Hanger_Rail_Step_loader");
+  //   await removeLoader(loader);
+  // }
+  // if (!hanger_rail_single) {
+  //   hanger_rail_single = await loadGLTFModel(
+  //     glftLoader,
+  //     "Hanger_Rail_Single.glb"
+  //   );
+  //   await setupHangerModel(hanger_rail_single);
+  //   hanger_rail_single =
+  //     hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+  //   hanger_model.add(hanger_rail_single);
+  //   let loader = document.querySelector(".Hanger_Rail_Single_loader");
+  //   await removeLoader(loader);
+  // }
 
-  if (!hanger_rail_d_500) {
-    hanger_rail_d_500 = await loadGLTFModel(
-      glftLoader,
-      "Hanger_Rail_D_500mm.glb"
-    );
-    await setupHangerModel(hanger_rail_d_500);
-    hanger_rail_d_500 = hanger_rail_d_500.getObjectByName(
-      "Hanger_Rail_D_500mm"
-    );
-    hanger_model.add(hanger_rail_d_500);
-    let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
-    await removeLoader(loader);
-  }
+  // if (!hanger_rail_d_500) {
+  //   hanger_rail_d_500 = await loadGLTFModel(
+  //     glftLoader,
+  //     "Hanger_Rail_D_500mm.glb"
+  //   );
+  //   await setupHangerModel(hanger_rail_d_500);
+  //   hanger_rail_d_500 = hanger_rail_d_500.getObjectByName(
+  //     "Hanger_Rail_D_500mm"
+  //   );
+  //   hanger_model.add(hanger_rail_d_500);
+  //   let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
+  //   await removeLoader(loader);
+  // }
 
-  if (!hanger_rail_d_1000) {
-    hanger_rail_d_1000 = await loadGLTFModel(
-      glftLoader,
-      "Hanger_Rail_D_1000mm.glb"
-    );
-    await setupHangerModel(hanger_rail_d_1000);
-    hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName(
-      "Hanger_Rail_D_1000mm"
-    );
-    hanger_model.add(hanger_rail_d_1000);
-    let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
-    await removeLoader(loader);
-  }
+  // if (!hanger_rail_d_1000) {
+  //   hanger_rail_d_1000 = await loadGLTFModel(
+  //     glftLoader,
+  //     "Hanger_Rail_D_1000mm.glb"
+  //   );
+  //   await setupHangerModel(hanger_rail_d_1000);
+  //   hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName(
+  //     "Hanger_Rail_D_1000mm"
+  //   );
+  //   hanger_model.add(hanger_rail_d_1000);
+  //   let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
+  //   await removeLoader(loader);
+  // }
 
   await traverseAsync(modelGroup, async (modelNode) => {
     if (allModelNames.includes(modelNode.name)) {
@@ -538,36 +538,96 @@ async function init() {
   if (id) {
     previousData = await getModelData(id)
     if (previousData) {
-      let lastInnerMaterial = params.lastInnerMaterial
+
+
+      // Rebuild materials using MaterialLoader
+      const loader = new THREE.MaterialLoader();
+      let restoredMaterials = {};
+      // let lastInnerMaterial = params.lastInnerMaterial
       let model_data = previousData.model_data
-      // Update state with fetched data using the generic update function
       updateVariable('params', model_data.params);
-      // updateVariable('allGroupNames', model_data.allGroupNames);
-      // updateVariable('allGroupModelName', model_data.allGroupModelName);
       updateVariable('setting', model_data.setting);
 
-      // mainFramCropedImage = model_data.mainFramCropedImage
-      // topFramCropedImage = model_data.topFramCropedImage
+      mainFramCropedImage = model_data.mainFramCropedImage
+      topFramCropedImage = model_data.topFramCropedImage
 
-      // console.log('allGroupNames', allGroupNames)
-      await showHideNodes(modelGroup, scene, camera);
+      // console.log('params', params)
+      // await showHideNodes(modelGroup, scene, camera);
+      let lastGroupNames = model_data.allGroupNames
 
+      let mainModelIndex = lastGroupNames.indexOf('main_model');
+      let retrievedSelectedGroupName = params.selectedGroupName;
+      let retrievedMaterialData = params.lastInnerMaterial;
 
-
-      for (let newName of model_data.allGroupNames) {
-        params.lastInnerMaterial = lastInnerMaterial;
-        if (newName.startsWith('Other_')) {
-          await addAnotherModels(allGroupNames, modelGroup, camera, newName);
+      for (let [index, groupName] of lastGroupNames.entries()) {
+        let side
+        if (index < mainModelIndex) {
+          side = false
+        } else if (index >= mainModelIndex) {
+          side = true
         }
+        console.log('side', side);
+
+
+        restoredMaterials[groupName] = {};
+        for (let materialName in retrievedMaterialData[groupName]) {
+          restoredMaterials[groupName][materialName] = loader.parse(retrievedMaterialData[groupName][materialName]);
+        }
+        params.lastInnerMaterial = restoredMaterials;
+        if (groupName.startsWith('Other_')) {
+          await addAnotherModels(allGroupNames, modelGroup, camera, groupName, side);
+        }
+
+      }
+      await centerMainModel(modelGroup);
+      for (let [index, groupName] of lastGroupNames.entries()) {
+        setTimeout(async function () {
+          params.selectedGroupName = groupName
+          if (setting[params.selectedGroupName].headerRodToggle == true && setting[params.selectedGroupName].headerRodToggle == setting[params.selectedGroupName].headerUpDown) {
+            setting[params.selectedGroupName].headerUpDown = !setting[params.selectedGroupName].headerRodToggle
+          }
+          await setTopFrameCropedImage();
+          await setMainFrameCropedImage();
+          await showHideNodes(modelGroup, scene, camera);
+          await centerMainModel(modelGroup);
+        }, 1000 * (index + 0.1))
+
       }
 
-
-      // console.log('modelGroup', modelGroup)
+      params.selectedGroupName = retrievedSelectedGroupName
 
       await centerMainModel(modelGroup);
       await loaderShowHide(false);
       await showHideNodes(modelGroup, scene, camera);
 
+      for (let name of ['Hanger_Rail_Step_loader', 'Hanger_Rail_Single_loader', 'Hanger_Rail_D_500mm_loader', 'Hanger_Rail_D_1000mm_loader']) {
+        let loaders = document.querySelectorAll("." + name);
+        loaders.forEach(loader => {
+          removeLoader(loader);
+        })
+      }
+
+      setTimeout(function () {
+        const accordionContainer = document.querySelector("#accordionModel");
+        const openAccordionItems = accordionContainer.querySelectorAll(
+          ".accordion-collapse.show"
+        );
+        openAccordionItems.forEach((item) => {
+          const bsCollapse = new bootstrap.Collapse(item, {
+            toggle: false, // Prevent toggle during the collapse
+          });
+          bsCollapse.hide(); // Explicitly hide the open accordion
+        });
+        // const lastAccordionItem = accordionContainer.querySelector(".accordion-item:last-child .accordion-collapse");
+        const lastAccordionItem = accordionContainer.querySelector(`.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`);
+        if (lastAccordionItem) {
+          // console.log('lastAccordionItem', lastAccordionItem);
+
+          const bsCollapse = new bootstrap.Collapse(lastAccordionItem, {
+            toggle: true, // This will show the collapse content
+          });
+        }
+      }, 1000)
     }
 
   }
@@ -709,7 +769,7 @@ async function otherModelSetup() {
     );
     // header_500_height_model = await loadModel(colladaLoader, 'header_500_height_model.dae');
     await setupHeader500HeightModel(modelGroup, header_500_height_model);
-    await updateMaterial(params.allBorderColor, "frame");
+    // await updateMaterial(params.frameBorderColor, "frame");
   }
   if (!header_wooden_shelf_model) {
     header_wooden_shelf_model = await loadGLTFModel(
@@ -718,7 +778,7 @@ async function otherModelSetup() {
     );
     // header_wooden_shelf_model = await loadModel(colladaLoader, 'header_wooden_shelf_model.dae');
     await setupHeaderWoodenShelfModel(modelGroup, header_wooden_shelf_model);
-    await updateMaterial(params.defaultShelfColor, "shelf");
+    // await updateMaterial(params.defaultShelfColor, "shelf");
   }
   if (!header_glass_shelf_model) {
     header_glass_shelf_model = await loadGLTFModel(
@@ -739,7 +799,7 @@ async function otherModelSetup() {
     );
     // slotted_sides_model = await loadModel(colladaLoader, 'slotted_sides_model.dae');
     await setupSlottedSidesModel(modelGroup, slotted_sides_model);
-    await updateMaterial(params.allBorderColor, "frame");
+    // await updateMaterial(params.frameBorderColor, "frame");
   }
 
   if (!support_base_middle || !support_base_side) {
@@ -1177,6 +1237,7 @@ async function render() {
 async function setMainFrameCropedImage() {
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
+  console.log('mainFramCropedImage', mainFramCropedImage);
 
   if (
     mainFramCropedImage &&
@@ -1187,26 +1248,39 @@ async function setMainFrameCropedImage() {
       setting[selectedGroupName].mainFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
-    tempCanvas.width =
-      mainFramCropedImage[selectedGroupName][defaultModel].width;
-    tempCanvas.height =
-      mainFramCropedImage[selectedGroupName][defaultModel].height;
     const ctx = tempCanvas.getContext("2d");
 
-    // Draw the background color
-    ctx.fillStyle = mainFrameBackgroundColor;
-    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    // Create a new image element
+    const img = new Image();
+    img.src = mainFramCropedImage[selectedGroupName][defaultModel]; // Assign the base64 string to the image's src
 
-    // Draw the cropped image on top
-    ctx.drawImage(mainFramCropedImage[selectedGroupName][defaultModel], 0, 0);
+    // Wait for the image to load
+    img.onload = function () {
+      // Set canvas dimensions to match the image dimensions
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
 
-    tempCanvas.toBlob(async (blob) => {
-      const url = URL.createObjectURL(blob);
-      const texture = new THREE.TextureLoader().load(url, async function () {
-        await updateMainFrameImageTexture(texture);
+      // Draw the background color
+      ctx.fillStyle = mainFrameBackgroundColor;
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw the cropped image on top
+      ctx.drawImage(img, 0, 0);
+
+      // Convert the canvas to a blob and create a texture from it
+      tempCanvas.toBlob(async (blob) => {
+        const url = URL.createObjectURL(blob);
+        const texture = new THREE.TextureLoader().load(url, async function () {
+          await updateMainFrameImageTexture(texture);
+        });
+        await closeCropper();
       });
-      await closeCropper();
-    });
+    };
+
+    // Handle any errors during image loading
+    img.onerror = function (err) {
+      console.error('Image loading failed', err);
+    };
   } else {
     const mainFrameBackgroundColor = await getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
@@ -1229,41 +1303,49 @@ async function setTopFrameCropedImage() {
 
   if (
     topFramCropedImage &&
+    topFramCropedImage[selectedGroupName] &&
     topFramCropedImage[selectedGroupName][defaultModel] &&
     topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]
   ) {
+    console.log('topFramCropedImage', selectedGroupName, topFramCropedImage)
+
     const topFrameBackgroundColor = await getHex(
       setting[selectedGroupName].topFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
-    tempCanvas.width =
-      topFramCropedImage[selectedGroupName][defaultModel][
-        defaultHeaderSize
-      ].width;
-    tempCanvas.height =
-      topFramCropedImage[selectedGroupName][defaultModel][
-        defaultHeaderSize
-      ].height;
     const ctx = tempCanvas.getContext("2d");
 
-    // Draw the background color
-    ctx.fillStyle = topFrameBackgroundColor;
-    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    // Create a new image element
+    const img = new Image();
+    img.src = topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]; // Assign the base64 string to the image's src
 
-    // Draw the cropped image on top
-    ctx.drawImage(
-      topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize],
-      0,
-      0
-    );
+    // Wait for the image to load
+    img.onload = function () {
+      // Set canvas dimensions to match the image dimensions
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
 
-    tempCanvas.toBlob(async (blob) => {
-      const url = URL.createObjectURL(blob);
-      const texture = new THREE.TextureLoader().load(url, async function () {
-        await updateTopFrameImageTexture(texture);
+      // Draw the background color
+      ctx.fillStyle = topFrameBackgroundColor;
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw the cropped image on top
+      ctx.drawImage(img, 0, 0);
+
+      // Convert the canvas to a blob and create a texture from it
+      tempCanvas.toBlob(async (blob) => {
+        const url = URL.createObjectURL(blob);
+        const texture = new THREE.TextureLoader().load(url, async function () {
+          await updateTopFrameImageTexture(texture);
+        });
+        await closeCropper();
       });
-      await closeCropper();
-    });
+    };
+
+    // Handle any errors during image loading
+    img.onerror = function (err) {
+      console.error('Image loading failed', err);
+    };
   } else {
     const topFrameBackgroundColor = await getHex(
       setting[selectedGroupName].topFrameBackgroundColor
@@ -1383,13 +1465,12 @@ async function updateMaterial(
   dropdownType,
   selectedModel = "main_model"
 ) {
+
+  let current_setting = setting[params.selectedGroupName];
+
   // console.log('value', value)
   let type, imageUrl, displayText;
-  if (dropdownType === "frame") {
-    params.allBorderColor = value;
-  } else if (dropdownType === "shelf") {
-    params.defaultShelfColor = value;
-  }
+
   // console.log('selectedModel', selectedModel)
 
   // const customDropdownButton = document.querySelector(`.custom-dropdown[data-type=${dropdownType}]`);
@@ -1421,11 +1502,20 @@ async function updateMaterial(
       }
     });
 
+  if (dropdownType === "frame") {
+    setting[params.selectedGroupName].frameBorderColor = value;
+    setting[params.selectedGroupName].frameMaterialType = type;
+  } else if (dropdownType === "shelf") {
+    setting[params.selectedGroupName].defaultShelfColor = value;
+    setting[params.selectedGroupName].shelfMaterialType = type;
+  }
+
   // console.log('value', value)
   // console.log('type', type)
   // console.log('displayText', displayText)
 
-  await updateFrameMaterial(modelGroup, dropdownType, type, value);
+  // await updateFrameMaterial(modelGroup, dropdownType, type, value);
+  await showHideNodes(modelGroup, scene, camera);
 
   // Update dropdown button with selected image/color and name
   const dropdownButton = customDropdownButton.querySelector(
@@ -1826,7 +1916,7 @@ if (cropButton) {
         mainFramCropedImage[selectedGroupName] =
           mainFramCropedImage[selectedGroupName] || {};
         mainFramCropedImage[selectedGroupName][defaultModel] =
-          cropper.getCroppedCanvas();
+          cropper.getCroppedCanvas().toDataURL('image/png');
         await setMainFrameCropedImage();
       } else if (params.fileUploadFlag == "TopFrame") {
         topFramCropedImage = topFramCropedImage || {};
@@ -1835,7 +1925,7 @@ if (cropButton) {
         topFramCropedImage[selectedGroupName][defaultModel] =
           topFramCropedImage[selectedGroupName][defaultModel] || {};
         topFramCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] =
-          cropper.getCroppedCanvas();
+          cropper.getCroppedCanvas().toDataURL('image/png');
         await setTopFrameCropedImage();
       }
     }
@@ -2147,12 +2237,12 @@ if (Save) {
     const dataToSave = {
       id: modelId,
       params: params,
-      allGroupNames: allGroupNames,
-      allGroupModelName: allGroupModelName,
       setting: setting,
+      allGroupNames: allGroupNames,
       topFramCropedImage: topFramCropedImage,
       mainFramCropedImage: mainFramCropedImage,
     };
+    console.log('dataToSave', dataToSave);
 
     await saveModelData(dataToSave);
   });

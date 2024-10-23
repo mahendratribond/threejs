@@ -1480,7 +1480,7 @@ export async function traverseAsync(modelNode, callback) {
 }
 
 export async function showHideNodes(modelGroup, scene, camera) {
-  // console.log('modelGroup', modelGroup);
+  console.log('setting', setting);
   // let currentModelNode = params.selectedGroupName;
   let current_setting = setting[params.selectedGroupName];
 
@@ -1493,6 +1493,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
     let main_model = modelGroup.getObjectByName(params.selectedGroupName);
     // console.log('main_model', main_model)
     await traverseAsync(main_model, async (child) => {
+
       let currentModelNode = await getMainParentNode(
         child,
         allModelNames,
@@ -1511,6 +1512,15 @@ export async function showHideNodes(modelGroup, scene, camera) {
         child.visible =
           (await isActiveGroup(currentModelNode)) &&
           Object.keys(setting).length > 1;
+      }
+      if (child.name && allModelNames.includes(child.name)) {
+
+        if (child.name === current_setting.defaultModel) {
+          console.log('child.name', child.name);
+          child.visible = true; // Show the selected model
+        } else {
+          child.visible = false; // Hide other models
+        }
       }
       if (child.name === "Left_Ex" || child.name === "Right_Ex") {
         if (isSlottedSides && current_setting.slottedSidesToggle) {
@@ -1571,6 +1581,50 @@ export async function showHideNodes(modelGroup, scene, camera) {
           isGlassShelf &&
           current_setting.defaultShelfType == "Header_Glass_Shelf";
       }
+
+      if (allFrameBorderNames.includes(child.name)) {
+        if (current_setting.frameMaterialType === "texture") {
+          let texture_border = new THREE.TextureLoader().load(
+            "./assets/images/borders/" + current_setting.frameBorderColor
+          );
+          texture_border = await setTextureParams(texture_border);
+          let material = border_texture_material.clone();
+          material.map = texture_border;
+          // // child.material = child.material.clone()
+          child.material = material;
+          child.material.needsUpdate = true;
+        } else if (current_setting.frameMaterialType === "color") {
+          // Apply color
+          const material = await commonMaterial(parseInt(current_setting.frameBorderColor, 16));
+          // child.material = child.material.clone()
+          child.material = material;
+          child.material.needsUpdate = true;
+        }
+      }
+
+      if (child.name == "Header_Wooden_Shelf") {
+        // console.log('Header_Wooden_Shelf', dropdownType, child.name)
+        if (current_setting.shelfMaterialType === "texture") {
+          // Load texture
+          let texture_border = new THREE.TextureLoader().load(
+            "./assets/images/borders/" + current_setting.defaultShelfColor
+          );
+          texture_border = await setTextureParams(texture_border);
+          let material = border_texture_material.clone();
+          material.map = texture_border;
+          child.material = material;
+          // child.material = [border_texture_material, shadow];
+          child.material.needsUpdate = true;
+        } else if (current_setting.shelfMaterialType === "color") {
+          // Apply color
+          const material = await commonMaterial(parseInt(current_setting.defaultShelfColor, 16));
+          child.material = material;
+          // child.material = [material, shadow];
+          child.material.needsUpdate = true;
+        }
+      }
+
+
       if (["Clothing"].includes(child.name)) {
         child.visible = current_setting.hangerClothesToggle;
       }
@@ -1689,6 +1743,10 @@ export async function showHideNodes(modelGroup, scene, camera) {
     `div.accordion-item[data-model="${params.selectedGroupName}"]`
   );
   if (parentElement) {
+    let frameSize = parentElement.querySelector(".frameSize");
+    if (frameSize) {
+      frameSize.value = current_setting.defaultModel;
+    }
     let topDropdown = parentElement.querySelector(".topDropdown");
     if (topDropdown) {
       topDropdown.value = current_setting.topOption;
@@ -1703,7 +1761,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
     }
     let headerRodToggle = parentElement.querySelector(".headerRodToggle");
     if (headerRodToggle) {
-      headerRodToggle.value = current_setting.headerRodToggle;
+      headerRodToggle.checked = current_setting.headerRodToggle;
     }
     let headerRodColorDropdown = parentElement.querySelector(
       ".headerRodColorDropdown"
@@ -1717,7 +1775,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
     }
     let slottedSidesToggle = parentElement.querySelector(".slottedSidesToggle");
     if (slottedSidesToggle) {
-      slottedSidesToggle.value = current_setting.slottedSidesToggle;
+      slottedSidesToggle.checked = current_setting.slottedSidesToggle;
     }
     let headerFrameColorInput = parentElement.querySelector(
       ".headerFrameColorInput"
@@ -1884,9 +1942,8 @@ export async function showHideNodes(modelGroup, scene, camera) {
         });
     }
   }
-  // setTimeout(async function () {
+
   await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
-  // }, 100)
 }
 
 // Function to find the next visible child
@@ -2008,12 +2065,12 @@ export async function updateFrameMaterial(
       let isActive = await isActiveGroup(currentModelNode);
       if (isActive) {
         // console.log('currentModelNode.name', currentModelNode.name)
-        if (type === "texture") {
+        if (setting[params.selectedGroupName].frameMaterialType === "texture") {
           // console.log('child.name', child.name)
 
           // Load texture
           let texture_border = new THREE.TextureLoader().load(
-            "./assets/images/borders/" + value
+            "./assets/images/borders/" + setting[params.selectedGroupName].frameBorderColor
           );
           texture_border = await setTextureParams(texture_border);
           let material = border_texture_material.clone();
@@ -2031,9 +2088,9 @@ export async function updateFrameMaterial(
           // });
           // child.material = newMaterial;
           // child.material.needsUpdate = true;
-        } else if (type === "color") {
+        } else if (setting[params.selectedGroupName].frameMaterialType === "color") {
           // Apply color
-          const material = await commonMaterial(parseInt(value, 16));
+          const material = await commonMaterial(parseInt(setting[params.selectedGroupName].frameBorderColor, 16));
           // child.material = child.material.clone()
           child.material = material;
           child.material.needsUpdate = true;
@@ -2065,10 +2122,10 @@ export async function updateFrameMaterial(
     }
     if (child.name == "Header_Wooden_Shelf" && dropdownType === "shelf") {
       // console.log('Header_Wooden_Shelf', dropdownType, child.name)
-      if (type === "texture") {
+      if (setting[params.selectedGroupName].shelfMaterialType === "texture") {
         // Load texture
         let texture_border = new THREE.TextureLoader().load(
-          "./assets/images/borders/" + value
+          "./assets/images/borders/" + setting[params.selectedGroupName].defaultShelfColor
         );
         texture_border = await setTextureParams(texture_border);
         let material = border_texture_material.clone();
@@ -2076,9 +2133,9 @@ export async function updateFrameMaterial(
         child.material = material;
         // child.material = [border_texture_material, shadow];
         child.material.needsUpdate = true;
-      } else if (type === "color") {
+      } else if (setting[params.selectedGroupName].shelfMaterialType === "color") {
         // Apply color
-        const material = await commonMaterial(parseInt(value, 16));
+        const material = await commonMaterial(parseInt(setting[params.selectedGroupName].defaultShelfColor, 16));
         child.material = material;
         // child.material = [material, shadow];
         child.material.needsUpdate = true;
@@ -2125,7 +2182,7 @@ export async function centerMainModel(modelGroup) {
   // Center the starting position by shifting based on half the total width
   currentX = -(totalWidth / 2);
 
-  console.log("totalWidth:", totalWidth);
+  // console.log("totalWidth:", totalWidth);
 
   // Second pass: Position each model with spacing and manual offsets
   for (const model of models) {
@@ -2167,8 +2224,8 @@ export async function centerMainModel(modelGroup) {
     });
   });
 
-  console.log("modelGroup:", modelGroup);
-  console.log("models:", models);
+  // console.log("modelGroup:", modelGroup);
+  // console.log("models:", models);
 }
 
 export async function centerMainModel1(modelGroup) {
@@ -2867,7 +2924,7 @@ export async function isVisibleParents(node) {
 
 export async function findParentNodeByName(node, parentName, isVisible = null) {
   // Base case: If the current node has no parent, return null
-  if (!node.parent) return null;
+  if (!node || !node.parent) return null;
 
   // Check if parentName is an array or a string
   const isMatch = Array.isArray(parentName)
@@ -2926,10 +2983,10 @@ export async function addCloseButton(modelName, accordionItem, modelGroup, merge
 }
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModels(allGroupNames, modelGroup, camera, modelName = null) {
+export async function addAnotherModels(allGroupNames, modelGroup, camera, modelName = null, side = null) {
   let defaultModel = modelGroup.getObjectByName("main_model");
-  console.log('defaultModel', defaultModel);
-  
+  // console.log('defaultModel', defaultModel);
+
   const newModel = defaultModel.clone();
   await cloneWithCustomProperties(defaultModel, newModel);
 
@@ -2961,9 +3018,8 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
 
   const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
   const center = boundingBox.getCenter(new THREE.Vector3());
-  const cameraOnLeft = camera.position.x < center.x;
+  const cameraOnLeft = side || camera.position.x < center.x;
 
-  // console.log('cameraOnLeft', cameraOnLeft)
 
   if (cameraOnLeft) {
     newModel.position.x = boundingBox.max.x + modelWidth / 2;
@@ -2975,11 +3031,13 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
     allGroupModelName.unshift(newModel.name);
   }
 
-  setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
-  setting[modelName].topFrameBackgroundColor =
-    params.topFrameBackgroundColor;
-  setting[modelName].mainFrameBackgroundColor =
-    params.mainFrameBackgroundColor;
+  if (!setting[modelName]) {
+    setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
+    setting[modelName].topFrameBackgroundColor =
+      params.topFrameBackgroundColor;
+    setting[modelName].mainFrameBackgroundColor =
+      params.mainFrameBackgroundColor;
+  }
 
   await traverseAsync(newModel, async (mesh) => {
     if (
@@ -3142,10 +3200,10 @@ export async function cloneAccordionItem(modelName) {
 
 export async function saveModelData(dataToSave) {
 
-  console.log('dataToSave', dataToSave)
-  const model_data = JSON.stringify(dataToSave); // Pretty print with 2 spaces
-  console.log('model_data', model_data)
-  // Send model state to the backend
+  const model_data = dataToSave;
+  // const model_data = JSON.stringify(dataToSave);
+  console.log('model_data', model_data);
+
   fetch('api.php', {
     method: 'POST',
     headers: {

@@ -21,7 +21,7 @@ export let allGroupModelName = ['main_model'];
 
 // Parameters for Three.js configuration
 export let params = {
-    allBorderColor: "0xffffff",
+    frameBorderColor: "0xffffff",
     rodFrameColor: "0xffffff",
     baseFrameColor: "0xffffff",
     topFrameBackgroundColor: "0xffffff",
@@ -34,6 +34,8 @@ export let params = {
     defaultRackColor: "0xffffff",
     measurementLineColor: 0x000000,
     measurementTextColor: 0xffffff,
+    frameMaterialType: 'color',
+    shelfMaterialType: 'color',
     exposure: 0.5,
     blurriness: 0.5,
     toneMapping: "AgX",
@@ -46,8 +48,6 @@ export let params = {
     topOption: 'Header', // we can set Header, Shelf, None
     headerRodToggle: false,
     defaultShelfType: 'Header_Glass_Shelf', // Header_Wooden_Shelf, Header_Glass_Shelf
-    // isShelf: true,
-    // isGlassShelf: true,
     rodSize: { x: 0, y: 0, z: 0 },
     glassShelfFixingSize: { x: 0, y: 0, z: 0 },
     calculateBoundingBox: {},
@@ -57,7 +57,6 @@ export let params = {
     measurementLineLength: 5,
     measurementLineHeight: 40,
     slottedSidesToggle: false,
-    // isSlottedSides: true,
     fontSize: 32,
     hangerClothesToggle: true,
     hangerGolfClubsToggle: true,
@@ -65,13 +64,8 @@ export let params = {
     moveLeftRight: 10,
     font: null,
     lastInnerMaterial: {},
-    // selectedModel: null,
     selectedGroupName: allGroupNames[0],
     addedVisibleModelName: allModelNames[0],
-    // setting: {},
-    // selectedModelBoxHelper: null,
-    // selectedModelZAxis: 30,
-
 
 };
 

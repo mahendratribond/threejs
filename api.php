@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Database connection
 $servername = "localhost";
 $username = "mamp";
@@ -18,7 +22,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Prepare and bind the SQL statement
     $id = $data['id'];
     $name = $data['name'];
-    $model_data = $data['model_data'];
+    $model_data = json_encode($data['model_data']);
 
     // Check if model state exists for the id
     $sql = "SELECT * FROM threejs_models WHERE id = ?";
