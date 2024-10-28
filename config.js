@@ -66,6 +66,10 @@ export let params = {
     lastInnerMaterial: {},
     selectedGroupName: allGroupNames[0],
     addedVisibleModelName: allModelNames[0],
+    hangerCount: {}, 
+    hangerAdded: {},
+    rackCount: {}, 
+    rackAdded: {},
 
 };
 
@@ -81,7 +85,7 @@ delete setting[params.selectedGroupName]['lastInnerMaterial'];
 
 
 // Generic update function
-export const updateVariable = (varName, newValue) => {
+export async function updateVariable(varName, newValue) {
     switch (varName) {
         case 'params':
             params = { ...params, ...newValue }; // Merge new parameters

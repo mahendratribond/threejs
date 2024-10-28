@@ -17,6 +17,13 @@ https://bitbucket.org/jack_risk/three-model/src/staging/assets/
 engraved
 emboss
 
+1. Frame ka background color copy nhi krna h
+4. add loader on show previous model
+
+
+2. Model ko move krne ka option add krne h 
+3. recenter krne pe issue aa raha h
+
 
 
 2. Fixture, holder white aa rha h
@@ -69,5 +76,30 @@ Wooden Shelf 6661_1061_1200
 https://sketchfab.com/3d-models/adidas-display-visual-merchandising-guideline-95fbd6c450814ed39e425edcac213992
 https://sketchfab.com/3d-models/adidas-winter-display-visual-merchandising-e6849b3538cd42e79c540b140010635d
 https://sketchfab.com/3d-models/pos-adidas-visual-merchandising-skateboard-55cda6af7f674f8d8c0d805ab55bfe04
+
+
+position {x: 1570.5857408005654, y: 188.74911499023438, z: 40.62211990356287}
+utils5.js:3249 position {x: 376.84298033749064, y: 129.61141967773438, z: 224.19418334960778}
+utils5.js:3249 position {x: -163.9311177429904, y: 129.61141967773438, z: 224.19418334960778}
+utils5.js:3249 position {x: -231.0500030517577, y: 188.74911499023438, z: -41.24013137817541}
+utils5.js:3249 position {x: 394.4499969482422, y: 188.74911499023438, z: -41.24013137817541}
+utils5.js:3249 position {x: 107.14896208785945, y: 228.55380249023438, z: -392.43035888672034}
+
+
+
+
+Other_main_model_1-Model_661-Front-Hanger_Rail_Single
+Vector3 {x: 2315.014329092263, y: 188.74911499023438, z: 40.62211990356287}
+Other_main_model_1-Model_1200-Back-Hanger_Golf_Club_Driver
+Vector3 {x: 84.65924738833291, y: 228.55380249023438, z: -392.43035888672034}
+Other_main_model_1-Model_1200-Back-Hanger_Rail_D_500mm
+Vector3 {x: 394.4499969482422, y: 188.74911499023438, z: -41.24013137817541}
+Vector3 {x: -231.0500030517577, y: 188.74911499023438, z: -41.24013137817541}
+Other_main_model_1-Model_1200-Front-Hanger_Rail_Step
+Vector3 {x: 307.6876017470631, y: 129.61141967773438, z: 224.19418334960778}
+Vector3 {x: -219.10731576252135, y: 129.61141967773438, z: 224.19418334960778}
+
+
+
 
 

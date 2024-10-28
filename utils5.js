@@ -18,6 +18,7 @@ import {
   frameTop1Names,
   baseFrameNames,
   allGroupNames,
+  golfClubNames,
   allModelNames,
   rackPartNames,
   hangerNames,
@@ -26,25 +27,6 @@ import {
   params,
   setting,
 
-  // gui, stats,
-  // renderer, scene, camera, controls, transformControls, raycaster, mouse, hangerIntersects, selectedNode,
-  // cropper, topFramCropedImage, mainFramCropedImage,
-  // texture_background,
-  // main_model,
-  // header_rod_model,
-  // header_wooden_shelf_model,
-  // header_500_height_model,
-  // header_glass_shelf_fixing_model,
-  // header_glass_shelf_model,
-  // slotted_sides_model,
-  // hanger_model,
-  // hanger_golf_club_model,
-  // golf_club,
-  // rack_wooden_model,
-  // rack_glass_model,
-  // lights,
-  // lightHelpers,
-  // hangerArray,
 } from "./config.js";
 
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
@@ -59,6 +41,11 @@ export async function getHeaderSize(value) {
 
 export async function getModelSize(model_name) {
   return model_name.replace("Model_", "");
+}
+
+// Helper function to create a delay
+export async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function commonMaterial(color) {
@@ -79,6 +66,33 @@ export async function clothsMaterial(color) {
   });
 
   return material;
+}
+
+
+export async function restoreMaterials(materialDataObject, loader) {
+  for (let [modelName, materialData] of Object.entries(materialDataObject)) {
+    if (!params.lastInnerMaterial[modelName]) {
+      let restoredMaterials = {}; // Reset restoredMaterials for each modelName
+      for (const materialName in materialData) {
+        restoredMaterials[materialName] = loader.parse(materialData[materialName]);
+      }
+      params.lastInnerMaterial[modelName] = restoredMaterials;
+    }
+  }
+
+}
+
+export async function addNewMaterials(materialDataObject) {
+  for (let [modelName, materialData] of Object.entries(materialDataObject)) {
+    if (!params.lastInnerMaterial[modelName]) {
+      let restoredMaterials = {}; // Reset restoredMaterials for each modelName
+      for (const materialName in materialData) {
+        restoredMaterials[materialName] = materialData[materialName];
+      }
+      params.lastInnerMaterial[modelName] = restoredMaterials;
+    }
+  }
+
 }
 
 export async function getRemoveIcon(removeIconName) {
@@ -248,53 +262,6 @@ export async function isHangerAdd(
     conditionFlag = false;
   }
 
-  return conditionFlag;
-}
-
-export async function isHangerAdd1(hangerType, hangerArray, hangerArrayKey) {
-  let conditionFlag = true;
-  let modelSize = await getModelSize(params.defaultModel);
-  if (
-    [
-      "Hanger_Rail_Step",
-      "Hanger_Rail_Single",
-      "Hanger_Golf_Club_Iron",
-      "Hanger_Golf_Club_Driver",
-    ].includes(hangerType)
-  ) {
-    if (hangerArray[hangerArrayKey] >= 1 && modelSize <= 600) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 2 && modelSize <= 1200) {
-      conditionFlag = false;
-    }
-    // else if (hangerArray[hangerArrayKey] >= 2 && modelSize <= 1500 ) {
-    //     conditionFlag = false
-    // }
-    // else if (hangerArray[hangerArrayKey] >= 3 && modelSize <= 2000 ) {
-    //     conditionFlag = false
-    // }
-    // else if (hangerArray[hangerArrayKey] >= 4 && modelSize <= 3000 ) {
-    //     conditionFlag = false
-    // }
-  } else if (hangerType == "Hanger_Rail_D_500mm") {
-    if (hangerArray[hangerArrayKey] >= 1 && modelSize < 1000) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 2 && modelSize <= 1500) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 3 && modelSize <= 2000) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 5 && modelSize <= 3000) {
-      conditionFlag = false;
-    }
-  } else if (hangerType == "Hanger_Rail_D_1000mm") {
-    if (modelSize < 1000) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 1 && modelSize <= 2000) {
-      conditionFlag = false;
-    } else if (hangerArray[hangerArrayKey] >= 2 && modelSize <= 3000) {
-      conditionFlag = false;
-    }
-  }
   return conditionFlag;
 }
 
@@ -1480,7 +1447,6 @@ export async function traverseAsync(modelNode, callback) {
 }
 
 export async function showHideNodes(modelGroup, scene, camera) {
-  console.log('setting', setting);
   // let currentModelNode = params.selectedGroupName;
   let current_setting = setting[params.selectedGroupName];
 
@@ -1514,9 +1480,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
           Object.keys(setting).length > 1;
       }
       if (child.name && allModelNames.includes(child.name)) {
-
         if (child.name === current_setting.defaultModel) {
-          console.log('child.name', child.name);
           child.visible = true; // Show the selected model
         } else {
           child.visible = false; // Hide other models
@@ -1737,7 +1701,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
     }
   }
 
-  console.log("modelGroup", modelGroup);
+  // console.log("modelGroup", modelGroup);
 
   const parentElement = document.querySelector(
     `div.accordion-item[data-model="${params.selectedGroupName}"]`
@@ -2982,8 +2946,7 @@ export async function addCloseButton(modelName, accordionItem, modelGroup, merge
 
 }
 
-// Function to dynamically generate and append cards for visible models
-export async function addAnotherModels(allGroupNames, modelGroup, camera, modelName = null, side = null) {
+export async function addAnotherModels(allGroupNames, modelGroup, scene, camera, modelName = null, side = null) {
   let defaultModel = modelGroup.getObjectByName("main_model");
   // console.log('defaultModel', defaultModel);
 
@@ -2991,7 +2954,7 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
   await cloneWithCustomProperties(defaultModel, newModel);
 
   const nodesToRemove = [];
-  newModel.traverse((child) => {
+  await traverseAsync(newModel, async (child) => {
     if (
       hangerNames.includes(child.name) ||
       rackNames.includes(child.name)
@@ -3008,7 +2971,22 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
     }
   });
 
-  newModel.name = modelName;
+  if (!modelName) {
+    let baseModelName = "Other_" + newModel.name;
+    let newModelName = baseModelName + "_1"; // Avoid redefining modelName
+    let suffix = 1;
+    while (allGroupModelName.includes(newModelName)) {
+      suffix++;
+      newModelName = `${baseModelName}_${suffix}`;
+    }
+
+    modelName = newModelName;
+
+  }
+
+  newModel.name = modelName; // If modelName is not null or undefined
+
+
   //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
   const modelBoundingBox = await computeBoundingBox(
     newModel,
@@ -3037,6 +3015,8 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
       params.topFrameBackgroundColor;
     setting[modelName].mainFrameBackgroundColor =
       params.mainFrameBackgroundColor;
+    setting[modelName].defaultModel =
+      params.addedVisibleModelName;
   }
 
   await traverseAsync(newModel, async (mesh) => {
@@ -3065,16 +3045,15 @@ export async function addAnotherModels(allGroupNames, modelGroup, camera, modelN
       }
     }
   });
-
+  
   modelGroup.add(newModel);
+
   await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
 }
 
 // Function to dynamically generate and append cards for visible models
 export async function addAnotherModelView(mergedArray, cameraOnLeft, modelGroup) {
   const rightControls = document.querySelector(".model_items");
-
-  let index = rightControls.children.length; // Get the current number of existing cards to maintain correct numbering
 
   // Loop through the mergedArray and append cards for visible models
   await mergedArray.forEach(async (modelName) => {
@@ -3168,9 +3147,12 @@ export async function cloneAccordionItem(modelName) {
   // }
 
   // Modify the data-model attribute and the text content
+  let displayName = modelName
+    .replace("Other_", "") // Remove "Other_"
+    .replace(/_/g, " ") // Replace underscores with spaces
+    .replace(/\b\w/g, char => char.toUpperCase());
   newAccordionItem.setAttribute("data-model", modelName);
-  newAccordionItem.querySelector(".accordion-header button").textContent =
-    modelName.replace("Other_", ""); // Change the title
+  newAccordionItem.querySelector(".accordion-header button").textContent = displayName; // Change the title
 
   // Set the new ID and aria-controls to ensure uniqueness
   const newId = `collapse${modelName}`;
@@ -3198,25 +3180,308 @@ export async function cloneAccordionItem(modelName) {
   return newAccordionItem;
 }
 
-export async function saveModelData(dataToSave) {
+export async function addHangers(modelGroup, hangerType, hanger_model, hanger_golf_club_model, scene, camera, lastside = null, position = null) {
 
-  const model_data = dataToSave;
-  // const model_data = JSON.stringify(dataToSave);
-  console.log('model_data', model_data);
+  let hangermodel,
+    hanger;
+
+  // const loader = new GLTFLoader();
+  if (golfClubNames.includes(hangerType)) {
+    hangermodel = hanger_golf_club_model;
+  } else {
+    hangermodel = hanger_model;
+  }
+  let selectedGroupName = params.selectedGroupName
+  let defaultModelName = setting[selectedGroupName].defaultModel;
+  let selectedGroupModel = modelGroup.getObjectByName(
+    selectedGroupName
+  );
+  let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
+  if (hangermodel) {
+    // console.log('hangermodel', hangermodel)
+    // console.log('selectedGroupName', selectedGroupName)
+    // console.log('defaultModelName', defaultModelName)
+
+    let hanger_object = hangermodel.getObjectByName(hangerType);
+    if (hanger_object) {
+      hanger = hanger_object.clone();
+      if (hanger) {
+        let frame = defaultModel.getObjectByName("Frame");
+        let side
+        if (lastside) {
+          side = lastside
+        }
+        else {
+          side = camera.position.z > 0 ? "Front" : "Back";
+        }
+
+
+
+        const hangerPrefix = selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+        let hangerArrayKey = hangerPrefix + hangerType;
+
+        let conditionFlag = await isHangerAdd(
+          frame,
+          hangermodel,
+          hangerType,
+          params.hangerCount,
+          hangerPrefix
+        );
+
+        // if (!conditionFlag) {
+        // console.log("frame:", frame);
+        // console.log("hangermodel:", hangermodel);
+        // console.log("hangerType:", hangerType);
+        // console.log("params.hangerCount:", params.hangerCount);
+        // console.log("hangerArrayKey:", hangerArrayKey);
+        // console.log("conditionFlag:", conditionFlag);
+        //   // console.log("There is not enough .", frame, hangermodel, hangerType, params.hangerCount, hangerArrayKey, conditionFlag);
+        // }
+
+        let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
+        if (!leftSideSlotted || !leftSideSlotted.visible) {
+          if (conditionFlag) {
+            hanger.position.y -= params.cameraPosition;
+            hanger.name = hangerType;
+
+            // Get the bounding box of the frame to find its center
+            const frameBoundingBox = new THREE.Box3().setFromObject(frame);
+            const frameCenter = frameBoundingBox.getCenter(
+              new THREE.Vector3()
+            );
+            const frameWidth =
+              frameBoundingBox.max.x - frameBoundingBox.min.x;
+
+            // Get the bounding box of the hanger
+            const hangerBoundingBox = new THREE.Box3().setFromObject(
+              hanger
+            );
+            const hangerCenter = hangerBoundingBox.getCenter(
+              new THREE.Vector3()
+            );
+            const hangerLength =
+              hangerBoundingBox.max.z - hangerBoundingBox.min.z;
+
+            hanger.localToWorld(hangerBoundingBox.min);
+            hanger.localToWorld(hangerBoundingBox.max);
+
+            let removeHangerIcon = await getRemoveIcon(
+              `removeHanger-${hangerType}`
+            );
+
+            // if (position) {
+            //   hanger.position.x = frameCenter.x + position.x
+            // }
+            // else {
+            //   hanger.position.x = frameCenter.x;
+            // }
+            hanger.position.x = frameCenter.x;
+
+            removeHangerIcon.position.set(
+              0, // Offset in world space
+              hangerCenter.y,
+              -hangerLength
+            );
+            // Adjust the hanger position based on the camera's z-axis position
+            if (side == "Front") {
+              hanger.rotation.y = Math.PI;
+              if (
+                golfClubNames.includes(hangerType) ||
+                hangerType == "Hanger_Rail_Step"
+              ) {
+                hanger.position.z =
+                  frame.position.z - hangerBoundingBox.max.z - 40; // Small offset in front of the frame
+              } else {
+                hanger.position.z =
+                  frame.position.z - hangerBoundingBox.max.z / 2; // Small offset in front of the frame
+              }
+              // hanger.position.x = frame.position.x
+            }
+
+            removeHangerIcon.visible = false;
+            hanger.add(removeHangerIcon);
+            frame.attach(hanger);
+
+            // Update removeHanger to always face the camera
+            scene.onBeforeRender = function () {
+              scene.traverse((obj) => {
+                if (obj.name && obj.name.includes("remove")) {
+                  obj.lookAt(camera.position);
+                }
+              });
+            };
+
+            if (position) {
+              hanger.position.x = position.x
+            }
+
+            params.hangerCount = params.hangerCount || {};
+            params.hangerCount[hangerArrayKey] = params.hangerCount[hangerArrayKey] || 0;
+            params.hangerCount[hangerArrayKey] += 1;
+
+            let count = params.hangerCount[hangerArrayKey];
+            hanger.hangerCount = count;
+            hanger.hangerArrayKey = hangerArrayKey;
+
+            // params.hangerAdded = params.hangerAdded || {};
+            // params.hangerAdded[hangerArrayKey] = params.hangerAdded[hangerArrayKey] || {};
+            // params.hangerAdded[hangerArrayKey][count] = hanger.position;
+
+            // console.log('params.hangerCount', params.hangerCount);
+            // console.log('params.hangerAdded', params.hangerAdded);
+
+
+            await showHideNodes(modelGroup, scene, camera);
+          } else {
+            if (!lastside) {
+              alert("There is not enough space to add this hanger.");
+            }
+            console.log("There is not enough space to add this hanger.");
+          }
+        } else {
+          // alert('The slotted side is visible; cannot add hanger.');
+        }
+      }
+    }
+  }
+}
+
+export async function addRacks(modelGroup, rackType, rack_wooden_model, rack_glass_model, scene, camera, lastside = null, position = null) {
+
+  let selectedGroupName = params.selectedGroupName
+  let defaultModelName = setting[selectedGroupName].defaultModel;
+  let selectedGroupModel = modelGroup.getObjectByName(
+    selectedGroupName
+  );
+  let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
+  let rack_model;
+  if (rackType == "RackGlassShelf") {
+    rack_model = rack_glass_model;
+  } else if (rackType == "RackWoodenShelf") {
+    rack_model = rack_wooden_model;
+  }
+
+  if (rack_model) {
+    let rack_clone = rack_model.clone();
+    let frame = defaultModel.getObjectByName("Frame");
+    let rack = rack_clone.getObjectByName(defaultModelName);
+
+    if (rack) {
+      rack.name = rackType;
+
+      // Get the Left_Ex_Slotted node
+      let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
+      let topExSide = frame.getObjectByName("Top_Ex");
+
+      if (topExSide && leftSideSlotted && leftSideSlotted.visible) {
+        let side
+        if (lastside) {
+          side = lastside
+        }
+        else {
+          side = camera.position.z > 0 ? "Front" : "Back";
+        }
+
+        const rackPrefix = selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+        let rackArrayKey = rackPrefix + rackType;
+
+        // Calculate the bounding box for the frame to find the center
+        const topExSideBoundingBox = new THREE.Box3().setFromObject(
+          topExSide
+        );
+        const topExSideCenter = topExSideBoundingBox.getCenter(
+          new THREE.Vector3()
+        ); // Get center of frame
+
+        const boundingBox =
+          params.calculateBoundingBox[defaultModelName][frame.name];
+
+        // Now compute the bounding box relative to the world coordinates
+        const rackBoundingBox = new THREE.Box3().setFromObject(rack);
+        const rackCenter = rackBoundingBox.getCenter(new THREE.Vector3());
+        const rackLength = rackBoundingBox.max.z - rackBoundingBox.min.z;
+
+        rack.position.x = topExSideCenter.x; // Ensure it stays centered
+
+        frame.attach(rack);
+
+        let margin = 1;
+        let gmargin = 20;
+
+        if (side == "Front") {
+          rack.position.z = boundingBox.max.z + rackLength / 2 + margin;
+          rack.rotation.y = Math.PI;
+          if (rack.name == "RackGlassShelf") {
+            rack.position.z -= gmargin;
+          }
+        } else {
+          rack.position.z = boundingBox.min.z - rackLength / 2 - margin;
+          if (rack.name == "RackGlassShelf") {
+            rack.position.z += gmargin;
+          }
+        }
+
+        let removeRackIcon = await getRemoveIcon(`removeRack-${rackType}`);
+
+        removeRackIcon.position.set(
+          rackBoundingBox.max.x, // Offset in world space
+          0,
+          -rackBoundingBox.min.z + 1
+        );
+        removeRackIcon.visible = false;
+        rack.add(removeRackIcon);
+
+        if (position) {
+          rack.position.y = position.y
+        }
+
+        // Update removeRack to always face the camera
+        scene.onBeforeRender = function () {
+          scene.traverse((obj) => {
+            if (obj.name && obj.name.includes("remove")) {
+              obj.lookAt(camera.position);
+            }
+          });
+        };
+
+        params.rackCount = params.rackCount || {};
+        params.rackCount[rackPrefix] = params.rackCount[rackPrefix] || 0;
+        params.rackCount[rackArrayKey] += 1;
+
+        let count = params.rackCount[rackArrayKey];
+        rack.rackCount = count;
+        rack.rackArrayKey = rackArrayKey;
+
+        await showHideNodes(modelGroup, scene, camera);
+      }
+    }
+  }
+}
+
+export async function saveModelData(name, dataToSave, modelId = 0) {
+
+  // const model_data = dataToSave;
+  dataToSave['action'] = 'save_model_data'
+  dataToSave['id'] = modelId || 0
+  dataToSave['name'] = name
+
+
+  const model_data = JSON.stringify(dataToSave);
+  // console.log('model_data', model_data);
 
   fetch('api.php', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ action: 'save_model_data', id: dataToSave.id, name: 'Test', model_data: model_data }), // Ensure data is stringified
+    body: model_data,
   })
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        console.log("Model data saved successfully!");
+        alert("Model data saved successfully!");
       } else {
-        console.error("Error saving model data:", data.error);
+        alert("Error saving model data:", data.error);
       }
     })
     .catch(error => console.error("Fetch error:", error));
@@ -3237,9 +3502,6 @@ export async function getModelData(id) {
 
     if (data.success) {
       console.log("Model fetch successfully!");
-      if (data.data.model_data) {
-        data.data.model_data = JSON.parse(data.data.model_data)
-      }
       return data.data; // Return the fetched data
     } else {
       console.error("No data found:");

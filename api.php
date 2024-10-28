@@ -1,28 +1,39 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-// Database connection
-$servername = "localhost";
-$username = "mamp";
-$password = "123456";
-$dbname = "three-model";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'connection.php';
 
 // Get JSON data from request
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
 
 if (!empty($data['action']) && $data['action'] == 'save_model_data') {
+    // print_r($data);
     // Prepare and bind the SQL statement
     $id = $data['id'];
     $name = $data['name'];
-    $model_data = json_encode($data['model_data']);
+
+    $updatedHangerCount = [];
+    $updatedRackCount = [];
+
+    if (!empty($data['params']['hangerCount'])) {
+        foreach ($data['params']['hangerCount'] as $hangerArrayKey => $count) {
+            $updatedHangerCount[$hangerArrayKey] = 0; // Reset each count to 0
+        }
+        $data['params']['hangerCount'] = $updatedHangerCount;
+    }
+    if (!empty($data['params']['rackCount'])) {
+        foreach ($data['params']['rackCount'] as $rackArrayKey => $count) {
+            $updatedRackCount[$rackArrayKey] = 0; // Reset each count to 0
+        }
+        $data['params']['rackCount'] = $updatedRackCount;
+    }
+    
+    $params = json_encode($data['params'] ?? null);
+    $setting = json_encode($data['setting'] ?? null);
+    $group_names = json_encode($data['group_names'] ?? null);
+    $top_frame_croped_image = json_encode($data['top_frame_croped_image'] ?? null);
+    $main_frame_croped_image = json_encode($data['main_frame_croped_image'] ?? null);
+
+
 
     // Check if model state exists for the id
     $sql = "SELECT * FROM threejs_models WHERE id = ?";
@@ -33,14 +44,14 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     if ($result->num_rows > 0) {
         // Update existing model state
-        $sql = "UPDATE threejs_models SET `name`=?, `model_data`=? WHERE id=?";
+        $sql = "UPDATE threejs_models SET `name`=?, `params`=?, `setting`=?, `group_names`=?, `top_frame_croped_image`=?, `main_frame_croped_image`=? WHERE id=?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $name, $model_data, $id); // Correct parameter types
+        $stmt->bind_param("sssssss", $name, $params, $setting, $group_names, $top_frame_croped_image, $main_frame_croped_image, $id); // Correct parameter types
     } else {
         // Insert new model state
-        $sql = "INSERT INTO threejs_models (`name`, `model_data`) VALUES (?, ?)";
+        $sql = "INSERT INTO threejs_models (`id`, `name`, `params`, `setting`, `group_names`, `top_frame_croped_image`, `main_frame_croped_image`) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $name, $model_data); // Correct parameter types
+        $stmt->bind_param("sssssss", $id, $name, $params, $setting, $group_names, $top_frame_croped_image, $main_frame_croped_image); // Correct parameter types
     }
 
     if ($stmt->execute()) {
@@ -59,6 +70,12 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
+        $row['params'] = !empty($row['params']) ? json_decode($row['params'], true) : null;
+        $row['setting'] = !empty($row['setting']) ? json_decode($row['setting'], true) : null;
+        $row['group_names'] = !empty($row['group_names']) ? json_decode($row['group_names'], true) : null;
+        $row['top_frame_croped_image'] = !empty($row['top_frame_croped_image']) ? json_decode($row['top_frame_croped_image'], true) : null;
+        $row['main_frame_croped_image'] = !empty($row['main_frame_croped_image']) ? json_decode($row['main_frame_croped_image'], true) : null;
+
         echo json_encode(['success' => true, 'data' => $row]);
     } else {
         echo json_encode(['success' => false]); // No state found
@@ -68,4 +85,3 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 }
 
 $conn->close();
-?>
