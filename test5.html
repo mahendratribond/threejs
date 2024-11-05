@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="assets/plugins/fontawesome/css/all.min.css">
   <link href="assets/plugins/cropperjs/cropper.min.css" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
-
 </head>
 
 <body class="loaded">
@@ -412,7 +411,28 @@
           <div class="control-group mt-3">
             <button id="saveModelDataButton" class="btn btn-outline-primary btn-sm">Save</button>
           </div>
-
+          <!-- <div class="control-group mt-3">
+            <button id="savePdfButton" class="btn btn-outline-primary btn-sm">Save Pdf</button>
+          </div> -->
+          <div class="control-group mt-3">
+            <button id="showInAR" class="border-0 rounded-pill bg-white" style="">
+              <img src=".\assets\images\modelLogo.png" alt="View in AR" style="width: 30px;">
+            </button>
+          </div>
+          <div id="ArView" class="ar-view" style="display:none; width: 100%; height: 100vh; z-index: 99; position: fixed; top: 0; left: 0; background-color: #ced9eb;">
+            <button id="closeButtonAR" style="width: 25px; height: 25px; z-index: 100; position: absolute; top: 20px; right: 10px; background-color: black; color: white; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; border-radius: 3px;">X</button>
+            <model-viewer id="modelViewer" ar auto-rotate camera-controls ar-placement="floor" style="width: 100%; height: 90%;"></model-viewer>
+          </div>
+          <a id="ViewArForIos" rel="ar" style="display: none;">
+            <img href="eg.jpg>" alt="here" />
+          </a>
+          <div id="loadingModal"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center; color: white; font-size: 1.5em;">
+            <div>
+              <p>Please wait... we are creating your AR model file</p>
+              <div class="modelWaitingloader"></div> <!-- Optionally, add a CSS spinner here -->
+            </div>
+          </div>
         </div>
       </div>
       <!-- <button id="toggleControlsButton" class="btn btn-primary btn-sm">Toggle Controls</button> -->
@@ -467,7 +487,7 @@
   </script>
 
   <script type="module" src="./main5.js" async></script>
-
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <script src="assets/plugins/bootstrap/js/bootstrap.min.js" defer></script>
   <script src="assets/plugins/cropperjs/cropper.min.js" defer></script>
   <script>
@@ -488,7 +508,7 @@
       images.forEach(img => {
         observer.observe(img); // Start observing each image
       });
-     
+
       // Select all toggle buttons
       const toggleControlsButtons = document.querySelectorAll('.toggle-controls-button');
 

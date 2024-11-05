@@ -58,7 +58,6 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { ColladaLoader } from "three/addons/loaders/ColladaLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-
 import {
   drawMeasurementBoxesWithLabels,
   setupHeaderWoodenShelfModel,
@@ -109,7 +108,9 @@ import {
   getModelSize,
   isHangerAdd,
   getNodeSize,
+  savePdfData,
   setupModel,
+  exportUsdz,
   addHangers,
   loadModel,
   addRacks,
@@ -138,7 +139,6 @@ import {
   rackNames,
   params,
   setting,
-
 } from "./config.js";
 
 const container = document.getElementById("container");
@@ -177,11 +177,13 @@ const measurementToggle = document.getElementById("measurementToggle");
 const captureButton = document.getElementById("captureButton");
 const takeScreenShot = document.getElementById("takeScreenShot");
 const saveModelDataButton = document.getElementById("saveModelDataButton");
-
+const showInAR = document.getElementById("showInAR");
+const savePdfButton = document.getElementById("savePdfButton");
 const cropperContainer = document.getElementById("cropper-container");
 const cropperImage = document.getElementById("cropper-image");
 const cropButton = document.getElementById("crop-button");
 const closeButton = document.getElementById("close-button");
+const closeButtonAR = document.getElementById("closeButtonAR");
 
 const accordionModel = document.getElementById("accordionModel");
 const moveLeftModel = document.getElementById("moveLeftModel");
@@ -198,7 +200,6 @@ const rotateRightButton = document.getElementById("cropper-rotate-right");
 const scaleXButton = document.getElementById("cropper-scale-x");
 const scaleYButton = document.getElementById("cropper-scale-y");
 const resetButton = document.getElementById("cropper-reset");
-
 // Set up the loading manager
 const manager = new THREE.LoadingManager();
 
@@ -368,6 +369,7 @@ async function init() {
   modelGroup.add(main_model);
   await showHideNodes(modelGroup, scene, camera);
   await loadHangerModels();
+  modelGroup.name = "main_group";
 
   for (let val of allModelNames) {
     let model_name = val + ".glb";
@@ -466,7 +468,6 @@ async function init() {
   document.body.appendChild(labelRenderer.domElement);
 
   await loadPreviousModels();
-
 }
 
 async function loadPreviousModels() {
@@ -475,7 +476,7 @@ async function loadPreviousModels() {
   document.body.appendChild(labelRenderer.domElement);
 
   const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get('id');
+  const id = urlParams.get("id");
 
   if (id) {
     previousData = await getModelData(id);
@@ -483,13 +484,13 @@ async function loadPreviousModels() {
       const loader = new THREE.MaterialLoader();
 
       let newMaterialData = params.lastInnerMaterial;
-      await updateVariable('params', previousData.params);
-      await updateVariable('setting', previousData.setting);
+      await updateVariable("params", previousData.params);
+      await updateVariable("setting", previousData.setting);
       let lastGroupNames = previousData.group_names;
       mainFrameCropedImage = previousData.main_frame_croped_image;
       topFrameCropedImage = previousData.top_frame_croped_image;
 
-      let mainModelIndex = lastGroupNames.indexOf('main_model');
+      let mainModelIndex = lastGroupNames.indexOf("main_model");
       let retrievedSelectedGroupName = params.selectedGroupName;
       let retrievedMaterialData = params.lastInnerMaterial;
       let hangerAdded = params.hangerAdded;
@@ -497,29 +498,35 @@ async function loadPreviousModels() {
       let rackAdded = params.rackAdded;
       params.rackAdded = {};
 
-
-      let reverseLastGroupNames = lastGroupNames
+      let reverseLastGroupNames = lastGroupNames;
       if (mainModelIndex > 0) {
         reverseLastGroupNames = lastGroupNames
-          .slice(0, mainModelIndex)  // Get elements before "main_model"
-          .reverse()  // Reverse them
-          .concat(lastGroupNames.slice(mainModelIndex));  // Concatenate with the rest of the array
+          .slice(0, mainModelIndex) // Get elements before "main_model"
+          .reverse() // Reverse them
+          .concat(lastGroupNames.slice(mainModelIndex)); // Concatenate with the rest of the array
       }
 
       params.lastInnerMaterial = {};
       await restoreMaterials(retrievedMaterialData, loader);
       await addNewMaterials(newMaterialData);
 
-      let i = 0
+      let i = 0;
       for (const groupName of reverseLastGroupNames) {
         const side = i < mainModelIndex ? false : true;
 
-        if (groupName.startsWith('Other_')) {
-          await addAnotherModels(allGroupNames, modelGroup, scene, camera, groupName, side);
+        if (groupName.startsWith("Other_")) {
+          await addAnotherModels(
+            allGroupNames,
+            modelGroup,
+            scene,
+            camera,
+            groupName,
+            side
+          );
         }
         // Add a short delay between each group loading
-        await delay(100);  // Adjust the delay time (in milliseconds) as needed
-        i++
+        await delay(100); // Adjust the delay time (in milliseconds) as needed
+        i++;
       }
 
       await centerMainModel(modelGroup);
@@ -527,9 +534,13 @@ async function loadPreviousModels() {
       for (const groupName of lastGroupNames) {
         params.selectedGroupName = groupName;
 
-        if (setting[params.selectedGroupName].headerRodToggle === true &&
-          setting[params.selectedGroupName].headerRodToggle === setting[params.selectedGroupName].headerUpDown) {
-          setting[params.selectedGroupName].headerUpDown = !setting[params.selectedGroupName].headerRodToggle;
+        if (
+          setting[params.selectedGroupName].headerRodToggle === true &&
+          setting[params.selectedGroupName].headerRodToggle ===
+            setting[params.selectedGroupName].headerUpDown
+        ) {
+          setting[params.selectedGroupName].headerUpDown =
+            !setting[params.selectedGroupName].headerRodToggle;
         }
 
         await setTopFrameCropedImage();
@@ -538,7 +549,7 @@ async function loadPreviousModels() {
         await centerMainModel(modelGroup);
 
         // Delay to ensure each model group update is visually distinct
-        await delay(100);  // Adjust as needed
+        await delay(100); // Adjust as needed
       }
 
       await centerMainModel(modelGroup);
@@ -546,11 +557,11 @@ async function loadPreviousModels() {
 
       // Sequentially process hangerAdded entries with delay
       for (const [hangerArrayKey, value] of Object.entries(hangerAdded)) {
-        const hangerArray = hangerArrayKey.split('-');
-        const groupName = hangerArray[0] || '';
-        const modelName = hangerArray[1] || '';
-        const side = hangerArray[2] || '';
-        const hangerType = hangerArray[3] || '';
+        const hangerArray = hangerArrayKey.split("-");
+        const groupName = hangerArray[0] || "";
+        const modelName = hangerArray[1] || "";
+        const side = hangerArray[2] || "";
+        const hangerType = hangerArray[3] || "";
 
         params.selectedGroupName = groupName;
         const lastDefaultModel = setting[groupName].defaultModel;
@@ -558,8 +569,17 @@ async function loadPreviousModels() {
 
         if (hangerArrayKey.startsWith(groupName)) {
           for (const position of Object.values(value)) {
-            await addHangers(modelGroup, hangerType, hanger_model, hanger_golf_club_model, scene, camera, side, position);
-            await delay(100);  // Delay for hangers
+            await addHangers(
+              modelGroup,
+              hangerType,
+              hanger_model,
+              hanger_golf_club_model,
+              scene,
+              camera,
+              side,
+              position
+            );
+            await delay(100); // Delay for hangers
           }
         }
 
@@ -568,11 +588,11 @@ async function loadPreviousModels() {
 
       // Sequentially process rackAdded entries with delay
       for (const [rackArrayKey, value] of Object.entries(rackAdded)) {
-        const rackArray = rackArrayKey.split('-');
-        const groupName = rackArray[0] || '';
-        const modelName = rackArray[1] || '';
-        const side = rackArray[2] || '';
-        const rackType = rackArray[3] || '';
+        const rackArray = rackArrayKey.split("-");
+        const groupName = rackArray[0] || "";
+        const modelName = rackArray[1] || "";
+        const side = rackArray[2] || "";
+        const rackType = rackArray[3] || "";
 
         params.selectedGroupName = groupName;
         const lastDefaultModel = setting[groupName].defaultModel;
@@ -580,8 +600,17 @@ async function loadPreviousModels() {
 
         if (rackArrayKey.startsWith(groupName)) {
           for (const position of Object.values(value)) {
-            await addRacks(modelGroup, rackType, rack_wooden_model, rack_glass_model, scene, camera, side, position);
-            await delay(100);  // Delay for racks
+            await addRacks(
+              modelGroup,
+              rackType,
+              rack_wooden_model,
+              rack_glass_model,
+              scene,
+              camera,
+              side,
+              position
+            );
+            await delay(100); // Delay for racks
           }
         }
 
@@ -595,19 +624,25 @@ async function loadPreviousModels() {
 
       for (const name of hangerNames) {
         const loaders = document.querySelectorAll(`.${name}_loader`);
-        loaders.forEach(loader => removeLoader(loader));
+        loaders.forEach((loader) => removeLoader(loader));
       }
 
       const accordionContainer = document.querySelector("#accordionModel");
-      const openAccordionItems = accordionContainer.querySelectorAll(".accordion-collapse.show");
-      openAccordionItems.forEach(item => {
+      const openAccordionItems = accordionContainer.querySelectorAll(
+        ".accordion-collapse.show"
+      );
+      openAccordionItems.forEach((item) => {
         const bsCollapse = new bootstrap.Collapse(item, { toggle: false });
         bsCollapse.hide();
       });
 
-      const lastAccordionItem = accordionContainer.querySelector(`.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`);
+      const lastAccordionItem = accordionContainer.querySelector(
+        `.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`
+      );
       if (lastAccordionItem) {
-        const bsCollapse = new bootstrap.Collapse(lastAccordionItem, { toggle: true });
+        const bsCollapse = new bootstrap.Collapse(lastAccordionItem, {
+          toggle: true,
+        });
       }
     }
   }
@@ -617,133 +652,158 @@ async function loadPreviousModels() {
 async function loadPreviousModels1() {
   // Get the current URL
   const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get('id'); // Extract the 'id' parameter
+  const id = urlParams.get("id"); // Extract the 'id' parameter
 
   if (id) {
-    previousData = await getModelData(id)
+    previousData = await getModelData(id);
     if (previousData.params) {
-
       // Rebuild materials using MaterialLoader
       const loader = new THREE.MaterialLoader();
       let restoredMaterials = {};
       // let lastInnerMaterial = params.lastInnerMaterial
-      await updateVariable('params', previousData.params);
-      await updateVariable('setting', previousData.setting);
-      let lastGroupNames = previousData.group_names
-      mainFrameCropedImage = previousData.main_frame_croped_image
-      topFrameCropedImage = previousData.top_frame_croped_image
+      await updateVariable("params", previousData.params);
+      await updateVariable("setting", previousData.setting);
+      let lastGroupNames = previousData.group_names;
+      mainFrameCropedImage = previousData.main_frame_croped_image;
+      topFrameCropedImage = previousData.top_frame_croped_image;
 
-      let mainModelIndex = lastGroupNames.indexOf('main_model');
+      let mainModelIndex = lastGroupNames.indexOf("main_model");
       let retrievedSelectedGroupName = params.selectedGroupName;
       let retrievedMaterialData = params.lastInnerMaterial;
       let hangerAdded = params.hangerAdded;
-      params.hangerAdded = {}
+      params.hangerAdded = {};
       let rackAdded = params.rackAdded;
-      params.rackAdded = {}
+      params.rackAdded = {};
 
       for (let [index, groupName] of lastGroupNames.entries()) {
-        let side
+        let side;
         if (index < mainModelIndex) {
-          side = false
+          side = false;
         } else if (index >= mainModelIndex) {
-          side = true
+          side = true;
         }
 
         restoredMaterials[groupName] = {};
         for (let materialName in retrievedMaterialData[groupName]) {
-          restoredMaterials[groupName][materialName] = loader.parse(retrievedMaterialData[groupName][materialName]);
+          restoredMaterials[groupName][materialName] = loader.parse(
+            retrievedMaterialData[groupName][materialName]
+          );
         }
         params.lastInnerMaterial = restoredMaterials;
-        if (groupName.startsWith('Other_')) {
-          await addAnotherModels(allGroupNames, modelGroup, scene, camera, groupName, side);
+        if (groupName.startsWith("Other_")) {
+          await addAnotherModels(
+            allGroupNames,
+            modelGroup,
+            scene,
+            camera,
+            groupName,
+            side
+          );
         }
-
       }
       await centerMainModel(modelGroup);
       for (let [index, groupName] of lastGroupNames.entries()) {
         setTimeout(async function () {
-          params.selectedGroupName = groupName
-          if (setting[params.selectedGroupName].headerRodToggle == true && setting[params.selectedGroupName].headerRodToggle == setting[params.selectedGroupName].headerUpDown) {
-            setting[params.selectedGroupName].headerUpDown = !setting[params.selectedGroupName].headerRodToggle
+          params.selectedGroupName = groupName;
+          if (
+            setting[params.selectedGroupName].headerRodToggle == true &&
+            setting[params.selectedGroupName].headerRodToggle ==
+              setting[params.selectedGroupName].headerUpDown
+          ) {
+            setting[params.selectedGroupName].headerUpDown =
+              !setting[params.selectedGroupName].headerRodToggle;
           }
           await setTopFrameCropedImage();
           await setMainFrameCropedImage();
           await showHideNodes(modelGroup, scene, camera);
           await centerMainModel(modelGroup);
-
-        }, 1000 * (index + 0.1))
-
+        }, 1000 * (index + 0.1));
       }
-
 
       await centerMainModel(modelGroup);
       await showHideNodes(modelGroup, scene, camera);
 
-      console.log('hangerAdded', hangerAdded);
+      console.log("hangerAdded", hangerAdded);
       setTimeout(async function () {
-        let i = 1
+        let i = 1;
         for (let [hangerArrayKey, value] of Object.entries(hangerAdded)) {
           // console.log('hangerArrayKey', hangerArrayKey);
 
-          let hangerArray = hangerArrayKey.split('-'); // Split by hyphen and get the last value
-          let groupName = hangerArray[0] || '';
-          let modelName = hangerArray[1] || '';
-          let side = hangerArray[2] || '';
-          let hangerType = hangerArray[3] || '';
-          params.selectedGroupName = groupName
-          let lastDefaultModel = setting[groupName].defaultModel
-          setting[groupName].defaultModel = modelName
+          let hangerArray = hangerArrayKey.split("-"); // Split by hyphen and get the last value
+          let groupName = hangerArray[0] || "";
+          let modelName = hangerArray[1] || "";
+          let side = hangerArray[2] || "";
+          let hangerType = hangerArray[3] || "";
+          params.selectedGroupName = groupName;
+          let lastDefaultModel = setting[groupName].defaultModel;
+          setting[groupName].defaultModel = modelName;
           if (hangerArrayKey.startsWith(groupName)) {
             for (let position of Object.values(value)) {
               // setTimeout(async function () {
-              await addHangers(modelGroup, hangerType, hanger_model, hanger_golf_club_model, scene, camera, side, position);
+              await addHangers(
+                modelGroup,
+                hangerType,
+                hanger_model,
+                hanger_golf_club_model,
+                scene,
+                camera,
+                side,
+                position
+              );
               // }, 2000 * i)
-              i++
+              i++;
             }
           }
-          setting[groupName].defaultModel = lastDefaultModel
+          setting[groupName].defaultModel = lastDefaultModel;
         }
-      }, 1800)
-      console.log('rackAdded', rackAdded);
+      }, 1800);
+      console.log("rackAdded", rackAdded);
       setTimeout(async function () {
-        let i = 1
+        let i = 1;
         for (let [rackArrayKey, value] of Object.entries(rackAdded)) {
           // console.log('rackArrayKey', rackArrayKey);
 
-          let rackArray = rackArrayKey.split('-'); // Split by hyphen and get the last value
-          let groupName = rackArray[0] || '';
-          let modelName = rackArray[1] || '';
-          let side = rackArray[2] || '';
-          let rackType = rackArray[3] || '';
-          params.selectedGroupName = groupName
-          let lastDefaultModel = setting[groupName].defaultModel
-          setting[groupName].defaultModel = modelName
+          let rackArray = rackArrayKey.split("-"); // Split by hyphen and get the last value
+          let groupName = rackArray[0] || "";
+          let modelName = rackArray[1] || "";
+          let side = rackArray[2] || "";
+          let rackType = rackArray[3] || "";
+          params.selectedGroupName = groupName;
+          let lastDefaultModel = setting[groupName].defaultModel;
+          setting[groupName].defaultModel = modelName;
           if (rackArrayKey.startsWith(groupName)) {
             for (let position of Object.values(value)) {
               // setTimeout(async function () {
-              await addRacks(modelGroup, rackType, rack_wooden_model, rack_glass_model, scene, camera, side, position);
+              await addRacks(
+                modelGroup,
+                rackType,
+                rack_wooden_model,
+                rack_glass_model,
+                scene,
+                camera,
+                side,
+                position
+              );
               // await addHangers(modelGroup, rackType, rack_model, rack_golf_club_model, scene, camera, side, position);
               // }, 2000 * i)
-              i++
+              i++;
             }
           }
-          setting[groupName].defaultModel = lastDefaultModel
+          setting[groupName].defaultModel = lastDefaultModel;
         }
-
-      }, 1800)
+      }, 1800);
 
       // setTimeout(async function () {
-      params.selectedGroupName = retrievedSelectedGroupName
+      params.selectedGroupName = retrievedSelectedGroupName;
       //   await centerMainModel(modelGroup);
       //   await showHideNodes(modelGroup, scene, camera);
       // }, 2000)
 
-
       for (let name of hangerNames) {
-        let loaders = document.querySelectorAll("." + name + '_loader');
-        loaders.forEach(loader => {
+        let loaders = document.querySelectorAll("." + name + "_loader");
+        loaders.forEach((loader) => {
           removeLoader(loader);
-        })
+        });
       }
 
       setTimeout(function () {
@@ -758,7 +818,9 @@ async function loadPreviousModels1() {
           bsCollapse.hide(); // Explicitly hide the open accordion
         });
         // const lastAccordionItem = accordionContainer.querySelector(".accordion-item:last-child .accordion-collapse");
-        const lastAccordionItem = accordionContainer.querySelector(`.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`);
+        const lastAccordionItem = accordionContainer.querySelector(
+          `.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`
+        );
         if (lastAccordionItem) {
           // console.log('lastAccordionItem', lastAccordionItem);
 
@@ -766,7 +828,7 @@ async function loadPreviousModels1() {
             toggle: true, // This will show the collapse content
           });
         }
-      }, 2500)
+      }, 2500);
     }
   }
 }
@@ -1381,7 +1443,7 @@ async function setMainFrameCropedImage() {
 
     // Handle any errors during image loading
     img.onerror = function (err) {
-      console.error('Image loading failed', err);
+      console.error("Image loading failed", err);
     };
   } else {
     const mainFrameBackgroundColor = await getHex(
@@ -1417,7 +1479,8 @@ async function setTopFrameCropedImage() {
 
     // Create a new image element
     const img = new Image();
-    img.src = topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]; // Assign the base64 string to the image's src
+    img.src =
+      topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]; // Assign the base64 string to the image's src
 
     // Wait for the image to load
     img.onload = function () {
@@ -1444,7 +1507,7 @@ async function setTopFrameCropedImage() {
 
     // Handle any errors during image loading
     img.onerror = function (err) {
-      console.error('Image loading failed', err);
+      console.error("Image loading failed", err);
     };
   } else {
     const topFrameBackgroundColor = await getHex(
@@ -1565,7 +1628,6 @@ async function updateMaterial(
   dropdownType,
   selectedModel = "main_model"
 ) {
-
   let current_setting = setting[params.selectedGroupName];
 
   // console.log('value', value)
@@ -1660,19 +1722,20 @@ async function closeCropper() {
   const topFrameFileUploads = document.querySelectorAll(".mainFrameFileUpload");
 
   // Loop through each element and set its value to blank
-  topFrameFileUploads.forEach(element => {
+  topFrameFileUploads.forEach((element) => {
     // console.log('vvvv', element);
-    
+
     element.value = ""; // Set the value to an empty string
   });
 
-  const mainFrameFileUploads = document.querySelectorAll(".mainFrameFileUpload");
+  const mainFrameFileUploads = document.querySelectorAll(
+    ".mainFrameFileUpload"
+  );
 
   // Loop through each element and set its value to blank
-  mainFrameFileUploads.forEach(element => {
+  mainFrameFileUploads.forEach((element) => {
     element.value = ""; // Set the value to an empty string
   });
-  
 }
 
 // Event listeners for controls
@@ -1843,7 +1906,6 @@ if (mainFrameFileUpload) {
           cropper.destroy();
         }
 
-
         let currentGroup = modelGroup.getObjectByName(params.selectedGroupName);
         let defaultModelName = setting[params.selectedGroupName].defaultModel;
         let defaultModel = currentGroup.getObjectByName(defaultModelName);
@@ -2002,8 +2064,9 @@ if (cropButton) {
         mainFrameCropedImage = mainFrameCropedImage || {};
         mainFrameCropedImage[selectedGroupName] =
           mainFrameCropedImage[selectedGroupName] || {};
-        mainFrameCropedImage[selectedGroupName][defaultModel] =
-          cropper.getCroppedCanvas().toDataURL('image/png');
+        mainFrameCropedImage[selectedGroupName][defaultModel] = cropper
+          .getCroppedCanvas()
+          .toDataURL("image/png");
         await setMainFrameCropedImage();
       } else if (params.fileUploadFlag == "TopFrame") {
         topFrameCropedImage = topFrameCropedImage || {};
@@ -2011,8 +2074,9 @@ if (cropButton) {
           topFrameCropedImage[selectedGroupName] || {};
         topFrameCropedImage[selectedGroupName][defaultModel] =
           topFrameCropedImage[selectedGroupName][defaultModel] || {};
-        topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] =
-          cropper.getCroppedCanvas().toDataURL('image/png');
+        topFrameCropedImage[selectedGroupName][defaultModel][
+          defaultHeaderSize
+        ] = cropper.getCroppedCanvas().toDataURL("image/png");
         await setTopFrameCropedImage();
       }
     }
@@ -2028,7 +2092,14 @@ if (addHanger) {
     if (event.target.closest(".addHanger")) {
       const hangerType = event.target.getAttribute("data-hanger");
       await otherModelSetup();
-      await addHangers(modelGroup, hangerType, hanger_model, hanger_golf_club_model, scene, camera);
+      await addHangers(
+        modelGroup,
+        hangerType,
+        hanger_model,
+        hanger_golf_club_model,
+        scene,
+        camera
+      );
     }
   });
 }
@@ -2038,7 +2109,14 @@ if (addRack) {
     if (event.target.closest(".addRack")) {
       const rackType = event.target.getAttribute("data-rack");
       await otherModelSetup();
-      await addRacks(modelGroup, rackType, rack_wooden_model, rack_glass_model, scene, camera);
+      await addRacks(
+        modelGroup,
+        rackType,
+        rack_wooden_model,
+        rack_glass_model,
+        scene,
+        camera
+      );
     }
   });
 }
@@ -2048,21 +2126,32 @@ if (saveModelDataButton) {
     const modelId = previousData && previousData.id ? previousData.id : 0;
 
     await traverseAsync(modelGroup, async (child) => {
-      if (hangerNames.includes(child.name) && child.hangerArrayKey && child.hangerCount) {
+      if (
+        hangerNames.includes(child.name) &&
+        child.hangerArrayKey &&
+        child.hangerCount
+      ) {
         params.hangerAdded = params.hangerAdded || {};
-        params.hangerAdded[child.hangerArrayKey] = params.hangerAdded[child.hangerArrayKey] || {};
-        params.hangerAdded[child.hangerArrayKey][child.hangerCount] = child.position
+        params.hangerAdded[child.hangerArrayKey] =
+          params.hangerAdded[child.hangerArrayKey] || {};
+        params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
+          child.position;
       }
-      if (rackNames.includes(child.name) && child.rackArrayKey && child.rackCount) {
-        console.log('params.rackAdded', params.rackAdded);
-        console.log('child', child);
-        console.log('child.name', child.name);
+      if (
+        rackNames.includes(child.name) &&
+        child.rackArrayKey &&
+        child.rackCount
+      ) {
+        console.log("params.rackAdded", params.rackAdded);
+        console.log("child", child);
+        console.log("child.name", child.name);
 
         params.rackAdded = params.rackAdded || {};
-        params.rackAdded[child.rackArrayKey] = params.rackAdded[child.rackArrayKey] || {};
-        params.rackAdded[child.rackArrayKey][child.rackCount] = child.position
+        params.rackAdded[child.rackArrayKey] =
+          params.rackAdded[child.rackArrayKey] || {};
+        params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
       }
-    })
+    });
 
     const dataToSave = {
       params: params || null,
@@ -2072,16 +2161,16 @@ if (saveModelDataButton) {
       main_frame_croped_image: mainFrameCropedImage || null,
     };
 
-    let projectName = previousData && previousData.name || null
-    let dataSave
+    let projectName = (previousData && previousData.name) || null;
+    let dataSave;
     if (modelId > 0) {
-      dataSave = true
+      dataSave = true;
     }
     if (!projectName) {
       // Prompt the user to enter a value
       projectName = prompt("Please enter a project name:");
       if (projectName !== null) {
-        dataSave = true
+        dataSave = true;
       }
     }
 
@@ -2295,113 +2384,131 @@ if (captureButton) {
   });
 }
 // ----------------------------------------------------------------------------------------------------------
+async function checkFileExists(url) {
+  // Poll the server every 500ms to check if the file exists
+  let FileFound = false;
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  if (/iPhone|iPad|iPod/.test(userAgent)) {
+    url = `${url}.usdz`;
+  } else {
+    url = `${url}.glb`;
+  }
+  while (!FileFound) {
+    try {
+      const response = await fetch(url, { method: "HEAD" });
+      if (response.ok) return true; // File exists, exit the loop
+    } catch (error) {
+      alert("Checking file existence failed:", error);
+    }
+  }
+  return false; // File not found after max attempts
+}
+function showLoadingModal() {
+  document.getElementById("loadingModal").style.display = "flex";
+}
+
+function hideLoadingModal() {
+  document.getElementById("loadingModal").style.display = "none";
+}
+
+closeButton.addEventListener("click", () => {
+  document.body.removeChild(document.getElementById("ArView"));
+});
+
+if (closeButtonAR){
+  closeButtonAR.addEventListener("click", () => {
+    let arviewer = document.getElementById("ArView");
+    arviewer.style.display = "none";
+  });
+}
+// ----------------------------------------------------------------------------------------------------------
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
-    const camPosition = [
-      camera.position.x,
-      camera.position.y,
-      camera.position.z,
-    ];
-    // Save the original size of the renderer for high-res images
-    const originalWidth = renderer.domElement.width;
-    const originalHeight = renderer.domElement.height;
-    const scaleFactor = 3; // Increase resolution
-    renderer.setSize(
-      originalWidth * scaleFactor,
-      originalHeight * scaleFactor,
-      false
-    );
-    camera.aspect =
-      (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
-    camera.updateProjectionMatrix();
+    
+// ----------------------------------------------------------------------------------------------------------
+if (showInAR) {
+  showInAR.addEventListener("click", async function () {
+    showLoadingModal();
+    const unixTimestamp = Math.floor(Date.now() / 1000);
+    const modelName = `main_group_${unixTimestamp}`;
+    const exportedModelFileUrl = `./export_models/${modelName}`;
 
-    // Get the model's bounding box to determine its size
-    const boundingBox = new THREE.Box3().setFromObject(modelGroup);
-    const size = boundingBox.getSize(new THREE.Vector3());
-    const center = boundingBox.getCenter(new THREE.Vector3());
+    await exportUsdz(modelGroup, modelName);
 
-    console.log("Model Size:", size); // Check if the size values are reasonable
-    console.log("Model Center:", center);
-
-    // Adjust camera distance based on model size (add a safety check for large values)
-    let maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim === 0 || isNaN(maxDim)) {
-      maxDim = 1; // Fallback if the model size is too small or undefined
-    }
-
-    const cameraDistance = Math.min(maxDim * 2, size.x * 0.7); // Limit max camera distance
-
-    // Define four dynamic angles based on the model's size
-    const angles = [
-      {
-        x: cameraDistance,
-        y: cameraDistance > 1000 ? 1000 : cameraDistance,
-        z: cameraDistance * 0.7,
-      }, // Front-Top-Right
-      {
-        x: -cameraDistance,
-        y: cameraDistance > 1000 ? 1000 : cameraDistance,
-        z: -cameraDistance * 0.7,
-      }, // Back-Top-Left
-      {
-        x: 0,
-        y: cameraDistance > 1000 ? 1000 : cameraDistance,
-        z: cameraDistance,
-      }, // Front-Top-Center
-      {
-        x: 0,
-        y: cameraDistance > 1000 ? 1000 : cameraDistance,
-        z: -cameraDistance,
-      }, // Back-Top-Center
-      {
-        x: cameraDistance,
-        y: cameraDistance > 1000 ? 1000 : cameraDistance,
-        z: 0,
-      }, // Right-Top-Center
-    ];
-
-    angles.forEach((angle) => {
-      captureScreenshot(angle.x, angle.y, angle.z);
-    });
-
-    // Revert the renderer back to its original size
-    renderer.setSize(originalWidth, originalHeight, false);
-    camera.aspect = originalWidth / originalHeight;
-    camera.position.x = camPosition[0];
-    camera.position.y = camPosition[1];
-    camera.position.z = camPosition[2];
-    camera.updateProjectionMatrix();
-
-    // Re-render the scene at the original size
-    renderer.render(scene, camera);
-
-    function captureScreenshot(angleX, angleY, angleZ) {
-      console.log(`${angleX} ${angleY}  ${angleZ}`);
-      // Rotate the camera around the model
-      camera.position.set(angleX, angleY, angleZ);
-      camera.lookAt(scene.position); // Ensure camera is looking at the model's position
-      renderer.render(scene, camera);
-
-      // Capture the screenshot from the current camera angle
-      const screenshotData = renderer.domElement.toDataURL(); // Get screenshot as data URL
-
-      // Optionally, download the screenshot
-      downloadScreenshot(
-        screenshotData,
-        `screenshot_angle_${angleX}_${angleY}_${angleZ}.png`
-      );
-    }
-
-    // Helper function to download the screenshot
-    function downloadScreenshot(dataUrl, filename) {
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = filename;
-      link.click();
+    // Check if the file exists
+    if (await checkFileExists(exportedModelFileUrl)) {
+      hideLoadingModal();      
+      // Configure model viewer attributes
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      if (/iPhone|iPad|iPod/.test(userAgent)) { 
+        let ViewArForIos = document.getElementById("ViewArForIos");
+        ViewArForIos.style.display = "block";
+        ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+        ViewArForIos.click();
+      } else if (/Android/.test(userAgent)) {
+        // Create or update the AR viewer
+        const modelViewer = document.getElementById("modelViewer");
+        let ArViewer = document.getElementById("ArView");
+        ArViewer.style.display = "block";
+        modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+        modelViewer.setAttribute("ar-modes", "scene-viewer");
+        modelViewer.addEventListener("load", () => {
+          modelViewer.enterAR();
+        });
+      } else {
+        alert("This feature is only supported on iOS and Android devices.");
+      }
+    } else {
+      console.error("File was not found within the expected time.");
+      hideLoadingModal();
     }
   });
 }
+// ----------------------------------------------------------------------------------------------------------
+if (savePdfButton) {
+  savePdfButton.addEventListener("click", async function () {
+    // const modelId = previousData && previousData.id ? previousData.id : 0;
 
+    await traverseAsync(modelGroup, async (child) => {
+      if (
+        hangerNames.includes(child.name) &&
+        child.hangerArrayKey &&
+        child.hangerCount
+      ) {
+        params.hangerAdded = params.hangerAdded || {};
+        params.hangerAdded[child.hangerArrayKey] =
+          params.hangerAdded[child.hangerArrayKey] || {};
+        params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
+          child.position;
+      }
+      if (
+        rackNames.includes(child.name) &&
+        child.rackArrayKey &&
+        child.rackCount
+      ) {
+        console.log("params.rackAdded", params.rackAdded);
+        console.log("child", child);
+        console.log("child.name", child.name);
+
+        params.rackAdded = params.rackAdded || {};
+        params.rackAdded[child.rackArrayKey] =
+          params.rackAdded[child.rackArrayKey] || {};
+        params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
+      }
+    });
+
+    const dataToSave = {
+      params: params || null,
+      setting: setting || null,
+      group_names: allGroupNames || null,
+      top_frame_croped_image: topFrameCropedImage || null,
+      main_frame_croped_image: mainFrameCropedImage || null,
+    };
+  
+    await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
+  });
+}
+// ----------------------------------------------------------------------------------------------------------
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {
     if (cropper) cropper.zoom(0.1); // Zoom in

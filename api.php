@@ -1,10 +1,11 @@
 <?php
 
 require_once 'connection.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 // Get JSON data from request
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
-
+    
 if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // print_r($data);
     // Prepare and bind the SQL statement
@@ -79,6 +80,78 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         echo json_encode(['success' => true, 'data' => $row]);
     } else {
         echo json_encode(['success' => false]); // No state found
+    }
+} elseif (!empty($data['action']) && $data['action'] == 'save_Pdf_data') {
+    $mpdf = new \Mpdf\Mpdf([
+            'tempDir' => './uploads',
+            'format' => 'A4',
+            'margin_left' => 11,
+            'margin_right' => 12,
+            'margin_top' => 13,
+            'margin_bottom' => 12,
+            'margin_header' => 0,
+            'margin_footer' => 8,
+        ]);
+    $mpdf->SetHTMLFooter('
+    <table width="100%">
+        <tr>
+            <td width="50%" style="text-align: left; font-size: 11px;font-family:arial;"><b>BIGINSTORE</b> | THREE MODEL </td>
+            <td width="50%" align="right" style="font-size: 11px;font-family:arial;">Page {PAGENO}/{nbpg}</td>
+        </tr>
+    </table>');
+
+    // Start output buffering
+    ob_start();
+    // Include the HTML template
+    include 'pdfContent.php'; // Adjust the path if needed
+    // Get the contents of the buffer
+    $html = ob_get_clean();
+    // Load the HTML content from the file
+    // $html = file_get_contents('content.html'); // Adjust the path if necessary
+    $mpdf->WriteHTML($html);
+
+    // Output the PDF
+    $filenameLoc = "./uploads/sample1.pdf";
+    $mpdf->Output($filenameLoc);
+    echo json_encode(["success" => true, "message" => "Screenshot saved successfully"]);
+    exit;
+} else if (isset($data['image']) && isset($data['filename'])) {
+    $imageData = $data['image'];
+    $filename = basename($data['filename']); // Use basename to prevent directory traversal attacks
+
+    // Remove the "data:image/png;base64," part from the image data
+    $base64Image = explode(',', $imageData)[1];
+
+    // Decode the image data
+    $decodedImage = base64_decode($base64Image);
+
+    // Save the image to the server
+    $savePath = "./screenshots/" .time()."_". $filename; // Save to "screenshots" directory
+    if (file_put_contents($savePath, $decodedImage)) {
+        echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $savePath]);
+        exit;
+    } else {
+        echo json_encode(["success" => false, "error" => "Failed to save screenshot"]);
+    }
+} else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'saveModelFile') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+        $targetDir = './export_models/'; // Set the desired directory
+        $targetFile = $targetDir . basename($_FILES['file']['name']);
+        $uploadedSize = $_FILES['file']['size'];
+        
+        // Check if the directory exists or create it
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        // Save the uploaded file
+        if (move_uploaded_file($_FILES['file']['tmp_name'], $targetFile)) {
+            echo json_encode(["status" => "success", "message" => "File saved successfully.",  "uploadedSize" => $uploadedSize, "Data" => $targetFile]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "Failed to save file."]);
+        }
+    } else {
+        echo json_encode(["status" => "error", "message" => "No file uploaded."]);
     }
 } else {
     echo json_encode("No Action Found"); // No action found

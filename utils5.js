@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import {
   CSS2DObject,
   CSS2DRenderer,
@@ -26,7 +28,6 @@ import {
   rackNames,
   params,
   setting,
-
 } from "./config.js";
 
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
@@ -45,7 +46,7 @@ export async function getModelSize(model_name) {
 
 // Helper function to create a delay
 export async function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function commonMaterial(color) {
@@ -68,18 +69,18 @@ export async function clothsMaterial(color) {
   return material;
 }
 
-
 export async function restoreMaterials(materialDataObject, loader) {
   for (let [modelName, materialData] of Object.entries(materialDataObject)) {
     if (!params.lastInnerMaterial[modelName]) {
       let restoredMaterials = {}; // Reset restoredMaterials for each modelName
       for (const materialName in materialData) {
-        restoredMaterials[materialName] = loader.parse(materialData[materialName]);
+        restoredMaterials[materialName] = loader.parse(
+          materialData[materialName]
+        );
       }
       params.lastInnerMaterial[modelName] = restoredMaterials;
     }
   }
-
 }
 
 export async function addNewMaterials(materialDataObject) {
@@ -92,7 +93,6 @@ export async function addNewMaterials(materialDataObject) {
       params.lastInnerMaterial[modelName] = restoredMaterials;
     }
   }
-
 }
 
 export async function getRemoveIcon(removeIconName) {
@@ -540,9 +540,9 @@ export async function createRod(
       shelf_fixing.position.set(
         rod.position.x, // Adjust based on offset
         shelf_fixing.position.y +
-        headerBox.min.y +
-        params.rodSize.y +
-        lassShelfFixingY,
+          headerBox.min.y +
+          params.rodSize.y +
+          lassShelfFixingY,
         shelf_fixing.position.z
       );
       shelf_fixing.visible = false;
@@ -611,14 +611,18 @@ export async function createSupportBase(
 
       const rodBox = new THREE.Box3().setFromObject(supportSide);
     };
-    const createAndPositionBaseMiddle = async (xOffset, supportBaseName, positionY) => {
+    const createAndPositionBaseMiddle = async (
+      xOffset,
+      supportBaseName,
+      positionY
+    ) => {
       let supportSide = support_base_middle.clone();
       supportSide.name = supportBaseName;
       modelNode.add(supportSide);
       supportSide = await setPositionCenter(supportSide);
       supportSide.position.set(
         supportSide.position.x + xOffset, // Adjust based on offset
-        supportSide.position.y = positionY,
+        (supportSide.position.y = positionY),
         supportSide.position.z
       );
       supportSide.visible = false;
@@ -645,7 +649,11 @@ export async function createSupportBase(
       // Place additional rods
       for (let i = 1; i <= additionalSupportBase; i++) {
         let xOffset = -baseSize.x / 2 + i * spacing;
-        await createAndPositionBaseMiddle(xOffset, "Base_Support_Sides", positionY);
+        await createAndPositionBaseMiddle(
+          xOffset,
+          "Base_Support_Sides",
+          positionY
+        );
       }
     }
   }
@@ -1459,7 +1467,6 @@ export async function showHideNodes(modelGroup, scene, camera) {
     let main_model = modelGroup.getObjectByName(params.selectedGroupName);
     // console.log('main_model', main_model)
     await traverseAsync(main_model, async (child) => {
-
       let currentModelNode = await getMainParentNode(
         child,
         allModelNames,
@@ -1559,7 +1566,9 @@ export async function showHideNodes(modelGroup, scene, camera) {
           child.material.needsUpdate = true;
         } else if (current_setting.frameMaterialType === "color") {
           // Apply color
-          const material = await commonMaterial(parseInt(current_setting.frameBorderColor, 16));
+          const material = await commonMaterial(
+            parseInt(current_setting.frameBorderColor, 16)
+          );
           // child.material = child.material.clone()
           child.material = material;
           child.material.needsUpdate = true;
@@ -1581,13 +1590,14 @@ export async function showHideNodes(modelGroup, scene, camera) {
           child.material.needsUpdate = true;
         } else if (current_setting.shelfMaterialType === "color") {
           // Apply color
-          const material = await commonMaterial(parseInt(current_setting.defaultShelfColor, 16));
+          const material = await commonMaterial(
+            parseInt(current_setting.defaultShelfColor, 16)
+          );
           child.material = material;
           // child.material = [material, shadow];
           child.material.needsUpdate = true;
         }
       }
-
 
       if (["Clothing"].includes(child.name)) {
         child.visible = current_setting.hangerClothesToggle;
@@ -1610,7 +1620,8 @@ export async function showHideNodes(modelGroup, scene, camera) {
         child.material &&
         child.material.color &&
         child.name &&
-        (child.name.startsWith("Base_Option") || child.name === "Base_Support_Sides")
+        (child.name.startsWith("Base_Option") ||
+          child.name === "Base_Support_Sides")
       ) {
         child.material = child.material.clone();
         child.material.color.set(await getHex(current_setting.baseFrameColor));
@@ -2034,7 +2045,8 @@ export async function updateFrameMaterial(
 
           // Load texture
           let texture_border = new THREE.TextureLoader().load(
-            "./assets/images/borders/" + setting[params.selectedGroupName].frameBorderColor
+            "./assets/images/borders/" +
+              setting[params.selectedGroupName].frameBorderColor
           );
           texture_border = await setTextureParams(texture_border);
           let material = border_texture_material.clone();
@@ -2052,9 +2064,13 @@ export async function updateFrameMaterial(
           // });
           // child.material = newMaterial;
           // child.material.needsUpdate = true;
-        } else if (setting[params.selectedGroupName].frameMaterialType === "color") {
+        } else if (
+          setting[params.selectedGroupName].frameMaterialType === "color"
+        ) {
           // Apply color
-          const material = await commonMaterial(parseInt(setting[params.selectedGroupName].frameBorderColor, 16));
+          const material = await commonMaterial(
+            parseInt(setting[params.selectedGroupName].frameBorderColor, 16)
+          );
           // child.material = child.material.clone()
           child.material = material;
           child.material.needsUpdate = true;
@@ -2089,7 +2105,8 @@ export async function updateFrameMaterial(
       if (setting[params.selectedGroupName].shelfMaterialType === "texture") {
         // Load texture
         let texture_border = new THREE.TextureLoader().load(
-          "./assets/images/borders/" + setting[params.selectedGroupName].defaultShelfColor
+          "./assets/images/borders/" +
+            setting[params.selectedGroupName].defaultShelfColor
         );
         texture_border = await setTextureParams(texture_border);
         let material = border_texture_material.clone();
@@ -2097,9 +2114,13 @@ export async function updateFrameMaterial(
         child.material = material;
         // child.material = [border_texture_material, shadow];
         child.material.needsUpdate = true;
-      } else if (setting[params.selectedGroupName].shelfMaterialType === "color") {
+      } else if (
+        setting[params.selectedGroupName].shelfMaterialType === "color"
+      ) {
         // Apply color
-        const material = await commonMaterial(parseInt(setting[params.selectedGroupName].defaultShelfColor, 16));
+        const material = await commonMaterial(
+          parseInt(setting[params.selectedGroupName].defaultShelfColor, 16)
+        );
         child.material = material;
         // child.material = [material, shadow];
         child.material.needsUpdate = true;
@@ -2914,11 +2935,21 @@ export async function findParentNodeByName(node, parentName, isVisible = null) {
   return null;
 }
 
-export async function addCloseButton(modelName, accordionItem, modelGroup, mergedArray) {
+export async function addCloseButton(
+  modelName,
+  accordionItem,
+  modelGroup,
+  mergedArray
+) {
   const closeButtonDiv = document.createElement("div");
   closeButtonDiv.classList.add("control-group");
   const closeButton = document.createElement("button");
-  closeButton.classList.add("btn", "btn-danger", "btn-sm", "model-close-button");
+  closeButton.classList.add(
+    "btn",
+    "btn-danger",
+    "btn-sm",
+    "model-close-button"
+  );
   closeButton.type = "button";
   closeButton.innerHTML = "Delete";
   closeButtonDiv.appendChild(closeButton);
@@ -2943,10 +2974,16 @@ export async function addCloseButton(modelName, accordionItem, modelGroup, merge
     }
     await centerMainModel(modelGroup);
   });
-
 }
 
-export async function addAnotherModels(allGroupNames, modelGroup, scene, camera, modelName = null, side = null) {
+export async function addAnotherModels(
+  allGroupNames,
+  modelGroup,
+  scene,
+  camera,
+  modelName = null,
+  side = null
+) {
   let defaultModel = modelGroup.getObjectByName("main_model");
   // console.log('defaultModel', defaultModel);
 
@@ -2955,10 +2992,7 @@ export async function addAnotherModels(allGroupNames, modelGroup, scene, camera,
 
   const nodesToRemove = [];
   await traverseAsync(newModel, async (child) => {
-    if (
-      hangerNames.includes(child.name) ||
-      rackNames.includes(child.name)
-    ) {
+    if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
       // Mark node for removal
       nodesToRemove.push(child);
     }
@@ -2981,23 +3015,17 @@ export async function addAnotherModels(allGroupNames, modelGroup, scene, camera,
     }
 
     modelName = newModelName;
-
   }
 
   newModel.name = modelName; // If modelName is not null or undefined
 
-
   //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
-  const modelBoundingBox = await computeBoundingBox(
-    newModel,
-    allModelNames
-  );
+  const modelBoundingBox = await computeBoundingBox(newModel, allModelNames);
   const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
 
   const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
   const center = boundingBox.getCenter(new THREE.Vector3());
   const cameraOnLeft = side || camera.position.x < center.x;
-
 
   if (cameraOnLeft) {
     newModel.position.x = boundingBox.max.x + modelWidth / 2;
@@ -3011,12 +3039,10 @@ export async function addAnotherModels(allGroupNames, modelGroup, scene, camera,
 
   if (!setting[modelName]) {
     setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
-    setting[modelName].topFrameBackgroundColor =
-      params.topFrameBackgroundColor;
+    setting[modelName].topFrameBackgroundColor = params.topFrameBackgroundColor;
     setting[modelName].mainFrameBackgroundColor =
       params.mainFrameBackgroundColor;
-    setting[modelName].defaultModel =
-      params.addedVisibleModelName;
+    setting[modelName].defaultModel = params.addedVisibleModelName;
   }
 
   await traverseAsync(newModel, async (mesh) => {
@@ -3045,19 +3071,26 @@ export async function addAnotherModels(allGroupNames, modelGroup, scene, camera,
       }
     }
   });
-  
+
   modelGroup.add(newModel);
 
   await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
 }
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModelView(mergedArray, cameraOnLeft, modelGroup) {
+export async function addAnotherModelView(
+  mergedArray,
+  cameraOnLeft,
+  modelGroup
+) {
   const rightControls = document.querySelector(".model_items");
 
   // Loop through the mergedArray and append cards for visible models
   await mergedArray.forEach(async (modelName) => {
-    if (modelName.startsWith("Other_") && !document.querySelector(`.accordion-item[data-model="${modelName}"]`)) {
+    if (
+      modelName.startsWith("Other_") &&
+      !document.querySelector(`.accordion-item[data-model="${modelName}"]`)
+    ) {
       // Clone the accordion item
       const accordionItem = await cloneAccordionItem(modelName);
 
@@ -3077,7 +3110,9 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft, modelGroup)
         });
 
         // Set the parent for the new accordion item
-        accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
+        accordionItem
+          .querySelector(".accordion-collapse")
+          .setAttribute("data-bs-parent", "#accordionModel");
         accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
         await addCloseButton(modelName, accordionItem, modelGroup, mergedArray);
 
@@ -3150,9 +3185,10 @@ export async function cloneAccordionItem(modelName) {
   let displayName = modelName
     .replace("Other_", "") // Remove "Other_"
     .replace(/_/g, " ") // Replace underscores with spaces
-    .replace(/\b\w/g, char => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase());
   newAccordionItem.setAttribute("data-model", modelName);
-  newAccordionItem.querySelector(".accordion-header button").textContent = displayName; // Change the title
+  newAccordionItem.querySelector(".accordion-header button").textContent =
+    displayName; // Change the title
 
   // Set the new ID and aria-controls to ensure uniqueness
   const newId = `collapse${modelName}`;
@@ -3180,10 +3216,17 @@ export async function cloneAccordionItem(modelName) {
   return newAccordionItem;
 }
 
-export async function addHangers(modelGroup, hangerType, hanger_model, hanger_golf_club_model, scene, camera, lastside = null, position = null) {
-
-  let hangermodel,
-    hanger;
+export async function addHangers(
+  modelGroup,
+  hangerType,
+  hanger_model,
+  hanger_golf_club_model,
+  scene,
+  camera,
+  lastside = null,
+  position = null
+) {
+  let hangermodel, hanger;
 
   // const loader = new GLTFLoader();
   if (golfClubNames.includes(hangerType)) {
@@ -3191,11 +3234,9 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
   } else {
     hangermodel = hanger_model;
   }
-  let selectedGroupName = params.selectedGroupName
+  let selectedGroupName = params.selectedGroupName;
   let defaultModelName = setting[selectedGroupName].defaultModel;
-  let selectedGroupModel = modelGroup.getObjectByName(
-    selectedGroupName
-  );
+  let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
   let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
   if (hangermodel) {
     // console.log('hangermodel', hangermodel)
@@ -3207,17 +3248,15 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
       hanger = hanger_object.clone();
       if (hanger) {
         let frame = defaultModel.getObjectByName("Frame");
-        let side
+        let side;
         if (lastside) {
-          side = lastside
-        }
-        else {
+          side = lastside;
+        } else {
           side = camera.position.z > 0 ? "Front" : "Back";
         }
 
-
-
-        const hangerPrefix = selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+        const hangerPrefix =
+          selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
         let hangerArrayKey = hangerPrefix + hangerType;
 
         let conditionFlag = await isHangerAdd(
@@ -3246,16 +3285,11 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
 
             // Get the bounding box of the frame to find its center
             const frameBoundingBox = new THREE.Box3().setFromObject(frame);
-            const frameCenter = frameBoundingBox.getCenter(
-              new THREE.Vector3()
-            );
-            const frameWidth =
-              frameBoundingBox.max.x - frameBoundingBox.min.x;
+            const frameCenter = frameBoundingBox.getCenter(new THREE.Vector3());
+            const frameWidth = frameBoundingBox.max.x - frameBoundingBox.min.x;
 
             // Get the bounding box of the hanger
-            const hangerBoundingBox = new THREE.Box3().setFromObject(
-              hanger
-            );
+            const hangerBoundingBox = new THREE.Box3().setFromObject(hanger);
             const hangerCenter = hangerBoundingBox.getCenter(
               new THREE.Vector3()
             );
@@ -3312,11 +3346,12 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
             };
 
             if (position) {
-              hanger.position.x = position.x
+              hanger.position.x = position.x;
             }
 
             params.hangerCount = params.hangerCount || {};
-            params.hangerCount[hangerArrayKey] = params.hangerCount[hangerArrayKey] || 0;
+            params.hangerCount[hangerArrayKey] =
+              params.hangerCount[hangerArrayKey] || 0;
             params.hangerCount[hangerArrayKey] += 1;
 
             let count = params.hangerCount[hangerArrayKey];
@@ -3329,7 +3364,6 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
 
             // console.log('params.hangerCount', params.hangerCount);
             // console.log('params.hangerAdded', params.hangerAdded);
-
 
             await showHideNodes(modelGroup, scene, camera);
           } else {
@@ -3346,13 +3380,19 @@ export async function addHangers(modelGroup, hangerType, hanger_model, hanger_go
   }
 }
 
-export async function addRacks(modelGroup, rackType, rack_wooden_model, rack_glass_model, scene, camera, lastside = null, position = null) {
-
-  let selectedGroupName = params.selectedGroupName
+export async function addRacks(
+  modelGroup,
+  rackType,
+  rack_wooden_model,
+  rack_glass_model,
+  scene,
+  camera,
+  lastside = null,
+  position = null
+) {
+  let selectedGroupName = params.selectedGroupName;
   let defaultModelName = setting[selectedGroupName].defaultModel;
-  let selectedGroupModel = modelGroup.getObjectByName(
-    selectedGroupName
-  );
+  let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
   let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
   let rack_model;
   if (rackType == "RackGlassShelf") {
@@ -3374,21 +3414,19 @@ export async function addRacks(modelGroup, rackType, rack_wooden_model, rack_gla
       let topExSide = frame.getObjectByName("Top_Ex");
 
       if (topExSide && leftSideSlotted && leftSideSlotted.visible) {
-        let side
+        let side;
         if (lastside) {
-          side = lastside
-        }
-        else {
+          side = lastside;
+        } else {
           side = camera.position.z > 0 ? "Front" : "Back";
         }
 
-        const rackPrefix = selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+        const rackPrefix =
+          selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
         let rackArrayKey = rackPrefix + rackType;
 
         // Calculate the bounding box for the frame to find the center
-        const topExSideBoundingBox = new THREE.Box3().setFromObject(
-          topExSide
-        );
+        const topExSideBoundingBox = new THREE.Box3().setFromObject(topExSide);
         const topExSideCenter = topExSideBoundingBox.getCenter(
           new THREE.Vector3()
         ); // Get center of frame
@@ -3432,7 +3470,7 @@ export async function addRacks(modelGroup, rackType, rack_wooden_model, rack_gla
         rack.add(removeRackIcon);
 
         if (position) {
-          rack.position.y = position.y
+          rack.position.y = position.y;
         }
 
         // Update removeRack to always face the camera
@@ -3459,43 +3497,41 @@ export async function addRacks(modelGroup, rackType, rack_wooden_model, rack_gla
 }
 
 export async function saveModelData(name, dataToSave, modelId = 0) {
-
   // const model_data = dataToSave;
-  dataToSave['action'] = 'save_model_data'
-  dataToSave['id'] = modelId || 0
-  dataToSave['name'] = name
-
+  dataToSave["action"] = "save_model_data";
+  dataToSave["id"] = modelId || 0;
+  dataToSave["name"] = name;
 
   const model_data = JSON.stringify(dataToSave);
   // console.log('model_data', model_data);
 
-  fetch('api.php', {
-    method: 'POST',
+  fetch("api.php", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: model_data,
   })
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       if (data.success) {
         alert("Model data saved successfully!");
       } else {
         alert("Error saving model data:", data.error);
       }
     })
-    .catch(error => console.error("Fetch error:", error));
+    .catch((error) => console.error("Fetch error:", error));
 }
 
 export async function getModelData(id) {
   try {
     // Send model state to the backend
-    const response = await fetch('api.php', {
-      method: 'POST',
+    const response = await fetch("api.php", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ action: 'get_model_data', id: id }), // Ensure data is stringified
+      body: JSON.stringify({ action: "get_model_data", id: id }), // Ensure data is stringified
     });
 
     const data = await response.json(); // Wait for the JSON response
@@ -3538,4 +3574,292 @@ export async function setModelOpacity(
       child.material.needsUpdate = true;
     }
   });
+}
+async function takeAngleShots(
+  modelGroup,
+  camera,
+  renderer,
+  angleImages,
+  scene
+) {
+  const camPosition = [camera.position.x, camera.position.y, camera.position.z];
+  // Save the original size of the renderer for high-res images
+  const originalWidth = renderer.domElement.width;
+  const originalHeight = renderer.domElement.height;
+  const scaleFactor = 3; // Increase resolution
+  renderer.setSize(
+    originalWidth * scaleFactor,
+    originalHeight * scaleFactor,
+    false
+  );
+  camera.aspect =
+    (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
+  camera.updateProjectionMatrix();
+
+  // Get the model's bounding box to determine its size
+  const boundingBox = new THREE.Box3().setFromObject(modelGroup);
+  const size = boundingBox.getSize(new THREE.Vector3());
+  const center = boundingBox.getCenter(new THREE.Vector3());
+
+  console.log("Model Size:", size); // Check if the size values are reasonable
+  console.log("Model Center:", center);
+
+  // Adjust camera distance based on model size (add a safety check for large values)
+  let maxDim = Math.max(size.x, size.y, size.z);
+  if (maxDim === 0 || isNaN(maxDim)) {
+    maxDim = 1; // Fallback if the model size is too small or undefined
+  }
+
+  const cameraDistance = Math.min(maxDim * 2, size.x * 0.7); // Limit max camera distance
+
+  // Define four dynamic angles based on the model's size
+  const angles = [
+    {
+      x: cameraDistance,
+      y: cameraDistance > 1000 ? 1000 : cameraDistance,
+      z: cameraDistance * 0.7,
+    }, // Front-Top-Right
+    {
+      x: -cameraDistance,
+      y: cameraDistance > 1000 ? 1000 : cameraDistance,
+      z: -cameraDistance * 0.7,
+    }, // Back-Top-Left
+    {
+      x: 0,
+      y: cameraDistance > 1000 ? 1000 : cameraDistance,
+      z: cameraDistance,
+    }, // Front-Top-Center
+    {
+      x: 0,
+      y: cameraDistance > 1000 ? 1000 : cameraDistance,
+      z: -cameraDistance,
+    }, // Back-Top-Center
+    {
+      x: cameraDistance,
+      y: cameraDistance > 1000 ? 1000 : cameraDistance,
+      z: 0,
+    }, // Right-Top-Center
+  ];
+
+  let counter = 1;
+  const fetchPromises = angles.map((angle) =>
+    captureScreenshot(angle.x, angle.y, angle.z, scene, angleImages, counter++)
+  );
+
+  await Promise.all(fetchPromises);
+
+  // Revert the renderer back to its original size
+  renderer.setSize(originalWidth, originalHeight, false);
+  camera.aspect = originalWidth / originalHeight;
+  camera.position.x = camPosition[0];
+  camera.position.y = camPosition[1];
+  camera.position.z = camPosition[2];
+  camera.updateProjectionMatrix();
+
+  // Re-render the scene at the original size
+  renderer.render(scene, camera);
+
+  async function captureScreenshot(
+    angleX,
+    angleY,
+    angleZ,
+    scene,
+    angleImages,
+    counter
+  ) {
+    // Rotate the camera around the model
+    camera.position.set(angleX, angleY, angleZ);
+    camera.lookAt(scene.position); // Ensure camera is looking at the model's position
+    renderer.render(scene, camera);
+
+    // Capture the screenshot from the current camera angle
+    const screenshotData = renderer.domElement.toDataURL(); // Get screenshot as data URL
+    const unixTime = Math.floor(Date.now() / 1000);
+
+    // Optionally, download the screenshot
+    // downloadScreenshot(
+    //   screenshotData,
+    //   `screenshot_angle_${angleX}_${angleY}_${angleZ}.png`
+    // );
+    // Send screenshot to PHP
+    try {
+      const response = await fetch("api.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: screenshotData,
+          filename: `screenshot_angle_${unixTime}_${counter}.png`,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        angleImages[`Counter${counter}`] = data.path;
+      } else {
+        console.error("Error saving screenshot:", data.error);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  }
+
+  // Helper function to download the screenshot
+  // function downloadScreenshot(dataUrl, filename) {
+  //   const link = document.createElement("a");
+  //   link.href = dataUrl;
+  //   link.download = filename;
+  //   link.click();
+  // }
+}
+
+async function getModelMeasurement(
+  model,
+  heightMeasurementNames,
+  modelMeasurement
+) {
+  const bbox = new THREE.Box3();
+  model.traverse(async function (modelNode) {
+    if (heightMeasurementNames.includes(modelNode.name)) {
+      let isNodeVisible = modelNode.visible;
+      if (isNodeVisible) {
+        bbox.expandByObject(modelNode);
+      }
+    }
+  });
+  if (bbox) {
+    let multiplier = 1;
+    const min = bbox.min.clone();
+    const max = bbox.max.clone();
+    // Create width measurement group
+    const width = max.x - min.x;
+    modelMeasurement["width"] = `${width.toFixed(0) * multiplier}mm`;
+    // Create height measurement group
+    const height = max.y - min.y;
+    modelMeasurement["height"] = `${height.toFixed(0) * multiplier}mm`;
+    // Create depth measurement group
+    const depth = max.z - min.z;
+    modelMeasurement["depth"] = `${depth.toFixed(0) * multiplier}mm`;
+  }
+}
+
+export async function savePdfData(
+  name = "test",
+  dataToSave,
+  modelGroup,
+  camera,
+  renderer,
+  scene
+) {
+  let modelMeasurementData = {};
+  await traverseAsync(modelGroup, async (child) => {
+    if (allModelNames.includes(child.name) && child.visible) {
+      let modelMeasurement = {};
+      await getModelMeasurement(
+        child,
+        heightMeasurementNames,
+        modelMeasurement
+      );
+      // Check if the parent key exists; if not, create it as an object
+      if (!modelMeasurementData[child.parent.name]) {
+        modelMeasurementData[child.parent.name] = {};
+      }
+      // Assign the measurement data under the appropriate keys
+      modelMeasurementData[child.parent.name][child.name] = modelMeasurement;
+    }
+  });
+
+  let angleImages = {};
+
+  await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);
+
+  dataToSave["angleImages"] = angleImages;
+  dataToSave["ModelData"] = modelMeasurementData;
+  dataToSave["action"] = "save_Pdf_data";
+  // dataToSave["id"] = modelId || 0;
+  // dataToSave["name"] = name;
+  // console.log(dataToSave);
+  // return
+  const pdf_data = JSON.stringify(dataToSave);
+  fetch("api.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: pdf_data,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log("Model data saved successfully!");
+      } else {
+        console.error("Error saving model data:", data.error);
+      }
+    })
+    .catch((error) => console.error("Fetch error:", error));
+}
+
+async function saveModel(blob, filename) {
+  if (blob) {
+    await saveArrayBuffer(blob, filename); // Save the file only if blob is not null
+  }
+}
+
+async function exportGLB(clone, name) {
+  const gltfExporter = new GLTFExporter();
+  const result = await gltfExporter.parseAsync(clone, { binary: true });
+  const blob = new Blob([result], { type: "application/octet-stream" });
+  await saveModel(blob, `${name}.glb`);
+}
+
+async function exportUSDZ(clone, name) {
+  const usdzExporter = new USDZExporter();
+  const result = await usdzExporter.parse(clone);
+  const blob = new Blob([result], { type: "application/octet-stream" });
+  await saveModel(blob, `${name}.usdz`);
+}
+
+export async function exportUsdz(model, name) {
+  const clone = model.clone();
+
+  // Scale the clone model proportionally
+  const box = new THREE.Box3().setFromObject(clone);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  // const scaleFactor = 1 / Math.min(size.x, size.y, size.z);
+  // clone.scale.set(scaleFactor, scaleFactor, scaleFactor);
+  // alert(scaleFactor);
+  // clone.scale.multiplyScalar(0.001);
+  clone.scale.set(0.001, 0.001, 0.001);
+  clone.updateMatrixWorld();
+  clone.position.set(0, 0, 0);
+
+  // Detect device type and export accordingly
+  const isIOS = /iPhone|iPad|iPod/.test(
+    navigator.userAgent || navigator.vendor || window.opera
+  );
+
+  if (isIOS) {
+    await exportUSDZ(clone, name); // Export USDZ for iOS devices
+  } else {
+    await exportGLB(clone, name); // Export only GLB for other devices
+  }
+}
+
+async function saveArrayBuffer(blob, filename) {
+  const formData = new FormData();
+  formData.append("file", blob, filename);
+  formData.append("action", "saveModelFile");
+
+  return fetch("api.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("File saved:", data);
+      return data; // Ensure data is returned so that exportUsdz can await it
+    })
+    .catch((error) => {
+      console.error("Error saving file:", error);
+      throw error; // Re-throw to handle error in exportUsdz
+    });
 }

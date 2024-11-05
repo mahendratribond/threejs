@@ -52,4 +52,6 @@ Thumbs.db
 
 three/
 assets/models/generated/
+vendor/
+uploads/
 
