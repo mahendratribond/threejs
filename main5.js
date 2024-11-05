@@ -2425,6 +2425,9 @@ if (closeButtonAR){
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
     
+  })
+};
+    
 // ----------------------------------------------------------------------------------------------------------
 if (showInAR) {
   showInAR.addEventListener("click", async function () {
