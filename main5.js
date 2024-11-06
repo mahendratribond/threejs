@@ -537,7 +537,7 @@ async function loadPreviousModels() {
         if (
           setting[params.selectedGroupName].headerRodToggle === true &&
           setting[params.selectedGroupName].headerRodToggle ===
-            setting[params.selectedGroupName].headerUpDown
+          setting[params.selectedGroupName].headerUpDown
         ) {
           setting[params.selectedGroupName].headerUpDown =
             !setting[params.selectedGroupName].headerRodToggle;
@@ -556,65 +556,69 @@ async function loadPreviousModels() {
       await showHideNodes(modelGroup, scene, camera);
 
       // Sequentially process hangerAdded entries with delay
-      for (const [hangerArrayKey, value] of Object.entries(hangerAdded)) {
-        const hangerArray = hangerArrayKey.split("-");
-        const groupName = hangerArray[0] || "";
-        const modelName = hangerArray[1] || "";
-        const side = hangerArray[2] || "";
-        const hangerType = hangerArray[3] || "";
+      if (hangerAdded) {
+        for (const [hangerArrayKey, value] of Object.entries(hangerAdded)) {
+          const hangerArray = hangerArrayKey.split("-");
+          const groupName = hangerArray[0] || "";
+          const modelName = hangerArray[1] || "";
+          const side = hangerArray[2] || "";
+          const hangerType = hangerArray[3] || "";
 
-        params.selectedGroupName = groupName;
-        const lastDefaultModel = setting[groupName].defaultModel;
-        setting[groupName].defaultModel = modelName;
+          params.selectedGroupName = groupName;
+          const lastDefaultModel = setting[groupName].defaultModel;
+          setting[groupName].defaultModel = modelName;
 
-        if (hangerArrayKey.startsWith(groupName)) {
-          for (const position of Object.values(value)) {
-            await addHangers(
-              modelGroup,
-              hangerType,
-              hanger_model,
-              hanger_golf_club_model,
-              scene,
-              camera,
-              side,
-              position
-            );
-            await delay(100); // Delay for hangers
+          if (hangerArrayKey.startsWith(groupName)) {
+            for (const position of Object.values(value)) {
+              await addHangers(
+                modelGroup,
+                hangerType,
+                hanger_model,
+                hanger_golf_club_model,
+                scene,
+                camera,
+                side,
+                position
+              );
+              await delay(100); // Delay for hangers
+            }
           }
-        }
 
-        setting[groupName].defaultModel = lastDefaultModel;
+          setting[groupName].defaultModel = lastDefaultModel;
+        }
       }
 
       // Sequentially process rackAdded entries with delay
-      for (const [rackArrayKey, value] of Object.entries(rackAdded)) {
-        const rackArray = rackArrayKey.split("-");
-        const groupName = rackArray[0] || "";
-        const modelName = rackArray[1] || "";
-        const side = rackArray[2] || "";
-        const rackType = rackArray[3] || "";
+      if (rackAdded) {
+        for (const [rackArrayKey, value] of Object.entries(rackAdded)) {
+          const rackArray = rackArrayKey.split("-");
+          const groupName = rackArray[0] || "";
+          const modelName = rackArray[1] || "";
+          const side = rackArray[2] || "";
+          const rackType = rackArray[3] || "";
 
-        params.selectedGroupName = groupName;
-        const lastDefaultModel = setting[groupName].defaultModel;
-        setting[groupName].defaultModel = modelName;
+          params.selectedGroupName = groupName;
+          const lastDefaultModel = setting[groupName].defaultModel;
+          setting[groupName].defaultModel = modelName;
 
-        if (rackArrayKey.startsWith(groupName)) {
-          for (const position of Object.values(value)) {
-            await addRacks(
-              modelGroup,
-              rackType,
-              rack_wooden_model,
-              rack_glass_model,
-              scene,
-              camera,
-              side,
-              position
-            );
-            await delay(100); // Delay for racks
+          if (rackArrayKey.startsWith(groupName)) {
+            for (const position of Object.values(value)) {
+              await addRacks(
+                modelGroup,
+                rackType,
+                rack_wooden_model,
+                rack_glass_model,
+                scene,
+                camera,
+                side,
+                position
+              );
+              await delay(100); // Delay for racks
+            }
           }
-        }
 
-        setting[groupName].defaultModel = lastDefaultModel;
+          setting[groupName].defaultModel = lastDefaultModel;
+        }
       }
 
       params.selectedGroupName = retrievedSelectedGroupName;
@@ -649,189 +653,6 @@ async function loadPreviousModels() {
   await loaderShowHide(false);
 }
 
-async function loadPreviousModels1() {
-  // Get the current URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get("id"); // Extract the 'id' parameter
-
-  if (id) {
-    previousData = await getModelData(id);
-    if (previousData.params) {
-      // Rebuild materials using MaterialLoader
-      const loader = new THREE.MaterialLoader();
-      let restoredMaterials = {};
-      // let lastInnerMaterial = params.lastInnerMaterial
-      await updateVariable("params", previousData.params);
-      await updateVariable("setting", previousData.setting);
-      let lastGroupNames = previousData.group_names;
-      mainFrameCropedImage = previousData.main_frame_croped_image;
-      topFrameCropedImage = previousData.top_frame_croped_image;
-
-      let mainModelIndex = lastGroupNames.indexOf("main_model");
-      let retrievedSelectedGroupName = params.selectedGroupName;
-      let retrievedMaterialData = params.lastInnerMaterial;
-      let hangerAdded = params.hangerAdded;
-      params.hangerAdded = {};
-      let rackAdded = params.rackAdded;
-      params.rackAdded = {};
-
-      for (let [index, groupName] of lastGroupNames.entries()) {
-        let side;
-        if (index < mainModelIndex) {
-          side = false;
-        } else if (index >= mainModelIndex) {
-          side = true;
-        }
-
-        restoredMaterials[groupName] = {};
-        for (let materialName in retrievedMaterialData[groupName]) {
-          restoredMaterials[groupName][materialName] = loader.parse(
-            retrievedMaterialData[groupName][materialName]
-          );
-        }
-        params.lastInnerMaterial = restoredMaterials;
-        if (groupName.startsWith("Other_")) {
-          await addAnotherModels(
-            allGroupNames,
-            modelGroup,
-            scene,
-            camera,
-            groupName,
-            side
-          );
-        }
-      }
-      await centerMainModel(modelGroup);
-      for (let [index, groupName] of lastGroupNames.entries()) {
-        setTimeout(async function () {
-          params.selectedGroupName = groupName;
-          if (
-            setting[params.selectedGroupName].headerRodToggle == true &&
-            setting[params.selectedGroupName].headerRodToggle ==
-              setting[params.selectedGroupName].headerUpDown
-          ) {
-            setting[params.selectedGroupName].headerUpDown =
-              !setting[params.selectedGroupName].headerRodToggle;
-          }
-          await setTopFrameCropedImage();
-          await setMainFrameCropedImage();
-          await showHideNodes(modelGroup, scene, camera);
-          await centerMainModel(modelGroup);
-        }, 1000 * (index + 0.1));
-      }
-
-      await centerMainModel(modelGroup);
-      await showHideNodes(modelGroup, scene, camera);
-
-      console.log("hangerAdded", hangerAdded);
-      setTimeout(async function () {
-        let i = 1;
-        for (let [hangerArrayKey, value] of Object.entries(hangerAdded)) {
-          // console.log('hangerArrayKey', hangerArrayKey);
-
-          let hangerArray = hangerArrayKey.split("-"); // Split by hyphen and get the last value
-          let groupName = hangerArray[0] || "";
-          let modelName = hangerArray[1] || "";
-          let side = hangerArray[2] || "";
-          let hangerType = hangerArray[3] || "";
-          params.selectedGroupName = groupName;
-          let lastDefaultModel = setting[groupName].defaultModel;
-          setting[groupName].defaultModel = modelName;
-          if (hangerArrayKey.startsWith(groupName)) {
-            for (let position of Object.values(value)) {
-              // setTimeout(async function () {
-              await addHangers(
-                modelGroup,
-                hangerType,
-                hanger_model,
-                hanger_golf_club_model,
-                scene,
-                camera,
-                side,
-                position
-              );
-              // }, 2000 * i)
-              i++;
-            }
-          }
-          setting[groupName].defaultModel = lastDefaultModel;
-        }
-      }, 1800);
-      console.log("rackAdded", rackAdded);
-      setTimeout(async function () {
-        let i = 1;
-        for (let [rackArrayKey, value] of Object.entries(rackAdded)) {
-          // console.log('rackArrayKey', rackArrayKey);
-
-          let rackArray = rackArrayKey.split("-"); // Split by hyphen and get the last value
-          let groupName = rackArray[0] || "";
-          let modelName = rackArray[1] || "";
-          let side = rackArray[2] || "";
-          let rackType = rackArray[3] || "";
-          params.selectedGroupName = groupName;
-          let lastDefaultModel = setting[groupName].defaultModel;
-          setting[groupName].defaultModel = modelName;
-          if (rackArrayKey.startsWith(groupName)) {
-            for (let position of Object.values(value)) {
-              // setTimeout(async function () {
-              await addRacks(
-                modelGroup,
-                rackType,
-                rack_wooden_model,
-                rack_glass_model,
-                scene,
-                camera,
-                side,
-                position
-              );
-              // await addHangers(modelGroup, rackType, rack_model, rack_golf_club_model, scene, camera, side, position);
-              // }, 2000 * i)
-              i++;
-            }
-          }
-          setting[groupName].defaultModel = lastDefaultModel;
-        }
-      }, 1800);
-
-      // setTimeout(async function () {
-      params.selectedGroupName = retrievedSelectedGroupName;
-      //   await centerMainModel(modelGroup);
-      //   await showHideNodes(modelGroup, scene, camera);
-      // }, 2000)
-
-      for (let name of hangerNames) {
-        let loaders = document.querySelectorAll("." + name + "_loader");
-        loaders.forEach((loader) => {
-          removeLoader(loader);
-        });
-      }
-
-      setTimeout(function () {
-        const accordionContainer = document.querySelector("#accordionModel");
-        const openAccordionItems = accordionContainer.querySelectorAll(
-          ".accordion-collapse.show"
-        );
-        openAccordionItems.forEach((item) => {
-          const bsCollapse = new bootstrap.Collapse(item, {
-            toggle: false, // Prevent toggle during the collapse
-          });
-          bsCollapse.hide(); // Explicitly hide the open accordion
-        });
-        // const lastAccordionItem = accordionContainer.querySelector(".accordion-item:last-child .accordion-collapse");
-        const lastAccordionItem = accordionContainer.querySelector(
-          `.accordion-item[data-model="${params.selectedGroupName}"] .accordion-collapse`
-        );
-        if (lastAccordionItem) {
-          // console.log('lastAccordionItem', lastAccordionItem);
-
-          const bsCollapse = new bootstrap.Collapse(lastAccordionItem, {
-            toggle: true, // This will show the collapse content
-          });
-        }
-      }, 2500);
-    }
-  }
-}
 
 async function loadHangerModels() {
   if (!hanger_rail_step) {
@@ -2415,7 +2236,7 @@ closeButton.addEventListener("click", () => {
   document.body.removeChild(document.getElementById("ArView"));
 });
 
-if (closeButtonAR){
+if (closeButtonAR) {
   closeButtonAR.addEventListener("click", () => {
     let arviewer = document.getElementById("ArView");
     arviewer.style.display = "none";
@@ -2424,10 +2245,10 @@ if (closeButtonAR){
 // ----------------------------------------------------------------------------------------------------------
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
-    
+
   })
 };
-    
+
 // ----------------------------------------------------------------------------------------------------------
 if (showInAR) {
   showInAR.addEventListener("click", async function () {
@@ -2440,10 +2261,10 @@ if (showInAR) {
 
     // Check if the file exists
     if (await checkFileExists(exportedModelFileUrl)) {
-      hideLoadingModal();      
+      hideLoadingModal();
       // Configure model viewer attributes
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      if (/iPhone|iPad|iPod/.test(userAgent)) { 
+      if (/iPhone|iPad|iPod/.test(userAgent)) {
         let ViewArForIos = document.getElementById("ViewArForIos");
         ViewArForIos.style.display = "block";
         ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
@@ -2507,7 +2328,7 @@ if (savePdfButton) {
       top_frame_croped_image: topFrameCropedImage || null,
       main_frame_croped_image: mainFrameCropedImage || null,
     };
-  
+
     await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
   });
 }
