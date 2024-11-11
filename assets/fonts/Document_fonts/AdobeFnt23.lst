@@ -1,0 +1,118 @@
+%!Adobe-FontList 1.23
+%Locale:0x409
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Invalid
+OutlineFileName:/Users/kaydogan/Desktop/2024/Slatframe/PDF Example/PDF Example Folder/Document fonts/AdobeFnt23.lst
+FileLength:2395
+FileModTime:751975047
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:Gotham-Bold
+FamilyName:Gotham
+StyleName:Bold
+MenuName:Gotham Bold
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Gotham Bold
+WritingScript:Roman
+OutlineFileName:/Users/kaydogan/Desktop/2024/Slatframe/PDF Example/PDF Example Folder/Document fonts/Gotham-Bold.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:157328
+FileModTime:242843518
+NameArray:0,Mac,4,Gotham Bold
+NameArray:0,Win,1,Gotham Bold
+NameArray:0,Win,16,Gotham
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:Gotham-Book
+FamilyName:Gotham
+StyleName:Book
+MenuName:Gotham Book
+StyleBits:0
+WeightClass:325
+WidthClass:5
+AngleClass:0
+FullName:Gotham Book
+WritingScript:Roman
+OutlineFileName:/Users/kaydogan/Desktop/2024/Slatframe/PDF Example/PDF Example Folder/Document fonts/Gotham-Book.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:158964
+FileModTime:242843510
+NameArray:0,Mac,4,Gotham Book
+NameArray:0,Win,1,Gotham Book
+NameArray:0,Win,16,Gotham
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:MinionPro-Regular
+FamilyName:Minion Pro
+StyleName:Regular
+MenuName:Minion Pro
+StyleBits:0
+WeightClass:400
+WidthClass:5
+AngleClass:0
+FullName:Minion Pro
+WritingScript:Roman
+OutlineFileName:/Users/kaydogan/Desktop/2024/Slatframe/PDF Example/PDF Example Folder/Document fonts/MinionPro-Regular.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:218640
+FileModTime:701036849
+DesignSize:110
+NameArray:0,Mac,4,Minion Pro
+NameArray:0,Win,1,Minion Pro
+%EndFont
+
+%BeginFont
+Handler:DirectoryHandler
+FontType:Type1
+FontName:SFProDisplay-Medium
+FamilyName:SF Pro Display
+StyleName:Medium
+MenuName:SF Pro Display
+StyleBits:0
+WeightClass:500
+WidthClass:5
+AngleClass:0
+FullName:SF Pro Display Medium
+WritingScript:Roman
+OutlineFileName:/Users/kaydogan/Desktop/2024/Slatframe/PDF Example/PDF Example Folder/Document fonts/SF-Pro-Display-Medium.otf
+DataFormat:sfntData
+UsesStandardEncoding:yes
+isCFF:yes
+hasSVG:no
+hasCOLR:no
+VariableFontType:NonVariableFont
+FileLength:335512
+FileModTime:517891784
+NameArray:0,Win,1,SF Pro Display
+NameArray:0,Win,16,SF Pro Display
+%EndFont
+

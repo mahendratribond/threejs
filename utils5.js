@@ -3767,11 +3767,11 @@ export async function savePdfData(
     }
   });
 
-  let angleImages = {};
+  // let angleImages = {};
 
-  await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);
+  // await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);
 
-  dataToSave["angleImages"] = angleImages;
+  // dataToSave["angleImages"] = ModelImageName;
   dataToSave["ModelData"] = modelMeasurementData;
   dataToSave["action"] = "save_Pdf_data";
   // dataToSave["id"] = modelId || 0;

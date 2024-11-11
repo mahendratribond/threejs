@@ -83,32 +83,83 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     }
 } elseif (!empty($data['action']) && $data['action'] == 'save_Pdf_data') {
     $mpdf = new \Mpdf\Mpdf([
-            'tempDir' => './uploads',
-            'format' => 'A4',
-            'margin_left' => 11,
-            'margin_right' => 12,
-            'margin_top' => 13,
-            'margin_bottom' => 12,
-            'margin_header' => 0,
-            'margin_footer' => 8,
-        ]);
+        'tempDir' => './uploads',
+        'format' => 'A4-L',
+        'margin_left' => 0,
+        'margin_right' => 0,
+        'margin_top' => 0,
+        'margin_bottom' => 0,
+        'margin_header' => 0,
+        'margin_footer' => 0,
+    ]);
+    // Register fonts in the mPDF configuration
+    $fontDir = __DIR__ . '/assets/fonts/Document_fonts';
+    $mpdf->fontdata['MinionPro'] = [
+        'R' => $fontDir . '/MinionPro-Regular.otf',
+    ];
+    $mpdf->fontdata['Gotham'] = [
+        'B' => $fontDir . '/Gotham-Bold.otf',
+    ];
+    $mpdf->fontdata['GothamBook'] = [
+        'R' => $fontDir . '/Gotham-Book.otf',
+    ];
+
+    // First page HTML content
+    ob_start();
+    include './pdfContentFile/pdfFrontpage.html'; // Adjust the path if needed
+    $firstPageHtml = ob_get_clean();
+
+    // Write the first page content
+    $mpdf->WriteHTML($firstPageHtml);
+
+    // Now set the footer for subsequent pages
     $mpdf->SetHTMLFooter('
-    <table width="100%">
+    <table style="width:100%; padding-bottom:0px; margin-bottom: 0px">
         <tr>
-            <td width="50%" style="text-align: left; font-size: 11px;font-family:arial;"><b>BIGINSTORE</b> | THREE MODEL </td>
-            <td width="50%" align="right" style="font-size: 11px;font-family:arial;">Page {PAGENO}/{nbpg}</td>
+            <td style="width:13.2%; background-color:#de1a40; color:white; padding:0px; padding-right:10px; text-align:right;">
+                <p style="font-size:10px; font-weight:bold; letter-spacing:1px; margin:0px; padding:0px;">PATENT PENDING</p>
+            </td>
+            <td style="width:1.5%; padding: 0;">
+            </td>
+            <td style="width:82.3%; padding: 0;">
+                <div style="height:1px; margin:0; border:0; padding:0;"><hr></div>
+            </td>
+            <td style="width:3%; padding: 0;">
+            </td>
         </tr>
+    </table>
+    <table width="96.6%" style="padding:0px 0px 14px 0px;">
+        <tbody>
+            <tr>
+                <td width="50%" style="text-align: left; font-size: 11px; padding-left:37px;">
+                    <p style="font-size:16px; color:gray;"><b style="color:#00635a; font-size:15px">E: </b>sales@slatframe.com   &nbsp;&nbsp;|&nbsp;&nbsp;   <b
+                            style="color:#00635a; font-size:15px">W:
+                        </b>www.slatframe.com </p>
+                </td>
+                <td width="50%" align="right" style="font-size: 11px;">
+                    <table style="width: auto; text-align: right;">
+                        <tr>
+                            <td style="color: #00635a; font-size: 11px; font-weight:bold; padding: 0; text-align: left;">DESIGNED ON</td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 20px; font-family: GothamBook, sans-serif; font-weight: lighter; padding: 0; margin: 0;">
+                                <span style="font-family: Gotham, sans-serif; font-weight: bold;">SLAT</span>FRAME
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
     </table>');
 
-    // Start output buffering
+
+    // Start output buffering for the remaining content
     ob_start();
-    // Include the HTML template
-    include 'pdfContent.php'; // Adjust the path if needed
-    // Get the contents of the buffer
-    $html = ob_get_clean();
-    // Load the HTML content from the file
-    // $html = file_get_contents('content.html'); // Adjust the path if necessary
-    $mpdf->WriteHTML($html);
+    include './pdfContentFile/pdfContent.php'; // Adjust the path if needed
+    $additionalContent = ob_get_clean();
+
+    // Write remaining content with footer applied
+    $mpdf->WriteHTML($additionalContent);
 
     // Output the PDF
     $filenameLoc = "./uploads/sample1.pdf";
@@ -126,7 +177,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $decodedImage = base64_decode($base64Image);
 
     // Save the image to the server
-    $savePath = "./screenshots/" .time()."_". $filename; // Save to "screenshots" directory
+    $savePath = "./screenshots/". $filename; // Save to "screenshots" directory
     if (file_put_contents($savePath, $decodedImage)) {
         echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $savePath]);
         exit;
