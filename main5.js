@@ -2246,7 +2246,13 @@ if (closeButtonAR) {
 async function cloneModelGroup(model) {
   let cloneModelGroup = model.clone();
   let CloneArr = [];
-  await cloneModelGroup.traverse((node) => {
+  await traverseAsync(cloneModelGroup, async (node) => {
+    if (node.visible && node.name.startsWith("Hanger_")) {
+      console.log(node);
+      node.parent.remove(node);
+    }
+  });
+  await traverseAsync(cloneModelGroup, async (node) => {
     if (node.visible && node.name.startsWith("Model_")) {
       CloneArr.push(node);
     }
@@ -2263,13 +2269,12 @@ async function cloneModelGroup(model) {
             node.children.splice(index, 1);
           }
         }
-      } else {
-        if (childNode.name == "Cone") {
-          childNode.parent.remove(childNode);
-        }
+      } else if (childNode.name == "Cone") {
+        childNode.parent.remove(childNode);
       }
     });
   });
+  console.log(CloneArr);
 
   return CloneArr;
 }
@@ -2277,6 +2282,11 @@ async function cloneMainModelGroup(model) {
   let cloneModelGroup = model.clone();
   let CloneArr = [];
   // Traverse to find visible models that start with "Model_"
+  await traverseAsync(cloneModelGroup, async (node) => {
+    if (node.visible && node.name.startsWith("Hanger_")) {
+      node.parent.remove(node);
+    }
+  });
   cloneModelGroup.children.forEach(async (child) => {
     await child.traverse((node) => {
       if (node.visible && node.name.startsWith("Model_")) {
@@ -2315,24 +2325,152 @@ async function renderAndDownload(
   tempRenderer.render(scene, camera);
   const screenshotData = tempRenderer.domElement.toDataURL();
   const unixTime = Math.floor(Date.now() / 1000);
-  downloadScreenshotwithDiffCanvas(
+  await downloadScreenshotwithDiffCanvas(
     screenshotData,
     `model-${name}-${viewName}-${unixTime}.png`
   );
   imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
 }
 
+// Function to download the image
+async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
+  // const link = document.createElement("a");
+  // link.href = dataUrl;
+  // link.download = filename;
+  // link.click();
+  // return;
+  
+  await removeBlankSpacesFromImage(dataUrl , async (croppedImage) => {
+    try {
+      const response = await fetch("api.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: croppedImage,
+          filename: filename,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+      } else {
+        console.error("Error saving screenshot:", data.error);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  });
+
+}
+
+async function removeBlankSpacesFromImage(imageSrc, callback) {
+  const img = new Image();
+  img.src = imageSrc;
+  img.onload = function () {
+    // Create a canvas to work with the image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    // Draw the image onto the canvas
+    ctx.drawImage(img, 0, 0);
+
+    // Get the image data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const { data, width, height } = imageData;
+
+    let top = 0, bottom = height, left = 0, right = width;
+
+    // Find the top boundary
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          top = y;
+          break;
+        }
+      }
+      if (top !== 0) break;
+    }
+
+    // Find the bottom boundary
+    for (let y = height - 1; y >= 0; y--) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          bottom = y;
+          break;
+        }
+      }
+      if (bottom !== height) break;
+    }
+
+    // Find the left boundary
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          left = x;
+          break;
+        }
+      }
+      if (left !== 0) break;
+    }
+
+    // Find the right boundary
+    for (let x = width - 1; x >= 0; x--) {
+      for (let y = 0; y < height; y++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          right = x;
+          break;
+        }
+      }
+      if (right !== width) break;
+    }
+
+    // Crop dimensions
+    const cropWidth = right - left + 1;
+    const cropHeight = bottom - top + 1;
+
+    // Draw the cropped image
+    const croppedCanvas = document.createElement('canvas');
+    const croppedCtx = croppedCanvas.getContext('2d');
+    croppedCanvas.width = cropWidth;
+    croppedCanvas.height = cropHeight;
+
+    croppedCtx.drawImage(
+      canvas,
+      left, top, cropWidth, cropHeight,
+      0, 0, cropWidth, cropHeight
+    );
+
+    // Convert cropped canvas to a new image
+    const croppedImage = croppedCanvas.toDataURL();
+    callback(croppedImage); // Return the cropped image as a data URL
+  };
+}
+
+
+
 async function captureModelImages(modelGroup) {
   let imagesNameArr = [];
   scene.background = null; // No background color for transparency
-  modelGroup.children.forEach(async (model) => {
+
+  // Convert forEach to for...of loop for proper async handling
+  for (const model of modelGroup.children) {
     let isCorn = false;
 
     // Step 1: Calculate the bounding box for the current model
     let modelSize = await cloneModelGroup(model);
+    // return
+
     const box = new THREE.Box3().setFromObject(modelSize[0]);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
+
+    console.log(size);
+    console.log(box);
 
     // Prepare a temporary canvas for rendering
     const tempCanvas = document.createElement("canvas");
@@ -2343,21 +2481,21 @@ async function captureModelImages(modelGroup) {
       alpha: true,
     });
     tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-    tempRenderer.setClearColor(0x000000, 0); // Transparent background
+    tempRenderer.setClearColor(0x000000, 0);
 
-    // Traverse model children to check for "Cone" nodes
-    model.children.forEach(async (modelChild) => {
+    // Check for Cone nodes
+    for (const modelChild of model.children) {
       if (modelChild.visible) {
-        await modelChild.traverse((node) => {
+        modelChild.traverse((node) => {
           if (node.name === "Cone" && node.visible === true) {
             isCorn = true;
-            node.visible = false; // Temporarily hide the "Cone"
+            node.visible = false;
           }
         });
       }
-    });
+    }
 
-    // Hide all models except the current one in the scene
+    // Hide other models
     scene.children.forEach((childScene) => {
       if (childScene.name === "main_group") {
         childScene.children.forEach((child) => {
@@ -2368,31 +2506,20 @@ async function captureModelImages(modelGroup) {
       }
     });
 
-    // Step 2a: Front view
+    // Front view
     const frontCamera = new THREE.PerspectiveCamera(
       45,
       size.x / size.y,
       0.1,
       10000
     );
-
-//
-
-
-  let adjustedMultiplier = 3.2; // For 3000 width and larger
-  var s = size.z * adjustedMultiplier;
-
-
-
-
-
-    frontCamera.position.set(
-      center.x,
-      center.y,
-      center.z + s
-    );
+    let adjustedMultiplier = 3.4;
+    var s = 700 * adjustedMultiplier;
+    frontCamera.position.set(center.x, center.y, center.z + s);
     frontCamera.lookAt(center);
-    renderAndDownload(
+
+    // Wait for front view render to complete
+    await renderAndDownload(
       "front",
       frontCamera,
       tempRenderer,
@@ -2400,9 +2527,7 @@ async function captureModelImages(modelGroup) {
       imagesNameArr
     );
 
-
-
-    // Step 2b: Side view
+    // Side view
     tempCanvas.width = size.z;
     tempCanvas.height = size.y;
     tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
@@ -2412,12 +2537,13 @@ async function captureModelImages(modelGroup) {
       1,
       10000
     );
-    console.log("center.x + size.x * 3.5", center);
-    let adjustedMultiplierr = 3.5;//1.2
-  var sr = size.x * adjustedMultiplierr;
+
+    var sr = box.max.x + 2000;
     sideCamera.position.set(sr, center.y, center.z);
     sideCamera.lookAt(center);
-    renderAndDownload(
+
+    // Wait for side view render to complete
+    await renderAndDownload(
       "side",
       sideCamera,
       tempRenderer,
@@ -2425,7 +2551,7 @@ async function captureModelImages(modelGroup) {
       imagesNameArr
     );
 
-    // Step 2c: Diagonal view
+    // Diagonal view setup
     tempCanvas.width = size.x + size.z / 2;
     tempCanvas.height = size.y;
     tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
@@ -2435,13 +2561,26 @@ async function captureModelImages(modelGroup) {
       10,
       100000
     );
-    diagonalCamera.position.set(
-      center.x + size.x * 2,
-      center.y - 200,
-      center.z + size.z * 2.9
-    );
+
+    // Calculate camera position for diagonal view
+    let xMultiplier = 0.8;
+    let yMultiplier = 0.4;
+    let zMultiplier =
+      size.x <= 800 ? 3.2 : size.x < 1500 ? 3.4 : size.x <= 3000 ? 3.5 : 3.7;
+
+    const cameraPos = {
+      x: center.x + size.x * xMultiplier,
+      y: center.y + size.y * yMultiplier,
+      z: center.z + 700 * zMultiplier,
+    };
+
+    diagonalCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
+    diagonalCamera.fov = 45;
+    diagonalCamera.updateProjectionMatrix();
     diagonalCamera.lookAt(center);
-    renderAndDownload(
+
+    // Wait for diagonal view render to complete
+    await renderAndDownload(
       "diagonal",
       diagonalCamera,
       tempRenderer,
@@ -2449,7 +2588,7 @@ async function captureModelImages(modelGroup) {
       imagesNameArr
     );
 
-    // Restore visibility for all models
+    // Restore visibility
     scene.children.forEach((childScene) => {
       if (childScene.name === "main_group") {
         childScene.children.forEach((child) => {
@@ -2458,69 +2597,81 @@ async function captureModelImages(modelGroup) {
       }
     });
 
-    // Restore "Cone" visibility if it was hidden
+    // Restore Cone visibility
     if (isCorn) {
-      model.children.forEach(async (modelChild) => {
-        await modelChild.traverse((node) => {
+      for (const modelChild of model.children) {
+        modelChild.traverse((node) => {
           if (node.name === "Cone") {
             node.visible = true;
           }
         });
-      });
+      }
     }
-  });
+  }
 
-  // container.style.display = "none";
-  // document.body.appendChild(tempCanvas);
-  // return;
-
+  // Whole model capture
   const Outerbox = await cloneMainModelGroup(modelGroup);
   const outerSize = Outerbox.getSize(new THREE.Vector3());
   const outerCenter = Outerbox.getCenter(new THREE.Vector3());
 
   const outerTempCanvas = document.createElement("canvas");
-  outerTempCanvas.width = outerSize.x + outerSize.z / 3; // Adjusted width for better view
-  outerTempCanvas.height = outerSize.y; // Adjusted height for better view
+  outerTempCanvas.width =
+    outerSize.x < 1000 ? outerSize.x + outerSize.x / 2 : outerSize.x;
+  outerTempCanvas.height = outerSize.y;
 
   const outerTempRenderer = new THREE.WebGLRenderer({
     canvas: outerTempCanvas,
     alpha: true,
   });
-  outerTempRenderer.setSize(
-    outerTempCanvas.width <= 3700 ? outerTempCanvas.width : 3700,
-    outerTempCanvas.height
-  );
-  outerTempRenderer.setClearColor(0x000000, 0); // Transparent background
+  outerTempRenderer.setSize(outerTempCanvas.width, outerTempCanvas.height);
+  outerTempRenderer.setClearColor(0x000000, 0);
 
-  let parentName;
-  let grandparentName;
-  let isCorn = false;
+  let parentName,
+    grandparentName,
+    isCorn = false;
 
-  // Traverse the modelGroup to locate any visible "Cone" node
-  await modelGroup.traverse((node) => {
+  // Find and handle Cone visibility
+  modelGroup.traverse((node) => {
     if (node.name === "Cone" && node.visible) {
       parentName = node.parent.name;
       grandparentName = node.parent.parent.name;
-      node.visible = false; // Temporarily hide "Cone"
+      node.visible = false;
       isCorn = true;
     }
   });
 
-  // Set up the camera for rendering
   const outerCamera = new THREE.PerspectiveCamera(
     45,
     (outerSize.x + outerSize.z / 2) / outerSize.y,
     10,
     100000
   );
-  outerCamera.position.set(
-    outerCenter.x + outerSize.x * 1.3, // X offset for diagonal perspective
-    outerCenter.y + outerSize.y * 0.5, // Y offset for a slight top-down angle
-    outerCenter.z + outerSize.z * 2.9 // Z offset for depth in the diagonal view
-  );
+  // Calculate camera position for diagonal view
+  let xMultiplier = 0.8;
+  let yMultiplier = 0.4;
+  let zMultiplier =
+    outerSize.x < 1500
+      ? 3.4
+      : outerSize.x <= 3000
+      ? 3.6
+      : outerSize.x <= 5000
+      ? 3.8
+      : 7;
+  console.log("s", outerSize.x);
+  console.log("m", zMultiplier);
+
+  const cameraPos = {
+    x: outerCenter.x + outerSize.x * xMultiplier,
+    y: outerCenter.y + outerSize.y * yMultiplier,
+    z: outerCenter.z + 700 * zMultiplier,
+  };
+
+  outerCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
+  outerCamera.fov = 45;
+  outerCamera.updateProjectionMatrix();
   outerCamera.lookAt(outerCenter);
 
-  // Render and download the model
+  // Wait for diagonal view render to complete
   await renderAndDownload(
     "wholeModel",
     outerCamera,
@@ -2529,19 +2680,20 @@ async function captureModelImages(modelGroup) {
     imagesNameArr
   );
 
-  // Restore "Cone" visibility if it was hidden
+  // Restore Cone visibility for whole model
   if (isCorn) {
-    await modelGroup.traverse((node) => {
+    modelGroup.traverse((node) => {
       if (
         node.name === "Cone" &&
         node.parent.name === parentName &&
         node.parent.parent.name === grandparentName
       ) {
-        node.visible = true; // Restore visibility
+        node.visible = true;
       }
     });
   }
 
+  // Restore scene background
   scene.backgroundBlurriness = params.blurriness;
   texture_background.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = texture_background;
@@ -2550,33 +2702,17 @@ async function captureModelImages(modelGroup) {
   return imagesNameArr;
 }
 
-// Function to download the image
-async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
-
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = filename;
-  link.click();
-  return
-
-  try {
-    const response = await fetch("api.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: dataUrl,
-        filename: filename,
-      }),
-    });
-    const data = await response.json();
-    if (data.success) {
-    } else {
-      console.error("Error saving screenshot:", data.error);
-    }
-  } catch (error) {
-    console.error("Fetch error:", error);
-  }
-}
+// Modified download function with proper async handling
+// async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
+//   return new Promise((resolve, reject) => {
+//     const link = document.createElement("a");
+//     link.href = dataUrl;
+//     link.download = filename;
+//     link.onclick = () => resolve();
+//     link.onerror = () => reject(new Error("Download failed"));
+//     link.click();
+//   });
+// }
 
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
@@ -2665,7 +2801,7 @@ if (savePdfButton) {
       main_frame_croped_image: mainFrameCropedImage || null,
       ModelImageName: ModelImageName || null,
     };
-
+    await delay(200)
     await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
   });
 }

@@ -35,7 +35,7 @@
             <table style="width:100%; padding-top: 110px;">
                 <tr style="page-break-after: always;">
                     <td style="text-align: center;">
-                        <img src="<?php echo $imageLink ?>" style="";>  
+                        <img src="<?php echo $imageLink ?>" style=""> 
                     </td>
                 </tr>
             </table>
@@ -69,7 +69,7 @@
                 // echo "heres a data"; echo "<pre>"; print_r($ModelMeasureArr);
                 // die;
                 ?> 
-                <table style="width:100%; table-layout: fixed; background-color:green;"> 
+                <table style="width:100%; table-layout: fixed;"> 
                     <tr>
                         <td colspan="2">
                             <table width="100%">
@@ -82,31 +82,31 @@
                         </td>
                     </tr>
                     <tr>
-                        <td width="55%" style="padding-top: 100px;">
+                        <td width="55%" style="padding-top: 50px;">
                             <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                 <?php
                                     $trimmedPath = str_replace('./screenshots/', '', $imageLink);
                                     $parts = explode('-', $trimmedPath);
                                     if($parts[1] == $groupName && $parts[2] == "diagonal"){
-                                    $imageDimensions = getScaledImageDimensions($imageLink, 400, 500);
-                                    $imageSize = getimagesize($imageLink);
+                                    // $imageDimensions = getScaledImageDimensions($imageLink, 400, 500);
+                                    // $imageSize = getimagesize($imageLink);
                                     // echo "<pre>";print_r($imageSize);
                                     // echo "<pre>";print_r($imageDimensions);die;
                                 ?> 
-                                <table style="width:100%; table-layout: fixed;">
+                                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                                     <tr>
                                         <!-- <td style="text-align: center; background-color:red;">
                                             <img src="<?php echo $imageLink ?>" width="<?php echo $imageDimensions['width'] ?>" height="<?php echo $imageDimensions['height'] ?>" />
                                         </td> -->
-                                        <td style="text-align: center; background-color:red;">
-                                            <img src="<?php echo $imageLink ?>" style="width: 400px; height: auto;">
+                                        <td valign="middle" align="center" height="520" style="">
+                                            <img src="<?php echo $imageLink ?>" style="display:block; max-width:500px; max-height:510px; width:auto; height:auto; ">
                                         </td>
                                     </tr>
                                 </table>         
                                 <?php } ?>
                             <?php } ?>
                         </td>
-                        <td width="45%" style="padding:130px 70px 0px 90px; padding-top: 0px; border:1px solid black;">
+                        <td width="45%" style="padding:130px 70px 0px 90px; padding-top: 0px;">
                             <table style="width:100%; border-bottom:1px solid #007b71;">
                                 <tr style="background-color:#e6e7e9;">
                                     <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">MODEL <?php echo $index + 1 ?></td>
@@ -122,6 +122,9 @@
                                                 <td style="width:50%;">Model Specification: </td>
                                                 <td style="width:50%;"><?php echo $ModelMeasureArr['modelMeasure']['width'].' x '.$ModelMeasureArr['modelMeasure']['height'].' x '.$ModelMeasureArr['modelMeasure']['depth'] ?></td>
                                             </tr> -->
+                                            <?php 
+                                                if(!empty($ModelMeasureArr['Header_Frame'])){
+                                            ?>
                                             <tr>
                                                 <td style="width:50%;">
                                                     <div>
@@ -132,13 +135,13 @@
                                                     </div> 
                                                 </td>
                                                 <td style="width:50%;">
-                                                    <?php 
-                                                    echo !empty($ModelMeasureArr['Header_Frame']) ? 
-                                                        $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : 
-                                                        "No header"; 
-                                                    ?>
+                                                    <?php echo $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm'; ?>
                                                 </td>
                                             </tr>
+                                            <?php } ?>
+                                            <?php 
+                                                if(!empty($ModelMeasureArr['Header_Graphic1-Mat'])){
+                                            ?>
                                             <tr>
                                                 <td>
                                                     <div>
@@ -156,6 +159,7 @@
                                                     ?>
                                                 </td>
                                             </tr>
+                                            <?php } ?>
                                             <tr>
                                                 <td>
                                                     <div>
@@ -392,7 +396,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="210px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>

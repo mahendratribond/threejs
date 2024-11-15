@@ -82,34 +82,34 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         echo json_encode(['success' => false]); // No state found
     }
 } elseif (!empty($data['action']) && $data['action'] == 'save_Pdf_data') {
-    function getScaledImageDimensions($imagePath, $maxWidth, $maxHeight) {
-        // Get the original dimensions of the image
-        list($originalWidth, $originalHeight) = getimagesize($imagePath);
+    // function getScaledImageDimensions($imagePath, $maxWidth, $maxHeight) {
+    //     // Get the original dimensions of the image
+    //     list($originalWidth, $originalHeight) = getimagesize($imagePath);
         
-        // If the image already fits within the dimensions, use its original size
-        if ($originalWidth <= $maxWidth && $originalHeight <= $maxHeight) {
-            return ['width' => $originalWidth, 'height' => $originalHeight];
-        }
+    //     // If the image already fits within the dimensions, use its original size
+    //     if ($originalWidth <= $maxWidth && $originalHeight <= $maxHeight) {
+    //         return ['width' => $originalWidth, 'height' => $originalHeight];
+    //     }
 
-        // Calculate aspect ratio
-        $aspectRatio = $originalWidth / $originalHeight;
+    //     // Calculate aspect ratio
+    //     $aspectRatio = $originalWidth / $originalHeight;
 
-        // Calculate new dimensions maintaining the aspect ratio
-        if ($originalWidth > $maxWidth) {
-            $newWidth = $maxWidth;
-            $newHeight = $maxWidth / $aspectRatio;
-        } else {
-            $newWidth = $originalWidth;
-            $newHeight = $originalHeight;
-        }
+    //     // Calculate new dimensions maintaining the aspect ratio
+    //     if ($originalWidth > $maxWidth) {
+    //         $newWidth = $maxWidth;
+    //         $newHeight = $maxWidth / $aspectRatio;
+    //     } else {
+    //         $newWidth = $originalWidth;
+    //         $newHeight = $originalHeight;
+    //     }
 
-        if ($newHeight > $maxHeight) {
-            $newHeight = $maxHeight;
-            $newWidth = $maxHeight * $aspectRatio;
-        }
+    //     if ($newHeight > $maxHeight) {
+    //         $newHeight = $maxHeight;
+    //         $newWidth = $maxHeight * $aspectRatio;
+    //     }
 
-        return ['width' => round($newWidth), 'height' => round($newHeight)];
-    }
+    //     return ['width' => round($newWidth), 'height' => round($newHeight)];
+    // }
     // Example usage
     // $imageDimensions = getScaledImageDimensions('path/to/your/image.jpg', 600, 800);
     // echo '<td><img src="path/to/your/image.jpg" width="' . $imageDimensions['width'] . '" height="' . $imageDimensions['height'] . '" /></td>';
