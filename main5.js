@@ -537,7 +537,7 @@ async function loadPreviousModels() {
         if (
           setting[params.selectedGroupName].headerRodToggle === true &&
           setting[params.selectedGroupName].headerRodToggle ===
-          setting[params.selectedGroupName].headerUpDown
+            setting[params.selectedGroupName].headerUpDown
         ) {
           setting[params.selectedGroupName].headerUpDown =
             !setting[params.selectedGroupName].headerRodToggle;
@@ -2243,261 +2243,323 @@ if (closeButtonAR) {
   });
 }
 // ----------------------------------------------------------------------------------------------------------
-// if (takeScreenShot) {
-//   takeScreenShot.addEventListener("click", async function () {
-    async function cloneModelGroup(model) {
-      let cloneModelGroup = model.clone();
-      let CloneArr = [];
-      await cloneModelGroup.traverse((node) => {
-        if (node.visible && node.name.startsWith("Model_")) {
-          CloneArr.push(node);
-        }
-      });
-      // Process each node in CloneArr to remove invisible children
-      CloneArr.forEach((node) => {
-        node.children.slice().forEach((childNode) => {
-          if (!childNode.visible) {
-            if (childNode.parent) {
-              childNode.parent.remove(childNode);
-            } else {
-              const index = node.children.indexOf(childNode);
-              if (index !== -1) {
-                node.children.splice(index, 1);
-              }
-            }
-          } else {
-            if (childNode.name == "Cone") {
-              childNode.parent.remove(childNode);
-            }
-          }
-        });
-      });      
-      
-      return CloneArr;
+async function cloneModelGroup(model) {
+  let cloneModelGroup = model.clone();
+  let CloneArr = [];
+  await cloneModelGroup.traverse((node) => {
+    if (node.visible && node.name.startsWith("Model_")) {
+      CloneArr.push(node);
     }
-    async function cloneMainModelGroup(model) {
-      let cloneModelGroup = model.clone();
-      let CloneArr = [];
-      // Traverse to find visible models that start with "Model_"
-      cloneModelGroup.children.forEach(async (child) => {
-        await child.traverse((node) => {
-          if (node.visible && node.name.startsWith("Model_")) {
-            CloneArr.push(node);
-          }
-        });
-      })
-      // Process each node in CloneArr to remove invisible children and unnecessary nodes
-      CloneArr.forEach((node) => {
-        node.children.slice().forEach((childNode) => {
-          if (!childNode.visible) {
-            // Remove invisible child nodes
-            childNode.parent.remove(childNode);
-          } else if (childNode.name === "Cone") {
-            // Remove nodes named "Cone"
-            childNode.parent.remove(childNode);
-          }
-        });
-      });
-      // Calculate combined bounding box for all models in CloneArr
-      const combinedBox = new THREE.Box3();
-      CloneArr.forEach((node) => {
-        const nodeBox = new THREE.Box3().setFromObject(node);
-        combinedBox.union(nodeBox); // Expand the combined bounding box to include this model's bounding box
-      });
-      return combinedBox;
-    }
-    // Helper function to render and download a screenshot
-    async function renderAndDownload(viewName, camera, tempRenderer, name, imagesNameArr) {
-      tempRenderer.render(scene, camera);
-      const screenshotData = tempRenderer.domElement.toDataURL();
-      const unixTime = Math.floor(Date.now() / 1000);
-      downloadScreenshotwithDiffCanvas(
-        screenshotData,
-        `model-${name}-${viewName}-${unixTime}.png`
-      );
-      imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
-    }
-
-    async function captureModelImages(modelGroup) {
-      let imagesNameArr = [];
-      modelGroup.children.forEach(async (model) => {
-        // Step 1: Calculate the bounding box for the current model
-        let modelSize = await cloneModelGroup(model);
-        const box = new THREE.Box3().setFromObject(modelSize[0]);
-        const size = box.getSize(new THREE.Vector3());
-        // const size = await getVisibleModelSize(model);
-
-        const center = box.getCenter(new THREE.Vector3());
-
-        // Prepare a temporary canvas for rendering
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = size.x; // Adjusted width for better view
-        tempCanvas.height = size.y; // Adjusted height for better view
-        const tempRenderer = new THREE.WebGLRenderer({
-          canvas: tempCanvas,
-          alpha: true,
-        });
-        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-        tempRenderer.setClearColor(0x000000, 0); // Transparent background
-
-        scene.children.forEach((childScene) => {
-          if (childScene.name == "main_group") {
-            childScene.children.forEach((child) => {
-              if (child.name !== model.name) {
-                child.visible = false;
-              }
-            });
-          }
-        });
-
-        // Set up an orthographic camera based on the bounding box size
-        const camera = new THREE.OrthographicCamera(
-          -size.x / 2,
-          size.x / 2,
-          size.y / 2,
-          -size.y / 2,
-          0.5,
-          10000
-        );
-
-        // Step 2a: Front view - Set the camera position to capture the front of the model
-        camera.position.set(center.x, center.y, center.z + size.z); // Increase the z-distance
-        camera.lookAt(center);
-        renderAndDownload(
-          "front",
-          camera,
-          tempRenderer,
-          model.name,
-          imagesNameArr
-        );
-        // console.log(model);
-        // Set up an orthographic camera 2 based on the bounding box size
-        const camera2 = new THREE.OrthographicCamera(
-          -size.z / 2,
-          size.z / 2,
-          size.y / 2,
-          -size.y / 2,
-          0.5,
-          10000
-        );
-        // Step 2b: Side view - Adjust the camera position to capture the side of the model
-        camera2.position.set(center.x + size.x, center.y, center.z); // Shift the camera to the side
-        camera2.lookAt(center);
-        renderAndDownload(
-          "side",
-          camera2,
-          tempRenderer,
-          model.name,
-          imagesNameArr
-        );
-
-        // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
-        tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-        tempCanvas.height = size.y; // Use both y and z for better height coverage
-        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-        const diagonalCamera = new THREE.OrthographicCamera(
-          (-size.z * 1.5) / 2,
-          (size.z * 1.5) / 2,
-          (size.y * 1.01) / 2,
-          (-size.y * 1.01) / 2,
-          0.5,
-          10000
-        );
-
-        // Set the diagonal position by offsetting X, Y, and Z from the center of the model
-        diagonalCamera.position.set(
-          center.x + size.z, // Increase X offset for more of a diagonal perspective
-          center.y, // Adjust Y offset slightly to show the full model
-          center.z + size.z // Increase Z offset for more of a diagonal view
-        );
-        diagonalCamera.lookAt(center);
-        renderAndDownload(
-          "diagonal",
-          diagonalCamera,
-          tempRenderer,
-          model.name,
-          imagesNameArr
-        );
-
-        scene.children.forEach((childScene) => {
-          if (childScene.name == "main_group") {
-            childScene.children.forEach((child) => {
-              child.visible = true;
-            });
-          }
-        });
-      });
-
-      const Outerbox = await cloneMainModelGroup(modelGroup);
-      const outerSize = Outerbox.getSize(new THREE.Vector3());
-      const outerCenter = Outerbox.getCenter(new THREE.Vector3());
-      const outerTempCanvas = document.createElement("canvas");
-      const maxDimension = Math.max(outerSize.x, outerSize.y, outerSize.z); // Add a margin for view
-      outerTempCanvas.width = (maxDimension * 1.5) / 2; // Adjusted width for better view
-      outerTempCanvas.height = outerSize.y; // Adjusted height for better view
-      const outerTempRenderer = new THREE.WebGLRenderer({
-        canvas: outerTempCanvas,
-        alpha: true,
-      });
-      outerTempRenderer.setSize(outerTempCanvas.width, outerTempCanvas.height);
-      outerTempRenderer.setClearColor(0x000000, 0); // Transparent background
-      console.log(Outerbox);
-      console.log(outerSize);
-      console.log(outerCenter);
-      console.log(maxDimension);
-      // Set up an orthographic camera to fully encompass the model group
-      const outerCamera = new THREE.OrthographicCamera(
-        -maxDimension / 2.5, // left
-        maxDimension / 2.5, // right
-        (outerSize.y * 1.01) / 2, // top
-        (-outerSize.y * 1.01) / 2, // bottom
-        0.1,
-        10000
-      );
-      outerCamera.position.set(
-        outerCenter.x + outerSize.x / 2,
-        outerCenter.y,
-        outerCenter.z + outerSize.x / 2
-      );
-      outerCamera.lookAt(outerCenter);
-      await renderAndDownload(
-        "wholeModel",
-        outerCamera,
-        outerTempRenderer,
-        modelGroup.name,
-        imagesNameArr
-      );
-
-      return imagesNameArr;
-    }
-
-    // Function to download the image
-    async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
-      try {
-        const response = await fetch("api.php", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image: dataUrl,
-            filename: filename,
-          }),
-        });
-        const data = await response.json();
-        if (data.success) {
-          console.log(data.success);
+  });
+  // Process each node in CloneArr to remove invisible children
+  CloneArr.forEach((node) => {
+    node.children.slice().forEach((childNode) => {
+      if (!childNode.visible) {
+        if (childNode.parent) {
+          childNode.parent.remove(childNode);
         } else {
-          console.error("Error saving screenshot:", data.error);
+          const index = node.children.indexOf(childNode);
+          if (index !== -1) {
+            node.children.splice(index, 1);
+          }
         }
-      } catch (error) {
-        console.error("Fetch error:", error);
+      } else {
+        if (childNode.name == "Cone") {
+          childNode.parent.remove(childNode);
+        }
       }
-    }
+    });
+  });
 
-    // Example usage
-    // await captureModelImages(modelGroup);
-    // Helper function to download the screenshot
-//   });
-// }
+  return CloneArr;
+}
+async function cloneMainModelGroup(model) {
+  let cloneModelGroup = model.clone();
+  let CloneArr = [];
+  // Traverse to find visible models that start with "Model_"
+  cloneModelGroup.children.forEach(async (child) => {
+    await child.traverse((node) => {
+      if (node.visible && node.name.startsWith("Model_")) {
+        CloneArr.push(node);
+      }
+    });
+  });
+  // Process each node in CloneArr to remove invisible children and unnecessary nodes
+  CloneArr.forEach((node) => {
+    node.children.slice().forEach((childNode) => {
+      if (!childNode.visible) {
+        // Remove invisible child nodes
+        childNode.parent.remove(childNode);
+      } else if (childNode.name === "Cone") {
+        // Remove nodes named "Cone"
+        childNode.parent.remove(childNode);
+      }
+    });
+  });
+  // Calculate combined bounding box for all models in CloneArr
+  const combinedBox = new THREE.Box3();
+  CloneArr.forEach((node) => {
+    const nodeBox = new THREE.Box3().setFromObject(node);
+    combinedBox.union(nodeBox); // Expand the combined bounding box to include this model's bounding box
+  });
+  return combinedBox;
+}
+// Helper function to render and download a screenshot
+async function renderAndDownload(
+  viewName,
+  camera,
+  tempRenderer,
+  name,
+  imagesNameArr
+) {
+  tempRenderer.render(scene, camera);
+  const screenshotData = tempRenderer.domElement.toDataURL();
+  const unixTime = Math.floor(Date.now() / 1000);
+  downloadScreenshotwithDiffCanvas(
+    screenshotData,
+    `model-${name}-${viewName}-${unixTime}.png`
+  );
+  imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
+}
+
+async function captureModelImages(modelGroup) {
+  let imagesNameArr = [];
+  scene.background = null; // No background color for transparency
+  modelGroup.children.forEach(async (model) => {
+    let isCorn = false;
+
+    // Step 1: Calculate the bounding box for the current model
+    let modelSize = await cloneModelGroup(model);
+    const box = new THREE.Box3().setFromObject(modelSize[0]);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Prepare a temporary canvas for rendering
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = size.x;
+    tempCanvas.height = size.y;
+    const tempRenderer = new THREE.WebGLRenderer({
+      canvas: tempCanvas,
+      alpha: true,
+    });
+    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+    tempRenderer.setClearColor(0x000000, 0); // Transparent background
+
+    // Traverse model children to check for "Cone" nodes
+    model.children.forEach(async (modelChild) => {
+      if (modelChild.visible) {
+        await modelChild.traverse((node) => {
+          if (node.name === "Cone" && node.visible === true) {
+            isCorn = true;
+            node.visible = false; // Temporarily hide the "Cone"
+          }
+        });
+      }
+    });
+
+    // Hide all models except the current one in the scene
+    scene.children.forEach((childScene) => {
+      if (childScene.name === "main_group") {
+        childScene.children.forEach((child) => {
+          if (child.name !== model.name) {
+            child.visible = false;
+          }
+        });
+      }
+    });
+
+    // Step 2a: Front view
+    const frontCamera = new THREE.PerspectiveCamera(
+      45,
+      size.x / size.y,
+      0.1,
+      10000
+    );
+    frontCamera.position.set(
+      center.x,
+      center.y,
+      center.z + size.x + size.z * 2.6
+    );
+    frontCamera.lookAt(center);
+    renderAndDownload(
+      "front",
+      frontCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    // Step 2b: Side view
+    tempCanvas.width = size.z;
+    tempCanvas.height = size.y;
+    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+    const sideCamera = new THREE.PerspectiveCamera(
+      45,
+      size.z / size.y,
+      1,
+      10000
+    );
+    sideCamera.position.set(center.x + size.x * 3.5, center.y - 800, center.z);
+    sideCamera.lookAt(center);
+    renderAndDownload(
+      "side",
+      sideCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    // Step 2c: Diagonal view
+    tempCanvas.width = size.x + size.z / 2;
+    tempCanvas.height = size.y;
+    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+    const diagonalCamera = new THREE.PerspectiveCamera(
+      45,
+      (size.x + size.z / 2) / size.y,
+      10,
+      100000
+    );
+    diagonalCamera.position.set(
+      center.x + size.x * 2,
+      center.y - 200,
+      center.z + size.z * 2.9
+    );
+    diagonalCamera.lookAt(center);
+    renderAndDownload(
+      "diagonal",
+      diagonalCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    // Restore visibility for all models
+    scene.children.forEach((childScene) => {
+      if (childScene.name === "main_group") {
+        childScene.children.forEach((child) => {
+          child.visible = true;
+        });
+      }
+    });
+
+    // Restore "Cone" visibility if it was hidden
+    if (isCorn) {
+      model.children.forEach(async (modelChild) => {
+        await modelChild.traverse((node) => {
+          if (node.name === "Cone") {
+            node.visible = true;
+          }
+        });
+      });
+    }
+  });
+
+  // container.style.display = "none";
+  // document.body.appendChild(tempCanvas);
+  // return;
+
+  const Outerbox = await cloneMainModelGroup(modelGroup);
+  const outerSize = Outerbox.getSize(new THREE.Vector3());
+  const outerCenter = Outerbox.getCenter(new THREE.Vector3());
+
+  const outerTempCanvas = document.createElement("canvas");
+  outerTempCanvas.width = outerSize.x + outerSize.z / 3; // Adjusted width for better view
+  outerTempCanvas.height = outerSize.y; // Adjusted height for better view
+
+  const outerTempRenderer = new THREE.WebGLRenderer({
+    canvas: outerTempCanvas,
+    alpha: true,
+  });
+  outerTempRenderer.setSize(
+    outerTempCanvas.width <= 3700 ? outerTempCanvas.width : 3700,
+    outerTempCanvas.height
+  );
+  outerTempRenderer.setClearColor(0x000000, 0); // Transparent background
+
+  let parentName;
+  let grandparentName;
+  let isCorn = false;
+
+  // Traverse the modelGroup to locate any visible "Cone" node
+  await modelGroup.traverse((node) => {
+    if (node.name === "Cone" && node.visible) {
+      parentName = node.parent.name;
+      grandparentName = node.parent.parent.name;
+      node.visible = false; // Temporarily hide "Cone"
+      isCorn = true;
+    }
+  });
+
+  // Set up the camera for rendering
+  const outerCamera = new THREE.PerspectiveCamera(
+    45,
+    (outerSize.x + outerSize.z / 2) / outerSize.y,
+    10,
+    100000
+  );
+  outerCamera.position.set(
+    outerCenter.x + outerSize.x * 1.3, // X offset for diagonal perspective
+    outerCenter.y + outerSize.y * 0.5, // Y offset for a slight top-down angle
+    outerCenter.z + outerSize.z * 2.9 // Z offset for depth in the diagonal view
+  );
+  outerCamera.lookAt(outerCenter);
+
+  // Render and download the model
+  await renderAndDownload(
+    "wholeModel",
+    outerCamera,
+    outerTempRenderer,
+    modelGroup.name,
+    imagesNameArr
+  );
+
+  // Restore "Cone" visibility if it was hidden
+  if (isCorn) {
+    await modelGroup.traverse((node) => {
+      if (
+        node.name === "Cone" &&
+        node.parent.name === parentName &&
+        node.parent.parent.name === grandparentName
+      ) {
+        node.visible = true; // Restore visibility
+      }
+    });
+  }
+
+  scene.backgroundBlurriness = params.blurriness;
+  texture_background.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = texture_background;
+  scene.environment = texture_background;
+
+  return imagesNameArr;
+}
+
+// Function to download the image
+async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
+  try {
+    const response = await fetch("api.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: dataUrl,
+        filename: filename,
+      }),
+    });
+    const data = await response.json();
+    if (data.success) {
+    } else {
+      console.error("Error saving screenshot:", data.error);
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  }
+}
+
+if (takeScreenShot) {
+  takeScreenShot.addEventListener("click", async function () {
+    await captureModelImages(modelGroup);
+  });
+}
 // ----------------------------------------------------------------------------------------------------------
 if (showInAR) {
   showInAR.addEventListener("click", async function () {
@@ -2570,7 +2632,7 @@ if (savePdfButton) {
       }
     });
 
-    let ModelImageName = await captureModelImages(modelGroup);    
+    let ModelImageName = await captureModelImages(modelGroup);
 
     const dataToSave = {
       params: params || null,
@@ -2578,9 +2640,9 @@ if (savePdfButton) {
       group_names: allGroupNames || null,
       top_frame_croped_image: topFrameCropedImage || null,
       main_frame_croped_image: mainFrameCropedImage || null,
-      ModelImageName: ModelImageName || null
+      ModelImageName: ModelImageName || null,
     };
-  
+
     await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
   });
 }

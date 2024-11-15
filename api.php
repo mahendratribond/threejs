@@ -82,7 +82,62 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         echo json_encode(['success' => false]); // No state found
     }
 } elseif (!empty($data['action']) && $data['action'] == 'save_Pdf_data') {
+    function getScaledImageDimensions($imagePath, $maxWidth, $maxHeight) {
+        // Get the original dimensions of the image
+        list($originalWidth, $originalHeight) = getimagesize($imagePath);
+        
+        // If the image already fits within the dimensions, use its original size
+        if ($originalWidth <= $maxWidth && $originalHeight <= $maxHeight) {
+            return ['width' => $originalWidth, 'height' => $originalHeight];
+        }
+
+        // Calculate aspect ratio
+        $aspectRatio = $originalWidth / $originalHeight;
+
+        // Calculate new dimensions maintaining the aspect ratio
+        if ($originalWidth > $maxWidth) {
+            $newWidth = $maxWidth;
+            $newHeight = $maxWidth / $aspectRatio;
+        } else {
+            $newWidth = $originalWidth;
+            $newHeight = $originalHeight;
+        }
+
+        if ($newHeight > $maxHeight) {
+            $newHeight = $maxHeight;
+            $newWidth = $maxHeight * $aspectRatio;
+        }
+
+        return ['width' => round($newWidth), 'height' => round($newHeight)];
+    }
+    // Example usage
+    // $imageDimensions = getScaledImageDimensions('path/to/your/image.jpg', 600, 800);
+    // echo '<td><img src="path/to/your/image.jpg" width="' . $imageDimensions['width'] . '" height="' . $imageDimensions['height'] . '" /></td>';
+
+
+
+    // echo __DIR__ . '/assets/fonts/Document_fonts';die;
+    $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+    $fontDirs = $defaultConfig['fontDir'];
+
+    $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+    $fontData = $defaultFontConfig['fontdata'];
+
     $mpdf = new \Mpdf\Mpdf([
+        'fontDir' => array_merge($fontDirs, [
+            __DIR__ . '/assets/fonts/Document_fonts',
+        ]),
+        'fontdata' => $fontData + [ // lowercase letters only in font key
+            'minipro' => [
+                'R' => 'MinionPro-Regular.ttf',
+            ],
+            'gotham' => [
+                'R' => 'Gotham-Bold.ttf',
+            ],
+            'gothambook' => [
+                'R' => 'Gotham-Book.ttf',
+            ]
+        ],
         'tempDir' => './uploads',
         'format' => 'A4-L',
         'margin_left' => 0,
@@ -93,16 +148,16 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         'margin_footer' => 0,
     ]);
     // Register fonts in the mPDF configuration
-    $fontDir = __DIR__ . '/assets/fonts/Document_fonts';
-    $mpdf->fontdata['MinionPro'] = [
-        'R' => $fontDir . '/MinionPro-Regular.otf',
-    ];
-    $mpdf->fontdata['Gotham'] = [
-        'B' => $fontDir . '/Gotham-Bold.otf',
-    ];
-    $mpdf->fontdata['GothamBook'] = [
-        'R' => $fontDir . '/Gotham-Book.otf',
-    ];
+    // $fontDir = __DIR__ . '/assets/fonts/Document_fonts';
+    // $mpdf->fontdata['minipro'] = [
+    //     'R' => $fontDir . '/MinionPro-Regular.otf',
+    // ];
+    // $mpdf->fontdata['gotham'] = [
+    //     'R' => $fontDir . '/Gotham-Bold.otf',
+    // ];
+    // $mpdf->fontdata['gothambook'] = [
+    //     'R' => $fontDir . '/Gotham-Book.otf',
+    // ];
 
     // First page HTML content
     ob_start();
@@ -114,36 +169,39 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Now set the footer for subsequent pages
     $mpdf->SetHTMLFooter('
-    <table style="width:100%; padding-bottom:0px; margin-bottom: 0px">
-        <tr>
-            <td style="width:13.2%; background-color:#de1a40; color:white; padding:0px; padding-right:10px; text-align:right;">
-                <p style="font-size:10px; font-weight:bold; letter-spacing:1px; margin:0px; padding:0px;">PATENT PENDING</p>
+    <table style="width:100%; padding-bottom:2.5px; border-collapse:collapse; border-spacing:0;">
+        <tr style="padding-left:0px; margin-left:0px;">
+            <td style="width:13.2%; background-color:#de1a40; color:white; padding:0px; padding-right:10px; padding-left:0px; margin-left:0px; text-align:right; height:23px;">
+                <div style="font-size: 8.5px; font-weight:bold; font-family:gotham; letter-spacing:1.5px; margin:0px; padding:0px;">PATENT PENDING</div>
             </td>
             <td style="width:1.5%; padding: 0;">
             </td>
             <td style="width:82.3%; padding: 0;">
-                <div style="height:1px; margin:0; border:0; padding:0;"><hr></div>
+                <div style="margin:0; border:0; padding:0;"><hr style="margin:0px; padding:0px;" size="10px"></div>
             </td>
             <td style="width:3%; padding: 0;">
             </td>
         </tr>
     </table>
-    <table width="96.6%" style="padding:0px 0px 14px 0px;">
+    <table width="97.2%" style="padding:0px 0px 20px 0px;">
         <tbody>
             <tr>
-                <td width="50%" style="text-align: left; font-size: 11px; padding-left:37px;">
-                    <p style="font-size:16px; color:gray;"><b style="color:#00635a; font-size:15px">E: </b>sales@slatframe.com   &nbsp;&nbsp;|&nbsp;&nbsp;   <b
-                            style="color:#00635a; font-size:15px">W:
-                        </b>www.slatframe.com </p>
+                <td width="50%" style="text-align: left;  padding-left:20px;">
+                  <table>
+                    <tr>
+                      <td style="border-right:1px solid black; padding:0px 12px; 0px 0px; padding-top:2.5px;"><p style="font-size:15px; font-family:gothambook;"><span style="color:#00635a; font-size:14px; font-family:gotham; font-weight:bold;">E:</span>&nbsp;sales@slatframe.com</p></td>
+                      <td style="padding-left:10px; padding-top:2.5px;"><p style="font-size:15px; font-family:gothambook;"><span style="color:#00635a; font-size:14px; font-family:gotham; font-weight:bold;">W:</span>&nbsp;www.slatframe.com </p></td>
+                    </tr>
+                  </table>
                 </td>
-                <td width="50%" align="right" style="font-size: 11px;">
+                <td width="50%" align="right" style="">
                     <table style="width: auto; text-align: right;">
                         <tr>
-                            <td style="color: #00635a; font-size: 11px; font-weight:bold; padding: 0; text-align: left;">DESIGNED ON</td>
+                            <td style="color: #00635a; font-size: 9px; font-family:gothambook; font-weight:bold; padding: 0; text-align: left;">DESIGNED ON</td>
                         </tr>
                         <tr>
-                            <td style="font-size: 20px; font-family: GothamBook, sans-serif; font-weight: lighter; padding: 0; margin: 0;">
-                                <span style="font-family: Gotham, sans-serif; font-weight: bold;">SLAT</span>FRAME
+                            <td>
+                                <img src="./assets/images/slatLogo.png" width="148px" height="17px" alt="">
                             </td>
                         </tr>
                     </table>
@@ -151,6 +209,13 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             </tr>
         </tbody>
     </table>');
+
+// <tr>
+//     <td style="font-size: 20px; font-family: gotham; font-weight:bold; padding: 0; margin: 0;">
+//     SLAT
+//     <span style="font-family:gothambook; font-weight:normal;">FRAME</span>
+//     </td>
+// </tr>
 
 
     // Start output buffering for the remaining content
@@ -160,6 +225,16 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Write remaining content with footer applied
     $mpdf->WriteHTML($additionalContent);
+
+    $mpdf->SetHTMLFooter('');
+
+    // last page HTML content
+    ob_start();
+    include './pdfContentFile/pdflastpage.html'; // Adjust the path if needed
+    $LastPageHtml = ob_get_clean();
+
+    // Write the first page content
+    $mpdf->WriteHTML($LastPageHtml);
 
     // Output the PDF
     $filenameLoc = "./uploads/sample1.pdf";

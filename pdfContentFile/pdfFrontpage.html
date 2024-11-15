@@ -5,20 +5,27 @@
         body {
             font-family: "MinionPro", sans-serif;
         }
+        body, html {
+            padding: 0;
+            margin: 0;
+        }
+
 
         .headerOneTd {
-            height: 475pt;
+            height: 476pt;
             padding-left: 152px;
-            padding-top: 330px;
+            padding-top: 335px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
         }
 
         .headerTwoTd {
-            padding-left: 152px;
-            padding-top: 55px;
-            letter-spacing: 2px;
+            height: 20px;
+            padding-left: 150px;
+            padding-top: 50px;
+            letter-spacing: 1px;
+            font-family: "GothamBook", sans-serif;
         }
 
         .header-text {
@@ -35,8 +42,8 @@
 
         .header-product {
             font-family: "GothamBook", sans-serif;
-            font-weight: lighter;
-            letter-spacing: 3px;
+            letter-spacing: 1.5px;
+            font-size: 17.2px;
         }
     </style>
 </head>
@@ -44,18 +51,32 @@
 <body>
     <table style="page-break-inside: avoid; width:100%;">
         <tbody>
-            <tr style="background-color:lightgray;">
+            <tr style="background-color:#f0f0f0;">
                 <td class="headerOneTd">
+                    <br>
                     <p class="header-logo">
-                        <span class="header-text">SLAT</span>FRAME
+                        <!-- <span class="header-text">SLAT</span>FRAME -->
+                         <img src="./assets/images/slatLogo.png" width="535px" height="60px" alt="">
                     </p>
-                    <p class="header-product" style="margin: 0;">PREMIUM | SUSTAINABLE | MODULAR | UPDATABLE</p>
+                    <br>
+                    <p class="header-product" style="margin: 0; font-family: GothamBook;">PREMIUM | SUSTAINABLE | MODULAR | UPDATABLE</p>
                 </td>
             </tr>
             <tr>
-                <td class="headerTwoTd">
-                    <p style="font-size:1.1rem;"><b style="color:#00635a;">E: &nbsp;</b>sales@slatframe.com | <b
-                            style="color:#00635a;">W: &nbsp;</b> www.slatframe.com</p>
+                <td class="headerTwoTd" style="width:60%">
+                    <table>
+                        <tr>
+                            <td style="border-right:1px solid black;">
+                                <p style="font-size:17px; font-family:gothambook; letter-spacing: 1px;"><b style="color:#00635a; font-family:gotham; font-weight:bold;">E:</b> sales@slatframe.com &nbsp;&nbsp;</p>
+                            </td>
+                            <td>
+                                <p style="font-size:17px; font-family:gothambook; padding-left:10px; letter-spacing: 1px;"><b style="color:#00635a; font-family:gotham; font-weight:bold;">&nbsp;&nbsp;W:</b>
+                                    www.slatframe.com</p>
+                            </td>
+                        </tr>
+                    </table>
+                    <!-- <p style="font-size:1.1rem;"><b style="color:#00635a;">E:</b> sales@slatframe.com | <b
+                            style="color:#00635a;">W:</b> www.slatframe.com</p> -->
                 </td>
             </tr>
         </tbody>

@@ -3675,12 +3675,6 @@ async function takeAngleShots(
     // Capture the screenshot from the current camera angle
     const screenshotData = renderer.domElement.toDataURL(); // Get screenshot as data URL
     const unixTime = Math.floor(Date.now() / 1000);
-
-    // Optionally, download the screenshot
-    // downloadScreenshot(
-    //   screenshotData,
-    //   `screenshot_angle_${angleX}_${angleY}_${angleZ}.png`
-    // );
     // Send screenshot to PHP
     try {
       const response = await fetch("api.php", {
@@ -3701,14 +3695,6 @@ async function takeAngleShots(
       console.error("Fetch error:", error);
     }
   }
-
-  // Helper function to download the screenshot
-  // function downloadScreenshot(dataUrl, filename) {
-  //   const link = document.createElement("a");
-  //   link.href = dataUrl;
-  //   link.download = filename;
-  //   link.click();
-  // }
 }
 
 async function getModelMeasurement(
@@ -3741,6 +3727,79 @@ async function getModelMeasurement(
   }
 }
 
+async function getComponentSize(model, modelComponentsData) {
+  console.log(model);
+
+  const setModelSize = (child, size) => {
+    modelComponentsData[child.name] = size;
+  };
+
+  const isValidChild = (child) => child.parent.visible && child.visible;
+
+  const isHeaderGraphic1Mat = (child) => 
+    child.name === "Header_Graphic1-Mat" && 
+    child.parent.parent.visible && 
+    ["Header_300", "Header_500"].includes(child.parent.parent.name);
+
+  const isHeaderFrame = (child, parentName) => 
+    child.name === "Header_Frame" && child.parent.name === parentName;
+
+  await traverseAsync(model, async (child) => {
+    if (isValidChild(child)) {
+      const modelSize = await getNodeSize(child);
+      // console.log(child);
+      // console.log(modelSize);
+      
+      if (isHeaderFrame(child, "Header_300") || isHeaderFrame(child, "Header_500")) {
+        setModelSize(child, modelSize);
+      } else if (isHeaderGraphic1Mat(child)) {
+        setModelSize(child, modelSize);
+      } else if (["Frame", "Cube1-Mat"].includes(child.name)) {
+        if (child.name === "Frame") {
+          const frameChild = child.clone();
+          console.log(frameChild);
+          // await frameChild.children.forEach((modelNode) => {
+          //   if (modelNode.name.startsWith("Hanger_")) {
+          //     modelNode.parent.remove(modelNode);
+          //   }
+          // });
+          for (let i = frameChild.children.length - 1; i >= 0; i--) {
+            const modelNode = frameChild.children[i];
+            if (modelNode.name && modelNode.name.startsWith("Hanger_")) {
+              modelNode.parent.remove(modelNode);
+            }
+          }
+          const bbox = new THREE.Box3();
+          frameChild.traverse((modelNode) => {
+            if (modelNode.visible) {
+              bbox.expandByObject(modelNode);
+            }
+          });
+          const min = bbox.min.clone();
+          const max = bbox.max.clone();
+          let modelMeasurement = {};
+          const width = max.x - min.x;
+          modelMeasurement["width"] = `${width.toFixed(0) * 1}mm`;
+          const height = max.y - min.y;
+          modelMeasurement["height"] = `${height.toFixed(0) * 1}mm`;
+          const depth = max.z - min.z;
+          modelMeasurement["depth"] = `${depth.toFixed(0) * 1}mm`;
+          setModelSize(child, modelMeasurement);
+        } else {
+          setModelSize(child, modelSize);
+        }
+      } else  if (["Base_Solid", "Base_Flat"].includes(child.name)) {
+        setModelSize(child, modelSize);
+      } else if(child.parent.name.startsWith("Hanger") && child.name == "Hanger_Stand"){
+        setModelSize(child.parent, modelSize);        
+      }
+    }
+  });
+
+  console.log(modelComponentsData);
+}
+
+
 export async function savePdfData(
   name = "test",
   dataToSave,
@@ -3758,12 +3817,15 @@ export async function savePdfData(
         heightMeasurementNames,
         modelMeasurement
       );
-      // Check if the parent key exists; if not, create it as an object
+      let modelComponentsData = {};
+      modelComponentsData['modelMeasure'] = modelMeasurement;
+      await getComponentSize(child, modelComponentsData);
+      
       if (!modelMeasurementData[child.parent.name]) {
         modelMeasurementData[child.parent.name] = {};
       }
-      // Assign the measurement data under the appropriate keys
-      modelMeasurementData[child.parent.name][child.name] = modelMeasurement;
+      
+      modelMeasurementData[child.parent.name][child.name] = modelComponentsData;
     }
   });
 
@@ -3774,8 +3836,6 @@ export async function savePdfData(
   // dataToSave["angleImages"] = ModelImageName;
   dataToSave["ModelData"] = modelMeasurementData;
   dataToSave["action"] = "save_Pdf_data";
-  // dataToSave["id"] = modelId || 0;
-  // dataToSave["name"] = name;
   // console.log(dataToSave);
   // return
   const pdf_data = JSON.stringify(dataToSave);
@@ -3796,6 +3856,7 @@ export async function savePdfData(
     })
     .catch((error) => console.error("Fetch error:", error));
 }
+// --------------------------------export models--------------------------------------------
 
 async function saveModel(blob, filename) {
   if (blob) {
