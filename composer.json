@@ -1,4 +1,16 @@
 {
+    "name": "shivmohansingh/3d_frame_maker",
+    "autoload": {
+        "psr-4": {
+            "Shivmohansingh\\3dFrameMaker\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Shiv Mohan Singh",
+            "email": "shiv@tribondinfosystems.com"
+        }
+    ],
     "require": {
         "mpdf/mpdf": "^8.2"
     }

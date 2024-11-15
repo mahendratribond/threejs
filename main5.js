@@ -2375,10 +2375,21 @@ async function captureModelImages(modelGroup) {
       0.1,
       10000
     );
+
+//
+
+
+  let adjustedMultiplier = 3.2; // For 3000 width and larger
+  var s = size.z * adjustedMultiplier;
+
+
+
+
+
     frontCamera.position.set(
       center.x,
       center.y,
-      center.z + size.x + size.z * 2.6
+      center.z + s
     );
     frontCamera.lookAt(center);
     renderAndDownload(
@@ -2388,6 +2399,8 @@ async function captureModelImages(modelGroup) {
       model.name,
       imagesNameArr
     );
+
+
 
     // Step 2b: Side view
     tempCanvas.width = size.z;
@@ -2399,7 +2412,10 @@ async function captureModelImages(modelGroup) {
       1,
       10000
     );
-    sideCamera.position.set(center.x + size.x * 3.5, center.y - 800, center.z);
+    console.log("center.x + size.x * 3.5", center);
+    let adjustedMultiplierr = 3.5;//1.2
+  var sr = size.x * adjustedMultiplierr;
+    sideCamera.position.set(sr, center.y, center.z);
     sideCamera.lookAt(center);
     renderAndDownload(
       "side",
@@ -2536,6 +2552,13 @@ async function captureModelImages(modelGroup) {
 
 // Function to download the image
 async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
+
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  link.click();
+  return
+
   try {
     const response = await fetch("api.php", {
       method: "POST",
