@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="loginStyle.css">
+</head>
+
+<body>
+    <div id="responseMessage" style="display: none;">
+        <p id="response"></p>
+    </div>
+    <div id="registerForm" class="form-container">
+        <form id="Register">
+            <h2>Register</h2>
+            <input type="text" id="registerUsername" name="userName" placeholder="Username" required>
+            <span id="registerUsernameError" class="error-message"></span>
+            <input type="email" id="registerEmail" name="email" placeholder="Email" required>
+            <span id="registerEmailError" class="error-message"></span>
+            <input type="password" id="registerPassword" name="password" placeholder="Password" required>
+            <span id="registerPasswordError" class="error-message"></span>
+            <input type="hidden" name="action" value="RegisterUser">
+            <input type="button" value="Register" id="registerButton">
+        </form>
+        <div class="switch-form">
+            <span>Already have an account? <a href="login.html">Login</a></span>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerButton').addEventListener('click', function () {
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const responseMessage = document.getElementById('responseMessage');
+            const response = document.getElementById('response');
+
+            const usernameError = document.getElementById('registerUsernameError');
+            const emailError = document.getElementById('registerEmailError');
+            const passwordError = document.getElementById('registerPasswordError');
+
+            // Reset error messages
+            usernameError.textContent = '';
+            emailError.textContent = '';
+            passwordError.textContent = '';
+
+            let hasError = false;
+
+            if (!username) {
+                usernameError.textContent = "Username is required.";
+                hasError = true;
+            }
+
+            if (!email) {
+                emailError.textContent = "Email is required.";
+                hasError = true;
+            }
+
+            if (!password) {
+                passwordError.textContent = "Password is required.";
+                hasError = true;
+            }
+
+            if (hasError) return; // Stop the function if there are validation errors
+            const form = document.getElementById("Register");
+            const formData = new FormData(form);
+            // Send an AJAX request
+            fetch("api.php", {
+                method: "POST",
+                body: formData,
+            })
+                .then(response => response.json()) // Parse JSON response
+                .then(data => {
+                    if (data.success) {
+                        // Perform actions on successful registration
+                        console.log("User registered successfully:", data);
+                        response.textContent = "User registered successfully.";
+                        responseMessage.style.display = "block";
+                        window.location.reload();
+                    } else {
+                        // Handle errors
+                        console.error("Error:", data);
+                    }
+                })
+                .catch(error => console.error("Request failed:", error));
+        });
+    </script>
+</body>
+
+</html>

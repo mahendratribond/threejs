@@ -1,5 +1,7 @@
 <?php
 require_once 'connection.php';
+// Start session
+session_start();
 
 // Check if an 'id' parameter is present in the URL
 if (isset($_GET['id'])) {
@@ -24,8 +26,11 @@ if (isset($_GET['id'])) {
 } 
 
 // Fetch data from the database
-$sql = "SELECT * FROM threejs_models"; // Change 'your_table' to your actual table name
-$result = $conn->query($sql);
+$sql = "SELECT * FROM threejs_models WHERE user_id = ?"; // Change 'your_table' to your actual table name
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $_SESSION['user_id']);  
+$stmt->execute();
+$result = $stmt->get_result();
 
 
 
@@ -64,7 +69,7 @@ $result = $conn->query($sql);
                         <td><?php echo $index++; ?></td>
                         <td><?php echo htmlspecialchars($row['name']); ?></td> <!-- Change 'column1' to your actual column names -->
                         <td>
-                            <a href="test5.html?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm">View</a> <!-- Change 'id' to your primary key -->
+                            <a href="test6.html?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm">View</a> <!-- Change 'id' to your primary key -->
                             <a href="my-model.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
                         </td>
                     </tr>

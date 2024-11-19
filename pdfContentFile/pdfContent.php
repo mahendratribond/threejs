@@ -34,8 +34,11 @@
         ?> 
             <table style="width:100%; padding-top: 110px;">
                 <tr style="page-break-after: always;">
-                    <td style="text-align: center;">
+                    <!-- <td style="text-align: center;">
                         <img src="<?php echo $imageLink ?>" style=""> 
+                    </td> -->
+                    <td valign="middle" align="center" height="520" style="">
+                        <img src="<?php echo $imageLink ?>" style="display:block; max-height:510px; height:auto; ">
                     </td>
                 </tr>
             </table>
@@ -88,16 +91,9 @@
                                     $trimmedPath = str_replace('./screenshots/', '', $imageLink);
                                     $parts = explode('-', $trimmedPath);
                                     if($parts[1] == $groupName && $parts[2] == "diagonal"){
-                                    // $imageDimensions = getScaledImageDimensions($imageLink, 400, 500);
-                                    // $imageSize = getimagesize($imageLink);
-                                    // echo "<pre>";print_r($imageSize);
-                                    // echo "<pre>";print_r($imageDimensions);die;
                                 ?> 
                                 <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                                     <tr>
-                                        <!-- <td style="text-align: center; background-color:red;">
-                                            <img src="<?php echo $imageLink ?>" width="<?php echo $imageDimensions['width'] ?>" height="<?php echo $imageDimensions['height'] ?>" />
-                                        </td> -->
                                         <td valign="middle" align="center" height="520" style="">
                                             <img src="<?php echo $imageLink ?>" style="display:block; max-width:500px; max-height:510px; width:auto; height:auto; ">
                                         </td>
@@ -194,9 +190,9 @@
                                                 <td>
                                                     <?php
                                                     if (!empty($ModelMeasureArr['Base_Solid'])) {
-                                                        echo $ModelMeasureArr['Base_Solid']['x'] . 'mm x ' . $ModelMeasureArr['Base_Solid']['y'] . 'mm x ' . $ModelMeasureArr['Base_Solid']['z'] . 'mm';
-                                                    } elseif (!empty($ModelMeasureArr['Base_Flat'])) {
-                                                        echo $ModelMeasureArr['Base_Flat']['x'] . 'mm x ' . $ModelMeasureArr['Base_Flat']['y'] . 'mm x ' . $ModelMeasureArr['Base_Flat']['z'] . 'mm';
+                                                        echo round($ModelMeasureArr['Base_Solid']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['z']) . 'mm';
+                                                    } elseif (!empty($ModelMeasureArr['Base_Support_Sides'])) {
+                                                        echo round($ModelMeasureArr['Base_Support_Sides']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['z']) . 'mm';
                                                     } else {
                                                         echo 'N/A';
                                                     }
@@ -294,6 +290,17 @@
                                                         </div> 
                                                     </td>
                                                     <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm'; ?></td>
+                                                </tr>
+                                                <?php
+                                            }
+                                            if(empty($HangerArr)){
+                                                ?>
+                                                <tr>
+                                                    <td colspan="2" style="width:100%;">
+                                                        <div>
+                                                            <span style="font-family:gothambook; font-weight:bold;">NONE</span>
+                                                        </div> 
+                                                    </td>
                                                 </tr>
                                                 <?php
                                             }

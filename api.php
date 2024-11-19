@@ -2,6 +2,10 @@
 
 require_once 'connection.php';
 require_once __DIR__ . '/vendor/autoload.php';
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+// Start session
+session_start();
 
 // Get JSON data from request
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
@@ -10,6 +14,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // print_r($data);
     // Prepare and bind the SQL statement
     $id = $data['id'];
+    $userId = $_SESSION['user_id'];
     $name = $data['name'];
 
     $updatedHangerCount = [];
@@ -50,9 +55,13 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         $stmt->bind_param("sssssss", $name, $params, $setting, $group_names, $top_frame_croped_image, $main_frame_croped_image, $id); // Correct parameter types
     } else {
         // Insert new model state
-        $sql = "INSERT INTO threejs_models (`id`, `name`, `params`, `setting`, `group_names`, `top_frame_croped_image`, `main_frame_croped_image`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO threejs_models (`id`, `user_id`, `name`, `params`, `setting`, `group_names`, `top_frame_croped_image`, `main_frame_croped_image`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssss", $id, $name, $params, $setting, $group_names, $top_frame_croped_image, $main_frame_croped_image); // Correct parameter types
+        if ($stmt === false) {
+            // This will print the error from MySQL
+            die('MySQL prepare error: ' . $conn->error);
+        }
+        $stmt->bind_param("ssssssss", $id, $userId, $name, $params, $setting, $group_names, $top_frame_croped_image, $main_frame_croped_image); // Correct parameter types
     }
 
     if ($stmt->execute()) {
@@ -63,9 +72,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } elseif (!empty($data['action']) && $data['action'] == 'get_model_data') {
     $id = $data['id'];
 
-    $sql = "SELECT * FROM threejs_models WHERE id = ?";
+    $sql = "SELECT * FROM threejs_models WHERE id = ? AND user_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $id);
+    $stmt->bind_param("ss", $id, $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -82,40 +91,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         echo json_encode(['success' => false]); // No state found
     }
 } elseif (!empty($data['action']) && $data['action'] == 'save_Pdf_data') {
-    // function getScaledImageDimensions($imagePath, $maxWidth, $maxHeight) {
-    //     // Get the original dimensions of the image
-    //     list($originalWidth, $originalHeight) = getimagesize($imagePath);
-        
-    //     // If the image already fits within the dimensions, use its original size
-    //     if ($originalWidth <= $maxWidth && $originalHeight <= $maxHeight) {
-    //         return ['width' => $originalWidth, 'height' => $originalHeight];
-    //     }
-
-    //     // Calculate aspect ratio
-    //     $aspectRatio = $originalWidth / $originalHeight;
-
-    //     // Calculate new dimensions maintaining the aspect ratio
-    //     if ($originalWidth > $maxWidth) {
-    //         $newWidth = $maxWidth;
-    //         $newHeight = $maxWidth / $aspectRatio;
-    //     } else {
-    //         $newWidth = $originalWidth;
-    //         $newHeight = $originalHeight;
-    //     }
-
-    //     if ($newHeight > $maxHeight) {
-    //         $newHeight = $maxHeight;
-    //         $newWidth = $maxHeight * $aspectRatio;
-    //     }
-
-    //     return ['width' => round($newWidth), 'height' => round($newHeight)];
-    // }
-    // Example usage
-    // $imageDimensions = getScaledImageDimensions('path/to/your/image.jpg', 600, 800);
-    // echo '<td><img src="path/to/your/image.jpg" width="' . $imageDimensions['width'] . '" height="' . $imageDimensions['height'] . '" /></td>';
-
-
-
     // echo __DIR__ . '/assets/fonts/Document_fonts';die;
     $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
     $fontDirs = $defaultConfig['fontDir'];
@@ -147,17 +122,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         'margin_header' => 0,
         'margin_footer' => 0,
     ]);
-    // Register fonts in the mPDF configuration
-    // $fontDir = __DIR__ . '/assets/fonts/Document_fonts';
-    // $mpdf->fontdata['minipro'] = [
-    //     'R' => $fontDir . '/MinionPro-Regular.otf',
-    // ];
-    // $mpdf->fontdata['gotham'] = [
-    //     'R' => $fontDir . '/Gotham-Bold.otf',
-    // ];
-    // $mpdf->fontdata['gothambook'] = [
-    //     'R' => $fontDir . '/Gotham-Book.otf',
-    // ];
 
     // First page HTML content
     ob_start();
@@ -210,13 +174,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         </tbody>
     </table>');
 
-// <tr>
-//     <td style="font-size: 20px; font-family: gotham; font-weight:bold; padding: 0; margin: 0;">
-//     SLAT
-//     <span style="font-family:gothambook; font-weight:normal;">FRAME</span>
-//     </td>
-// </tr>
-
 
     // Start output buffering for the remaining content
     ob_start();
@@ -244,8 +201,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } else if (isset($data['image']) && isset($data['filename'])) {
     $imageData = $data['image'];
     $filename = basename($data['filename']); // Use basename to prevent directory traversal attacks
-
-    // Remove the "data:image/png;base64," part from the image data
     $base64Image = explode(',', $imageData)[1];
 
     // Decode the image data
@@ -279,8 +234,103 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     } else {
         echo json_encode(["status" => "error", "message" => "No file uploaded."]);
     }
-} else {
-    echo json_encode("No Action Found"); // No action found
+} else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'RegisterUser') {
+    $username = $_REQUEST['userName'];
+    $email = $_REQUEST['email'];
+    $password = $_REQUEST['password'];
+
+    // Hash the password for security
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    try {
+        // Prepare SQL query
+        $sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+        // Bind parameters to the placeholders
+        $stmt->bind_param('sss', $username, $email, $hashed_password);
+        // Execute the query
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Registration successful."]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Registration failed: " . $stmt->error]);
+        }
+    } catch (PDOException $e) {
+        if ($e->getCode() == 23000) { // Duplicate entry error code
+            echo json_encode(["success" => false, "message" => "Email is already registered."]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $e->getMessage()]);
+        }
+    }
+
+} else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'LoginUser') {
+    $email = $_REQUEST['email'];
+    $password = $_REQUEST['password'];    
+
+    try {
+        // Check if the email exists in the database
+        $sql = "SELECT * FROM users WHERE email = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        
+        if ($user && password_verify($password, $user['password'])) {
+            // Password is correct, set session variables
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            echo json_encode(["success" => true, "message" => "Login successful." , "session" => $_SESSION]);
+        } else {
+            // Invalid credentials
+            echo json_encode(["success" => false, "message" => "Invalid email or password."]);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(["success" => false, "message" => "Error: " . $e->getMessage()]);
+    }
+
+
+} else if (!empty($data['action']) && $data['action'] == 'create_qr_code') {
+    // Define base URLs
+    $localUrl = "http://192.168.0.173/three-model";
+    $liveUrl = "https://biginstore.net/3d_frame_maker";
+
+    // Determine if the server is local or live
+    if ($host === '192.168.0.173' || strpos($host, 'localhost') !== false) {
+        $baseUrl = $localUrl;
+    } else {
+        $baseUrl = $liveUrl;
+    }
+    $baseRedirectUrl = $baseUrl."/redirect.php";
+
+    // Append the `url` parameter
+    $redirectUrl = $baseRedirectUrl . "?url=" . urlencode($baseUrl.$data['url']);
+
+    // Create the QR code
+    $qrCode = new QrCode($redirectUrl);
+    $qrCode->setSize(300);
+
+    // Initialize the writer
+    $writer = new PngWriter();
+
+    // Define the directory to save the QR code (make sure the directory is writable)
+    $directory = 'screenshots/';
+    $time = time();
+    $filePath = $directory . $time .'_qrcode.png';
+
+    // Save the QR code to a file
+    $result = $writer->write($qrCode);  // Use writeFile() to save the file
+    // Save the PNG image to the file path
+    file_put_contents($filePath, $result->getString()); // Save the result string as a PNG file
+
+    // Generate the URL to access the QR code
+    $qrCodeUrl = $filePath;
+
+    // Output the link to the saved QR code
+    echo json_encode(["success" => true, "message" => "QR Created successfully", "url" => $qrCodeUrl]);
+}else {
+    echo json_encode("No Action Found"); // No action found    
 }
 
 $conn->close();

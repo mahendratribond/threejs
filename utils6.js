@@ -3541,7 +3541,7 @@ export async function getModelData(id) {
       return data.data; // Return the fetched data
     } else {
       console.error("No data found:");
-      window.location.href = "test5.html";
+      window.location.href = "test6.html";
       return null; // Return null if no data is found
     }
   } catch (error) {
