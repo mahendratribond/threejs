@@ -13,6 +13,6 @@
     ],
     "require": {
         "mpdf/mpdf": "^8.2",
-        "endroid/qr-code": "^4.8"
+        "endroid/qr-code": "^4.6"
     }
 }

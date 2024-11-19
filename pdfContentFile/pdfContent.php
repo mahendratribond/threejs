@@ -46,18 +46,19 @@
         <?php } ?>
     <?php } ?>
     <!-- page 2 end -->
-    <?php $hangerData = $data['setting']['main_model']['hangerAdded'];?>
     <?php foreach ($data['group_names'] as $index => $groupName) { ?>
         <?php foreach ($data['setting'] as $key => $value) { 
             if($key == $groupName){ 
                 $ModelMeasureArr = [];
                 $HangerArr = [];
-                foreach($hangerData as $hangerKey => $hangerVal){
-                    $hangerPartkey = explode('-',$hangerKey);
-                    if($hangerPartkey[0] == $groupName){
-                        if($hangerPartkey[2] == "Front"){
-                            $HangerArr[] = $hangerPartkey[3];   
-                        } 
+                if (isset($data['params']) && isset($data['params']['hangerAdded'])) {
+                    foreach($data['params']['hangerAdded'] as $hangerKey => $hangerVal){
+                        $hangerPartkey = explode('-',$hangerKey);
+                        if($hangerPartkey[0] == $groupName){
+                            if($hangerPartkey[2] == "Front"){
+                                $HangerArr[] = $hangerPartkey[3];   
+                            } 
+                        }
                     }
                 }
                 foreach ($data['ModelData'] as $modelKey => $ModelMeasureValue) {

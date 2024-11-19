@@ -365,6 +365,19 @@ async function init() {
   modelGroup = new THREE.Group();
   scene.add(modelGroup);
 
+  controls.addEventListener('change', () => {
+    // Calculate and print the camera's position relative to the model
+    const cameraPosition = camera.position.clone(); // Get a copy of the camera's position
+    const modelPosition = model.position.clone(); // Get a copy of the model's position
+    const relativePosition = cameraPosition.sub(modelPosition);
+
+    // console.log('Camera Position:', camera.position); // Print camera position
+    // console.log('Relative Position (from model to camera):', relativePosition); // Print relative position
+
+    // Render the scene (only needed if you are not using a continuous loop)
+    renderer.render(scene, camera);
+  });
+
   main_model = await loadGLTFModel(glftLoader, params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
@@ -2341,8 +2354,28 @@ async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
   // link.download = filename;
   // link.click();
   // return;
-  
-  await removeBlankSpacesFromImage(dataUrl , async (croppedImage) => {
+  const croppedImage = await removeBlankSpacesFromImage(dataUrl);
+  try {
+    const response = await fetch("api.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: croppedImage,
+        filename: filename,
+      }),
+    });
+    const data = await response.json();
+    if (data.success) {
+    } else {
+      console.error("Error saving screenshot:", data.error);
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  }
+
+}
+const saveScreenshot = async (croppedImage, filename) => {
+  return new Promise(async (resolve, reject) => {
     try {
       const response = await fetch("api.php", {
         method: "POST",
@@ -2354,103 +2387,107 @@ async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
       });
       const data = await response.json();
       if (data.success) {
+        resolve(data); // Resolve with the data if successful
       } else {
-        console.error("Error saving screenshot:", data.error);
+        reject(new Error(`Error saving screenshot: ${data.error}`)); // Reject with an error message
       }
     } catch (error) {
-      console.error("Fetch error:", error);
+      reject(error); // Reject if any error occurs during the fetch request
     }
   });
+};
 
-}
+function removeBlankSpacesFromImage(imageSrc) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = function () {
+      // Create a canvas to work with the image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
 
-async function removeBlankSpacesFromImage(imageSrc, callback) {
-  const img = new Image();
-  img.src = imageSrc;
-  img.onload = function () {
-    // Create a canvas to work with the image
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    
-    // Draw the image onto the canvas
-    ctx.drawImage(img, 0, 0);
+      // Draw the image onto the canvas
+      ctx.drawImage(img, 0, 0);
 
-    // Get the image data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const { data, width, height } = imageData;
+      // Get the image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const { data, width, height } = imageData;
 
-    let top = 0, bottom = height, left = 0, right = width;
+      let top = 0, bottom = height, left = 0, right = width;
 
-    // Find the top boundary
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const alpha = data[(y * width + x) * 4 + 3];
-        if (alpha > 0) {
-          top = y;
-          break;
-        }
-      }
-      if (top !== 0) break;
-    }
-
-    // Find the bottom boundary
-    for (let y = height - 1; y >= 0; y--) {
-      for (let x = 0; x < width; x++) {
-        const alpha = data[(y * width + x) * 4 + 3];
-        if (alpha > 0) {
-          bottom = y;
-          break;
-        }
-      }
-      if (bottom !== height) break;
-    }
-
-    // Find the left boundary
-    for (let x = 0; x < width; x++) {
+      // Find the top boundary
       for (let y = 0; y < height; y++) {
-        const alpha = data[(y * width + x) * 4 + 3];
-        if (alpha > 0) {
-          left = x;
-          break;
+        for (let x = 0; x < width; x++) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 0) {
+            top = y;
+            break;
+          }
         }
+        if (top !== 0) break;
       }
-      if (left !== 0) break;
-    }
 
-    // Find the right boundary
-    for (let x = width - 1; x >= 0; x--) {
-      for (let y = 0; y < height; y++) {
-        const alpha = data[(y * width + x) * 4 + 3];
-        if (alpha > 0) {
-          right = x;
-          break;
+      // Find the bottom boundary
+      for (let y = height - 1; y >= 0; y--) {
+        for (let x = 0; x < width; x++) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 0) {
+            bottom = y;
+            break;
+          }
         }
+        if (bottom !== height) break;
       }
-      if (right !== width) break;
-    }
 
-    // Crop dimensions
-    const cropWidth = right - left + 1;
-    const cropHeight = bottom - top + 1;
+      // Find the left boundary
+      for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 0) {
+            left = x;
+            break;
+          }
+        }
+        if (left !== 0) break;
+      }
 
-    // Draw the cropped image
-    const croppedCanvas = document.createElement('canvas');
-    const croppedCtx = croppedCanvas.getContext('2d');
-    croppedCanvas.width = cropWidth;
-    croppedCanvas.height = cropHeight;
+      // Find the right boundary
+      for (let x = width - 1; x >= 0; x--) {
+        for (let y = 0; y < height; y++) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 0) {
+            right = x;
+            break;
+          }
+        }
+        if (right !== width) break;
+      }
 
-    croppedCtx.drawImage(
-      canvas,
-      left, top, cropWidth, cropHeight,
-      0, 0, cropWidth, cropHeight
-    );
+      // Crop dimensions
+      const cropWidth = right - left + 1;
+      const cropHeight = bottom - top + 1;
 
-    // Convert cropped canvas to a new image
-    const croppedImage = croppedCanvas.toDataURL();
-    callback(croppedImage); // Return the cropped image as a data URL
-  };
+      // Draw the cropped image
+      const croppedCanvas = document.createElement('canvas');
+      const croppedCtx = croppedCanvas.getContext('2d');
+      croppedCanvas.width = cropWidth;
+      croppedCanvas.height = cropHeight;
+
+      croppedCtx.drawImage(
+        canvas,
+        left, top, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+      );
+
+      // Convert cropped canvas to a new image
+      const croppedImage = croppedCanvas.toDataURL();
+      resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
+    };
+
+    img.onerror = reject; // In case of an error, reject the promise
+  });
 }
 
 
@@ -2470,9 +2507,6 @@ async function captureModelImages(modelGroup) {
     const box = new THREE.Box3().setFromObject(modelSize[0]);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-
-    console.log(size);
-    console.log(box);
 
     // Prepare a temporary canvas for rendering
     const tempCanvas = document.createElement("canvas");
@@ -2530,12 +2564,14 @@ async function captureModelImages(modelGroup) {
     );
 
     // Side view
-    tempCanvas.width = size.z;
+    tempCanvas.width = size.z * 2;
     tempCanvas.height = size.y;
+    console.log(size);
+    
     tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
     const sideCamera = new THREE.PerspectiveCamera(
       45,
-      size.z / size.y,
+      (size.z * 2) / size.y,
       1,
       10000
     );
@@ -2572,7 +2608,7 @@ async function captureModelImages(modelGroup) {
 
     const cameraPos = {
       x: center.x + size.x * xMultiplier,
-      y: center.y + size.y * yMultiplier,
+      y: 500,
       z: center.z + 700 * zMultiplier,
     };
 
@@ -2617,6 +2653,8 @@ async function captureModelImages(modelGroup) {
   const outerCenter = Outerbox.getCenter(new THREE.Vector3());
 
   const outerTempCanvas = document.createElement("canvas");
+  // document.body.appendChild(outerTempCanvas);
+
   outerTempCanvas.width =
     outerSize.x < 1000 ? outerSize.x + outerSize.x / 2 : outerSize.x;
   outerTempCanvas.height = outerSize.y;
@@ -2655,7 +2693,7 @@ async function captureModelImages(modelGroup) {
     outerSize.x < 1500
       ? 3.4
       : outerSize.x <= 3000
-      ? 3.6
+      ? 4.6
       : outerSize.x <= 5000
       ? 3.8
       : 7;
@@ -2664,7 +2702,7 @@ async function captureModelImages(modelGroup) {
 
   const cameraPos = {
     x: outerCenter.x + outerSize.x * xMultiplier,
-    y: outerCenter.y + outerSize.y * yMultiplier,
+    y: outerCenter.y + 100,
     z: outerCenter.z + 700 * zMultiplier,
   };
 
@@ -2738,7 +2776,7 @@ if (createQrButton) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        console.log("Model data saved successfully!");
+        console.log("Qr Code generate successfully!");
         document.getElementById("qrImage").src = data.url;
         showQRHere.style.display = "flex";
       } else {
@@ -2832,7 +2870,7 @@ if (savePdfButton) {
       main_frame_croped_image: mainFrameCropedImage || null,
       ModelImageName: ModelImageName || null,
     };
-    await delay(200)
+    await delay(1000);
     await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
   });
 }

@@ -194,9 +194,10 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $mpdf->WriteHTML($LastPageHtml);
 
     // Output the PDF
-    $filenameLoc = "./uploads/sample1.pdf";
+    $time = time();
+    $filenameLoc = "./uploads/".$data['fileName'];
     $mpdf->Output($filenameLoc);
-    echo json_encode(["success" => true, "message" => "Screenshot saved successfully"]);
+    echo json_encode(["success" => true, "message" => "Screenshot saved successfully","url" => $filenameLoc]);
     exit;
 } else if (isset($data['image']) && isset($data['filename'])) {
     $imageData = $data['image'];
@@ -292,6 +293,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
 
 } else if (!empty($data['action']) && $data['action'] == 'create_qr_code') {
+    // Detect the current host and scheme
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
     // Define base URLs
     $localUrl = "http://192.168.0.173/three-model";
     $liveUrl = "https://biginstore.net/3d_frame_maker";

@@ -3823,8 +3823,13 @@ export async function savePdfData(
 
   // let angleImages = {};
   // await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);
+  const username = localStorage.getItem("username");
+  const unixTimestamp = Math.floor(Date.now() / 1000);
+  const fileName = `${username}_${unixTimestamp}.pdf`;
   dataToSave["ModelData"] = modelMeasurementData;
   dataToSave["action"] = "save_Pdf_data";
+  dataToSave["fileName"] = fileName;
+
   // console.log(dataToSave);
   // return
   const pdf_data = JSON.stringify(dataToSave);
@@ -3838,8 +3843,12 @@ export async function savePdfData(
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        console.log("Model data saved successfully!");
+        console.log("Pdf saved successfully!");
         CreatingPdfFile.style.display = "none";
+        const pdfDownoad = document.createElement("a");
+        pdfDownoad.href = data.url;
+        pdfDownoad.download = fileName;
+        pdfDownoad.click();
       } else {
         console.error("Error saving model data:", data.error);
       }
