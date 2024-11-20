@@ -3801,25 +3801,29 @@ export async function savePdfData(
 ) {
   const CreatingPdfFile = document.getElementById("CreatingPdfFile");
   let modelMeasurementData = {};
-  await traverseAsync(modelGroup, async (child) => {
-    if (allModelNames.includes(child.name) && child.visible) {
-      let modelMeasurement = {};
-      await getModelMeasurement(
-        child,
-        heightMeasurementNames,
-        modelMeasurement
-      );
-      let modelComponentsData = {};
-      modelComponentsData['modelMeasure'] = modelMeasurement;
-      await getComponentSize(child, modelComponentsData);
-      
-      if (!modelMeasurementData[child.parent.name]) {
-        modelMeasurementData[child.parent.name] = {};
+  try {
+    await traverseAsync(modelGroup, async (child) => {
+      if (allModelNames.includes(child.name) && child.visible) {
+        let modelMeasurement = {};
+        await getModelMeasurement(
+          child,
+          heightMeasurementNames,
+          modelMeasurement
+        );
+        let modelComponentsData = {};
+        modelComponentsData['modelMeasure'] = modelMeasurement;
+        await getComponentSize(child, modelComponentsData);
+        
+        if (!modelMeasurementData[child.parent.name]) {
+          modelMeasurementData[child.parent.name] = {};
+        }
+        
+        modelMeasurementData[child.parent.name][child.name] = modelComponentsData;
       }
-      
-      modelMeasurementData[child.parent.name][child.name] = modelComponentsData;
-    }
-  });
+    });
+  } catch (error) {
+    console.log(error);    
+  }
 
   // let angleImages = {};
   // await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);

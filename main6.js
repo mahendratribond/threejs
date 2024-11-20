@@ -326,8 +326,10 @@ async function init() {
   renderer.setAnimationLoop(render);
 
   container.appendChild(renderer.domElement);
+  
 
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = THREE.NoToneMapping;
   renderer.toneMappingExposure = params.exposure;
 
   scene = new THREE.Scene();
@@ -365,18 +367,18 @@ async function init() {
   modelGroup = new THREE.Group();
   scene.add(modelGroup);
 
-  controls.addEventListener('change', () => {
-    // Calculate and print the camera's position relative to the model
-    const cameraPosition = camera.position.clone(); // Get a copy of the camera's position
-    const modelPosition = model.position.clone(); // Get a copy of the model's position
-    const relativePosition = cameraPosition.sub(modelPosition);
+  // controls.addEventListener('change', () => {
+  //   // Calculate and print the camera's position relative to the model
+  //   const cameraPosition = camera.position.clone(); // Get a copy of the camera's position
+  //   const modelPosition = modelGroup.position.clone(); // Get a copy of the model's position
+  //   const relativePosition = cameraPosition.sub(modelPosition);
 
-    // console.log('Camera Position:', camera.position); // Print camera position
-    // console.log('Relative Position (from model to camera):', relativePosition); // Print relative position
+  //   // console.log('Camera Position:', camera.position); // Print camera position
+  //   // console.log('Relative Position (from model to camera):', relativePosition); // Print relative position
 
-    // Render the scene (only needed if you are not using a continuous loop)
-    renderer.render(scene, camera);
-  });
+  //   // Render the scene (only needed if you are not using a continuous loop)
+  //   renderer.render(scene, camera);
+  // });
 
   main_model = await loadGLTFModel(glftLoader, params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
@@ -2263,7 +2265,7 @@ async function cloneModelGroup(model) {
   let CloneArr = [];
   await traverseAsync(cloneModelGroup, async (node) => {
     if (node.visible && node.name.startsWith("Hanger_")) {
-      console.log(node);
+      // console.log(node);
       node.parent.remove(node);
     }
   });
@@ -2289,7 +2291,7 @@ async function cloneModelGroup(model) {
       }
     });
   });
-  console.log(CloneArr);
+  // console.log(CloneArr);
 
   return CloneArr;
 }
@@ -2330,6 +2332,44 @@ async function cloneMainModelGroup(model) {
   return combinedBox;
 }
 // Helper function to render and download a screenshot
+// async function renderAndDownload1(
+//   viewName,
+//   camera,
+//   tempRenderer,
+//   name,
+//   imagesNameArr
+// ) {
+//   // tempRenderer.render(scene, camera);
+//   // const screenshotData = tempRenderer.domElement.toDataURL("image/png");
+//   // const unixTime = Math.floor(Date.now() / 1000);
+//   // const link = document.createElement("a");
+//   // link.href = screenshotData;
+//   // link.download = `model-${name}-${viewName}-${unixTime}.png`;
+//   // link.click();
+//   // return;
+//   const originalWidth = tempRenderer.domElement.width;
+//   const originalHeight = tempRenderer.domElement.height;
+
+//   // Set higher resolution (2x or 3x the original resolution)
+//   const scaleFactor = (viewName == "diagonal" || viewName == "wholeModel" ) && originalWidth * 3 > 5000 ? 1 : 3; // You can adjust this factor
+//   tempRenderer.setSize(
+//     originalWidth * scaleFactor,
+//     originalHeight * scaleFactor,
+//     true
+//   );
+//   camera.aspect =
+//     (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
+//   camera.updateProjectionMatrix();
+//   tempRenderer.render(scene, camera);
+//   const screenshotData = tempRenderer.domElement.toDataURL("image/png");
+//   const unixTime = Math.floor(Date.now() / 1000);
+//   await downloadScreenshotwithDiffCanvas(
+//     screenshotData,
+//     `model-${name}-${viewName}-${unixTime}.png`
+//   );
+//   imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
+// }
+
 async function renderAndDownload(
   viewName,
   camera,
@@ -2337,17 +2377,58 @@ async function renderAndDownload(
   name,
   imagesNameArr
 ) {
-  tempRenderer.render(scene, camera);
-  const screenshotData = tempRenderer.domElement.toDataURL();
-  const unixTime = Math.floor(Date.now() / 1000);
-  await downloadScreenshotwithDiffCanvas(
-    screenshotData,
-    `model-${name}-${viewName}-${unixTime}.png`
-  );
-  imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
+  // Store original renderer size and camera properties
+  const originalWidth = tempRenderer.domElement.width;
+  const originalHeight = tempRenderer.domElement.height;
+  const originalAspect = camera.aspect;
+  const originalPosition = camera.position.clone();
+  const originalRotation = camera.rotation.clone();
+  const originalQuaternion = camera.quaternion.clone();
+
+  try {
+    // Set higher resolution (2x or 3x the original resolution)
+    const scaleFactor =
+      (viewName == "diagonal" || viewName == "wholeModel") &&
+      originalWidth * 3 > 5000
+        ? 1
+        : 3; // Adjust this factor as needed
+    tempRenderer.setSize(
+      originalWidth * scaleFactor,
+      originalHeight * scaleFactor,
+      true
+    );
+
+    // Update camera aspect and projection matrix
+    camera.aspect =
+      (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
+    camera.updateProjectionMatrix();
+
+    // Render the scene and capture the screenshot
+    tempRenderer.render(scene, camera);
+    const screenshotData = tempRenderer.domElement.toDataURL("image/png");
+    const unixTime = Math.floor(Date.now() / 1000);
+
+    // Download or save the screenshot
+    await downloadScreenshotwithDiffCanvas(
+      screenshotData,
+      `model-${name}-${viewName}-${unixTime}.png`
+    );
+    imagesNameArr.push(
+      `./screenshots/model-${name}-${viewName}-${unixTime}.png`
+    );
+  } finally {
+    // Restore renderer size
+    tempRenderer.setSize(originalWidth, originalHeight, true);
+
+    // Restore camera properties
+    camera.aspect = originalAspect;
+    camera.position.copy(originalPosition);
+    camera.rotation.copy(originalRotation);
+    camera.quaternion.copy(originalQuaternion);
+    camera.updateProjectionMatrix();
+  }
 }
 
-// Function to download the image
 async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
   // const link = document.createElement("a");
   // link.href = dataUrl;
@@ -2374,28 +2455,6 @@ async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
   }
 
 }
-const saveScreenshot = async (croppedImage, filename) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const response = await fetch("api.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: croppedImage,
-          filename: filename,
-        }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        resolve(data); // Resolve with the data if successful
-      } else {
-        reject(new Error(`Error saving screenshot: ${data.error}`)); // Reject with an error message
-      }
-    } catch (error) {
-      reject(error); // Reject if any error occurs during the fetch request
-    }
-  });
-};
 
 function removeBlankSpacesFromImage(imageSrc) {
   return new Promise((resolve, reject) => {
@@ -2492,7 +2551,7 @@ function removeBlankSpacesFromImage(imageSrc) {
 
 
 
-async function captureModelImages(modelGroup) {
+async function captureModelImages1(modelGroup) {
   let imagesNameArr = [];
   scene.background = null; // No background color for transparency
 
@@ -2502,8 +2561,6 @@ async function captureModelImages(modelGroup) {
 
     // Step 1: Calculate the bounding box for the current model
     let modelSize = await cloneModelGroup(model);
-    // return
-
     const box = new THREE.Box3().setFromObject(modelSize[0]);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
@@ -2515,6 +2572,7 @@ async function captureModelImages(modelGroup) {
     const tempRenderer = new THREE.WebGLRenderer({
       canvas: tempCanvas,
       alpha: true,
+      
     });
     tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
     tempRenderer.setClearColor(0x000000, 0);
@@ -2729,6 +2787,223 @@ async function captureModelImages(modelGroup) {
   return imagesNameArr;
 }
 
+function cloneRenderer(renderer) {
+  // Create a new WebGLRenderer with the same parameters as the original
+  const parameters = {
+    // antialias: renderer.antialias,
+    // alpha: renderer.alpha,
+    // precision: renderer.precision,
+    // stencil: renderer.stencil,
+    // preserveDrawingBuffer: renderer.preserveDrawingBuffer,
+    // powerPreference: renderer.powerPreference,
+  };
+  
+  const newRenderer = new THREE.WebGLRenderer(parameters);
+
+  // Copy size
+  const size = renderer.getSize(new THREE.Vector2());
+  newRenderer.setSize(size.width, size.height, false);
+
+  // Copy pixel ratio
+  newRenderer.setPixelRatio(renderer.getPixelRatio());
+
+  // Copy shadow map settings
+  // newRenderer.shadowMap.enabled = renderer.shadowMap.enabled;
+  // newRenderer.shadowMap.type = renderer.shadowMap.type;
+
+  // Copy tone mapping
+  // newRenderer.toneMapping = renderer.toneMapping;
+  // newRenderer.toneMappingExposure = renderer.toneMappingExposure;
+
+  // Copy output encoding
+  // newRenderer.outputEncoding = renderer.outputEncoding;
+
+  return newRenderer;
+}
+
+
+
+async function captureModelImages2(model, imagesNameArr) {
+  // Step 1: Calculate the bounding box for the current model
+  let modelSize = await cloneModelGroup(model);
+  const box = new THREE.Box3().setFromObject(modelSize[0]);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+
+  // Prepare a temporary canvas for rendering
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = size.x;
+  tempCanvas.height = size.y;
+  // const tempRenderer = renderer.clone();
+  const tempRenderer = cloneRenderer(renderer);
+  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+  tempRenderer.setClearColor(0x000000, 0);
+
+  // Set up an orthographic camera based on the bounding box size
+  const frontCamera = new THREE.OrthographicCamera(
+    -size.x / 2,
+    size.x / 2,
+    size.y / 2,
+    -size.y / 2,
+    0.5,
+    10000
+  );
+
+  // Step 2a: Front view - Set the camera position to capture the front of the model
+  frontCamera.position.set(center.x, center.y, center.z + 700 * 3.4); // Increase the z-distance
+  frontCamera.lookAt(center);
+  renderAndDownload("front", frontCamera, tempRenderer, model.name, imagesNameArr);
+
+  // Side view
+  console.log(size);
+  // tempCanvas.width = size.z < size.y ? size.z : size.y;
+  // tempCanvas.height = size.z > size.y ? size.z : size.y;
+  tempCanvas.width = 1602;
+  tempCanvas.height = 2005;
+  console.log(tempCanvas.width);
+  console.log(tempCanvas.height);
+
+  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+  const sideCamera = new THREE.OrthographicCamera(
+    -1602 / 2,
+    1602 / 2,
+    2005 / 1.5,
+    -2005 / 1.5,
+    1,
+    10000
+  );
+  // Position the camera along the positive X-axis for a side view
+  const sideViewDistance = size.x * 1.5;
+  sideCamera.position.set(center.x + sideViewDistance , center.y, center.z);
+  sideCamera.lookAt(center);
+
+  // Wait for side view render to complete
+  await renderAndDownload(
+    "side",
+    sideCamera,
+    tempRenderer,
+    model.name,
+    imagesNameArr
+  );
+}
+
+async function captureModelImages(modelGroup) {
+  let imagesNameArr = [];
+  scene.background = null; // No background color for transparency
+  
+  // Store original camera position and rotation
+  const originalPosition = camera.position.clone();
+  const originalRotation = camera.rotation.clone();
+  const originalQuaternion = camera.quaternion.clone();
+
+
+  // Calculate bounding box for the model group
+  const boundingBox = new THREE.Box3().setFromObject(modelGroup);
+  const center = boundingBox.getCenter(new THREE.Vector3());
+  const size = boundingBox.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  
+  // Adjusted distance calculation - reduced divisor for closer view
+  const distance = Math.abs(maxDim / Math.sin(fov / 2) / 2.5); // Changed from 1.5 to 3.5 for closer view
+  
+  // Optional: Add a slight elevation to the camera
+  const heightOffset = size.y * 0.1; // 10% of model height
+
+  for (const model of modelGroup.children) {    
+    const ModelboundingBox = new THREE.Box3().setFromObject(model);
+    const Modelcenter = ModelboundingBox.getCenter(new THREE.Vector3());
+    
+    let isCorn = false;
+    renderer.setClearColor(0x000000, 0);
+
+    // Hide Cone if present
+    for (const modelChild of model.children) {
+      if (modelChild.visible) {
+        modelChild.traverse((node) => {
+          if (node.name === "Cone" && node.visible === true) {
+            isCorn = true;
+            node.visible = false;
+          }
+        });
+      }
+    }
+
+    // Hide other models
+    scene.children.forEach((childScene) => {
+      if (childScene.name === "main_group") {
+        childScene.children.forEach((child) => {
+          if (child.name !== model.name) {
+            child.visible = false;
+          }
+        });
+      }
+    });
+
+    // Front view - slightly elevated
+    await captureModelImages2(model, imagesNameArr);
+
+    // Diagonal view (45 degrees) - slightly elevated
+    const diagonalDistance = distance * 0.8; // Slightly closer for diagonal view
+    camera.position.set(
+      diagonalDistance * Math.cos(Math.PI/4) + 500,  
+      heightOffset, 
+      diagonalDistance * Math.cos(Math.PI/4) + 500
+    );
+    camera.lookAt(center);
+    await renderAndDownload("diagonal", camera, renderer, model.name, imagesNameArr);
+
+    // Restore visibility
+    scene.children.forEach((childScene) => {
+      if (childScene.name === "main_group") {
+        childScene.children.forEach((child) => {
+          child.visible = true;
+        });
+      }
+    });
+
+    // Restore Cone visibility
+    if (isCorn) {
+      for (const modelChild of model.children) {
+        modelChild.traverse((node) => {
+          if (node.name === "Cone") {
+            node.visible = true;
+          }
+        });
+      }
+    }
+  }
+
+  for (const modelChild of modelGroup.children) {
+    modelChild.traverse((node) => {
+      if (node.name === "Cone") {
+        node.visible = false;
+      }
+    });
+  }
+
+  const wholeModelDistance = distance * 0.8; // Slightly closer for wholeModel view
+  camera.position.set(
+    wholeModelDistance * Math.cos(Math.PI/4) + 500, 
+    heightOffset, 
+    wholeModelDistance * Math.cos(Math.PI/4) + 500
+  );
+  camera.lookAt(center);
+  await renderAndDownload("wholeModel", camera, renderer, modelGroup.name, imagesNameArr);
+
+  // Restore original camera position and rotation
+  camera.position.copy(originalPosition);
+  camera.rotation.copy(originalRotation);
+  camera.quaternion.copy(originalQuaternion);
+
+  // Restore scene background
+  scene.backgroundBlurriness = params.blurriness;
+  texture_background.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = texture_background;
+  scene.environment = texture_background;
+
+  return imagesNameArr;
+}
 // Modified download function with proper async handling
 // async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
 //   return new Promise((resolve, reject) => {

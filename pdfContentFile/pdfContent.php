@@ -6,10 +6,10 @@
     <title>Document</title>
     <style>
         .modelDesc tr:nth-child(odd) {
-            background-color: white;
+            background-color: #e6e7e8;
         }
         .modelDesc tr:nth-child(even) {
-            background-color: #e6e7e8;
+            background-color: white;
         }
         .modelDesc td{
             padding-left:8px;
@@ -108,13 +108,13 @@
                                 <tr style="background-color:#e6e7e9;">
                                     <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">MODEL <?php echo $index + 1 ?></td>
                                 </tr>
-                                <tr style="background-color:#007b71;">
-                                    <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
-                                    <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
-                                </tr>
                                 <tr>
                                     <td colspan="2" style="padding:0px; margin:0px;">
                                         <table class="modelDesc" style="width:100%; vertical-align:top;">
+                                            <tr style="background-color:#007b71;">
+                                                <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
+                                                <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
+                                            </tr>
                                             <!-- <tr>
                                                 <td style="width:50%;">Model Specification: </td>
                                                 <td style="width:50%;"><?php echo $ModelMeasureArr['modelMeasure']['width'].' x '.$ModelMeasureArr['modelMeasure']['height'].' x '.$ModelMeasureArr['modelMeasure']['depth'] ?></td>
@@ -208,13 +208,13 @@
                                 <tr style="background-color:#e6e7e9;">
                                     <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">FIXTURES</td>
                                 </tr>
-                                <tr style="background-color:#007b71;">
-                                    <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
-                                    <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
-                                </tr>
                                 <tr>
                                     <td colspan="2" style="padding:0px; margin:0px;">
                                         <table class="modelDesc" style="width:100%;">
+                                            <tr style="background-color:#007b71;">
+                                                <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
+                                                <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
+                                            </tr>
                                             <?php 
                                             if (in_array('Hanger_Rail_Step', $HangerArr)) {
                                                 ?>
@@ -364,7 +364,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="240px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" width="260px" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
