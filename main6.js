@@ -2377,6 +2377,13 @@ async function renderAndDownload(
   name,
   imagesNameArr
 ) {
+  // tempRenderer.render(scene, camera);
+  // const screenshotData2 = tempRenderer.domElement.toDataURL("image/png");
+  // const unixTime2 = Math.floor(Date.now() / 1000);
+  // const link2 = document.createElement("a");
+  // link2.href = screenshotData2;
+  // link2.download = `model-${name}-${viewName}-${unixTime2}.png`;
+  // link2.click();
   // Store original renderer size and camera properties
   const originalWidth = tempRenderer.domElement.width;
   const originalHeight = tempRenderer.domElement.height;
@@ -2384,13 +2391,14 @@ async function renderAndDownload(
   const originalPosition = camera.position.clone();
   const originalRotation = camera.rotation.clone();
   const originalQuaternion = camera.quaternion.clone();
+  console.log(viewName, " _ ", originalWidth);
+  
 
   try {
     // Set higher resolution (2x or 3x the original resolution)
     const scaleFactor =
-      (viewName == "diagonal" || viewName == "wholeModel") &&
-      originalWidth * 3 > 5000
-        ? 1
+      ((viewName == "diagonal" || viewName == "wholeModel") && originalWidth * 3 > 5000) || (viewName == "front" && (originalWidth >= 3000 || originalWidth * 3 > 5000))
+        ? 3
         : 3; // Adjust this factor as needed
     tempRenderer.setSize(
       originalWidth * scaleFactor,
@@ -2407,6 +2415,10 @@ async function renderAndDownload(
     tempRenderer.render(scene, camera);
     const screenshotData = tempRenderer.domElement.toDataURL("image/png");
     const unixTime = Math.floor(Date.now() / 1000);
+    // const link = document.createElement("a");
+    // link.href = screenshotData;
+    // link.download = `model-${name}-${viewName}-${unixTime}_dummy.png`;
+    // link.click();
 
     // Download or save the screenshot
     await downloadScreenshotwithDiffCanvas(
@@ -2806,6 +2818,7 @@ function cloneRenderer(renderer) {
 
   // Copy pixel ratio
   newRenderer.setPixelRatio(renderer.getPixelRatio());
+  newRenderer.toneMapping = THREE.NoToneMapping;
 
   // Copy shadow map settings
   // newRenderer.shadowMap.enabled = renderer.shadowMap.enabled;
@@ -2836,7 +2849,7 @@ async function captureModelImages2(model, imagesNameArr) {
   tempCanvas.height = size.y;
   // const tempRenderer = renderer.clone();
   const tempRenderer = cloneRenderer(renderer);
-  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+  tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
   tempRenderer.setClearColor(0x000000, 0);
 
   // Set up an orthographic camera based on the bounding box size
@@ -2850,18 +2863,24 @@ async function captureModelImages2(model, imagesNameArr) {
   );
 
   // Step 2a: Front view - Set the camera position to capture the front of the model
-  frontCamera.position.set(center.x, center.y, center.z + 700 * 3.4); // Increase the z-distance
+  frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
   frontCamera.lookAt(center);
-  renderAndDownload("front", frontCamera, tempRenderer, model.name, imagesNameArr);
+  renderAndDownload(
+    "front",
+    frontCamera,
+    tempRenderer,
+    model.name,
+    imagesNameArr
+  );
 
   // Side view
-  console.log(size);
   // tempCanvas.width = size.z < size.y ? size.z : size.y;
   // tempCanvas.height = size.z > size.y ? size.z : size.y;
   tempCanvas.width = 1602;
   tempCanvas.height = 2005;
-  console.log(tempCanvas.width);
-  console.log(tempCanvas.height);
+  console.log(size);
+  // console.log(tempCanvas.width);
+  // console.log(tempCanvas.height);
 
   tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
   const sideCamera = new THREE.OrthographicCamera(
@@ -2874,7 +2893,7 @@ async function captureModelImages2(model, imagesNameArr) {
   );
   // Position the camera along the positive X-axis for a side view
   const sideViewDistance = size.x * 1.5;
-  sideCamera.position.set(center.x + sideViewDistance , center.y, center.z);
+  sideCamera.position.set(center.x + sideViewDistance, center.y, center.z);
   sideCamera.lookAt(center);
 
   // Wait for side view render to complete
@@ -2885,35 +2904,60 @@ async function captureModelImages2(model, imagesNameArr) {
     model.name,
     imagesNameArr
   );
+
+  // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
+  tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
+  tempCanvas.height = size.y; // Use both y and z for better height coverage
+  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+  const diagonalCamera = new THREE.PerspectiveCamera(
+    45,
+    size.x / size.y,
+    100,
+    100000
+  );
+  
+  const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
+  const cameraDistance = maxDim + 200; // Adjust multiplier as needed
+
+  diagonalCamera.position.set(
+    center.x + cameraDistance, // Offset in X for diagonal perspective
+    center.y, // Offset in Y for better centering
+    center.z + cameraDistance // Offset in Z for distance
+  );
+
+  diagonalCamera.lookAt(center);
+  renderAndDownload(
+    "diagonal",
+    diagonalCamera,
+    tempRenderer,
+    model.name,
+    imagesNameArr
+  );
 }
 
 async function captureModelImages(modelGroup) {
   let imagesNameArr = [];
   scene.background = null; // No background color for transparency
-  
+
   // Store original camera position and rotation
   const originalPosition = camera.position.clone();
   const originalRotation = camera.rotation.clone();
   const originalQuaternion = camera.quaternion.clone();
 
-
   // Calculate bounding box for the model group
-  const boundingBox = new THREE.Box3().setFromObject(modelGroup);
-  const center = boundingBox.getCenter(new THREE.Vector3());
-  const size = boundingBox.getSize(new THREE.Vector3());
+  const Outerbox = await cloneMainModelGroup(modelGroup);
+  const size = Outerbox.getSize(new THREE.Vector3());
+  const center = Outerbox.getCenter(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
   const fov = camera.fov * (Math.PI / 180);
-  
+
   // Adjusted distance calculation - reduced divisor for closer view
   const distance = Math.abs(maxDim / Math.sin(fov / 2) / 2.5); // Changed from 1.5 to 3.5 for closer view
-  
+
   // Optional: Add a slight elevation to the camera
   const heightOffset = size.y * 0.1; // 10% of model height
 
-  for (const model of modelGroup.children) {    
-    const ModelboundingBox = new THREE.Box3().setFromObject(model);
-    const Modelcenter = ModelboundingBox.getCenter(new THREE.Vector3());
-    
+  for (const model of modelGroup.children) {
     let isCorn = false;
     renderer.setClearColor(0x000000, 0);
 
@@ -2942,16 +2986,6 @@ async function captureModelImages(modelGroup) {
 
     // Front view - slightly elevated
     await captureModelImages2(model, imagesNameArr);
-
-    // Diagonal view (45 degrees) - slightly elevated
-    const diagonalDistance = distance * 0.8; // Slightly closer for diagonal view
-    camera.position.set(
-      diagonalDistance * Math.cos(Math.PI/4) + 500,  
-      heightOffset, 
-      diagonalDistance * Math.cos(Math.PI/4) + 500
-    );
-    camera.lookAt(center);
-    await renderAndDownload("diagonal", camera, renderer, model.name, imagesNameArr);
 
     // Restore visibility
     scene.children.forEach((childScene) => {
@@ -2982,14 +3016,57 @@ async function captureModelImages(modelGroup) {
     });
   }
 
-  const wholeModelDistance = distance * 0.8; // Slightly closer for wholeModel view
+  // // Prepare a temporary canvas for rendering
+  // const tempCanvas = document.createElement("canvas");
+  // tempCanvas.width = size.x;
+  // tempCanvas.height = size.y;
+  // // const tempRenderer = renderer.clone();
+  // const tempRenderer = cloneRenderer(renderer);
+  // tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
+  // tempRenderer.setClearColor(0x000000, 0);
+
+  // tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
+  // tempCanvas.height = size.y; // Use both y and z for better height coverage
+  // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+  // const diagonalCamera = new THREE.PerspectiveCamera(
+  //   45,
+  //   size.x / size.y,
+  //   100,
+  //   100000
+  // );
+
+  // const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
+  // const cameraDistance = maxDim + 200; // Adjust multiplier as needed
+
+  // diagonalCamera.position.set(
+  //   center.x + cameraDistance, // Offset in X for diagonal perspective
+  //   center.y, // Offset in Y for better centering
+  //   center.z + cameraDistance // Offset in Z for distance
+  // );
+
+  // diagonalCamera.lookAt(center);
+  // renderAndDownload(
+  //   "diagonal",
+  //   diagonalCamera,
+  //   tempRenderer,
+  //   model.name,
+  //   imagesNameArr
+  // );
+
+  const wholeModelDistance = distance + 1000; // Slightly closer for wholeModel view
   camera.position.set(
-    wholeModelDistance * Math.cos(Math.PI/4) + 500, 
-    heightOffset, 
-    wholeModelDistance * Math.cos(Math.PI/4) + 500
+    wholeModelDistance * Math.cos(Math.PI / 4) + 500,
+    heightOffset,
+    wholeModelDistance * Math.cos(Math.PI / 4) + 500
   );
   camera.lookAt(center);
-  await renderAndDownload("wholeModel", camera, renderer, modelGroup.name, imagesNameArr);
+  await renderAndDownload(
+    "wholeModel",
+    camera,
+    renderer,
+    modelGroup.name,
+    imagesNameArr
+  );
 
   // Restore original camera position and rotation
   camera.position.copy(originalPosition);
