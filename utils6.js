@@ -453,6 +453,17 @@ export async function cloneWithCustomProperties(source, target) {
     }
   }
 }
+export async function cloneWithCustomHangerProperties(source, target) {
+  for (let model of hangerNames) {
+    let sourceModel = source.getObjectByName(model);
+    let targetModel = target.getObjectByName(model);
+    for (let key in sourceModel) {
+      if (sourceModel.hasOwnProperty(key) && !targetModel.hasOwnProperty(key)) {
+        targetModel[key] = sourceModel[key];
+      }
+    }
+  }
+}
 
 export async function setupArrowModel(main_model, arrow_model) {
   // console.log('arrow_model', arrow_model)
@@ -603,7 +614,7 @@ export async function createSupportBase(
       supportSide = await setPositionCenter(supportSide);
       supportSide.position.set(
         supportSide.position.x + xOffset, // Adjust based on offset
-        supportSide.position.y + baseY,
+        supportSide.position.y + baseY + 30,
         supportSide.position.z
       );
       positionY = supportSide.position.y;
@@ -1153,7 +1164,7 @@ export async function setupHangerModel(hanger_model) {
         child.material.color.set(await getHex(params.defaultClothingColor));
         child.material.needsUpdate = true;
       }
-      if (child.material && ["Hanger_Stand"].includes(child.name)) {
+      if (child.material && ["Hanger_Stand","Hanger_Stand-Arm_Metal","Hanger_Stand-Fixture_Material"].includes(child.name)) {
         const material = await commonMaterial(
           parseInt(params.defaultHangerStandColor, 16)
         );
@@ -1231,6 +1242,20 @@ export async function setupHangerGolfClubModel(hanger_golf_club_model) {
       // if (child.name == "Driver_Arm") {
       //     child.name = 'Hanger_Stand';
       // }
+      if (
+        child.material &&
+        [
+          "Hanger_Stand",
+          "Hanger_Stand-Arm_Metal",
+          "Hanger_Stand-Arm_Rubber",
+        ].includes(child.name)
+      ) {
+        const material = await commonMaterial(
+          parseInt(params.defaultHangerStandColor, 16)
+        );
+        child.material = material;
+        child.material.needsUpdate = true;
+      }
       if (child.material && ["Hanger_Stand"].includes(child.name)) {
         // const material = await commonMaterial(parseInt(params.defaultHangerStandColor, 16))
         // child.material = material
@@ -1465,13 +1490,12 @@ export async function showHideNodes(modelGroup, scene, camera) {
       }
     });
     let main_model = modelGroup.getObjectByName(params.selectedGroupName);
-    // console.log('main_model', main_model)
     await traverseAsync(main_model, async (child) => {
       let currentModelNode = await getMainParentNode(
         child,
         allModelNames,
         false
-      );
+      );      
       // console.log('currentModelNode', currentModelNode)
       // console.log('child', child)
       // console.log('child.name', child.name)
@@ -1495,6 +1519,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
       }
       if (child.name === "Left_Ex" || child.name === "Right_Ex") {
         if (isSlottedSides && current_setting.slottedSidesToggle) {
+
           child.visible = false;
         } else {
           child.visible = true;
@@ -1502,7 +1527,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
       }
       if (hangerNames.includes(child.name)) {
         if (isSlottedSides && current_setting.slottedSidesToggle) {
-          child.visible = false;
+          child.visible = true;
         } else {
           child.visible = true;
         }
@@ -1518,7 +1543,23 @@ export async function showHideNodes(modelGroup, scene, camera) {
         }
       }
       if (rackNames.includes(child.name)) {
-        if (isSlottedSides && current_setting.slottedSidesToggle) {
+        let rackArr = child.rackArrayKey;
+        let rackModelName = rackArr.split("-")[1];
+        let rackside = rackArr.split("-")[2];
+        let isSameSide = false;
+        let currentModel = main_model.getObjectByName(rackModelName);
+        let frame = currentModel.getObjectByName("Frame");
+        for(const hangerFrame of frame.children){
+          if(hangerNames.includes(hangerFrame.name) && hangerFrame.visible){    
+            let hangerArrKey = hangerFrame.hangerArrayKey;
+            let hangerModel = hangerArrKey.split("-")[1];
+            let hangerSide = hangerArrKey.split("-")[2];
+            if(rackModelName === hangerModel && rackside === hangerSide){
+              isSameSide = true;
+            }            
+          }
+        }
+        if (isSlottedSides && current_setting.slottedSidesToggle && isSameSide == false) {
           child.visible = true;
         } else {
           child.visible = false;
@@ -1623,6 +1664,13 @@ export async function showHideNodes(modelGroup, scene, camera) {
         (child.name.startsWith("Base_Option") ||
           child.name === "Base_Support_Sides")
       ) {
+        if(child.name === "Base_Support_Sides"){
+          await traverseAsync(child, async (subChild) => {
+            subChild.material = subChild.material.clone();
+            subChild.material.color.set(await getHex(current_setting.baseFrameColor));
+            subChild.material.needsUpdate = true;
+          })
+        }
         child.material = child.material.clone();
         child.material.color.set(await getHex(current_setting.baseFrameColor));
         child.material.needsUpdate = true;
@@ -1779,6 +1827,12 @@ export async function showHideNodes(modelGroup, scene, camera) {
     );
     if (baseSelectorDropdown) {
       baseSelectorDropdown.value = current_setting.selectedBaseFrame;
+    }
+    let baseColor = parentElement.querySelector(
+      ".baseColor"
+    );
+    if (baseColor) {
+      baseColor.value = current_setting.baseFrameColor;
     }
     let hangerClothesToggle = parentElement.querySelector(
       ".hangerClothesToggle"
@@ -3254,6 +3308,14 @@ export async function addHangers(
         } else {
           side = camera.position.z > 0 ? "Front" : "Back";
         }
+        let sameSide = false;
+        for(const rackHanger of frame.children){
+          if(rackNames.includes(rackHanger.name)){
+            if(side === rackHanger.side){
+              sameSide = true;
+            }
+          }
+        }
 
         const hangerPrefix =
           selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
@@ -3277,8 +3339,10 @@ export async function addHangers(
         //   // console.log("There is not enough .", frame, hangermodel, hangerType, params.hangerCount, hangerArrayKey, conditionFlag);
         // }
 
-        let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
-        if (!leftSideSlotted || !leftSideSlotted.visible) {
+        // let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
+        let RackShelf = frame.getObjectByName("RackWoodenShelf") || frame.getObjectByName("RackGlassShelf");
+        // if (!leftSideSlotted || !leftSideSlotted.visible) {
+        if (!RackShelf || !RackShelf.visible || sameSide === false) {
           if (conditionFlag) {
             hanger.position.y -= params.cameraPosition;
             hanger.name = hangerType;
@@ -3357,6 +3421,7 @@ export async function addHangers(
             let count = params.hangerCount[hangerArrayKey];
             hanger.hangerCount = count;
             hanger.hangerArrayKey = hangerArrayKey;
+            hanger.side = side;
 
             // params.hangerAdded = params.hangerAdded || {};
             // params.hangerAdded[hangerArrayKey] = params.hangerAdded[hangerArrayKey] || {};
@@ -3394,7 +3459,7 @@ export async function addRacks(
   let defaultModelName = setting[selectedGroupName].defaultModel;
   let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
   let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
-  let rack_model;
+  let rack_model;  
   if (rackType == "RackGlassShelf") {
     rack_model = rack_glass_model;
   } else if (rackType == "RackWoodenShelf") {
@@ -3405,21 +3470,26 @@ export async function addRacks(
     let rack_clone = rack_model.clone();
     let frame = defaultModel.getObjectByName("Frame");
     let rack = rack_clone.getObjectByName(defaultModelName);
-
     if (rack) {
+      let side;
+      if (lastside) {
+        side = lastside;
+      } else {
+        side = camera.position.z > 0 ? "Front" : "Back";
+      }
+      let sameSide = false;
+      for(const frameHanger of frame.children){
+        if(hangerNames.includes(frameHanger.name)){
+          if(side === frameHanger.side){
+            sameSide = true;
+          }
+        }
+      }
       rack.name = rackType;
-
       // Get the Left_Ex_Slotted node
       let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
       let topExSide = frame.getObjectByName("Top_Ex");
-
-      if (topExSide && leftSideSlotted && leftSideSlotted.visible) {
-        let side;
-        if (lastside) {
-          side = lastside;
-        } else {
-          side = camera.position.z > 0 ? "Front" : "Back";
-        }
+      if (topExSide && leftSideSlotted && leftSideSlotted.visible && sameSide === false) {
 
         const rackPrefix =
           selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
@@ -3489,6 +3559,7 @@ export async function addRacks(
         let count = params.rackCount[rackArrayKey];
         rack.rackCount = count;
         rack.rackArrayKey = rackArrayKey;
+        rack.side = side;
 
         await showHideNodes(modelGroup, scene, camera);
       }
@@ -3869,8 +3940,36 @@ async function saveModel(blob, filename) {
 
 async function exportGLB(clone, name) {
   const gltfExporter = new GLTFExporter();
-  const result = await gltfExporter.parseAsync(clone, { binary: true });
+  // Define the export options
+  const options = {
+    // Mesh compression options
+    compressed: true, // Enable mesh compression
+    bufferStreamed: true, // Stream the buffer data
+    compressMaterials: true, // Compress materials
+
+    // Texture compression options
+    embedImages: false, // Embed images in the GLB file
+    forcePowerOfTwoTextures: true, // Ensure textures have power-of-two dimensions
+    textureCompressionFormat: THREE.RGBA_ASTC_4x4_Format, // Use ASTC texture compression
+
+    // Other options
+    includeCustomExtensions: false, // Exclude custom extensions
+    includeImages: false, // Include images in the GLB file
+    includeAnimations: false, // Exclude animations
+    includeMaterials: true, // Include materials
+    includeGeometries: true, // Include geometries
+
+    // Normal options
+    includeNormals: false, // Set to false to exclude normals
+    binary: true
+  };
+  const result = await gltfExporter.parseAsync(clone, options);
   const blob = new Blob([result], { type: "application/octet-stream" });
+  console.log(blob);
+  // const modellink = document.createElement("a");
+  // modellink.href = URL.createObjectURL(blob);
+  // modellink.download = name + ".glb";
+  // modellink.click();
   await saveModel(blob, `${name}.glb`);
 }
 

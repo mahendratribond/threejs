@@ -459,6 +459,33 @@ body.loaded .loader-wrapper {
   cursor: pointer;
   border-radius: 3px;
 }
+#formBase{
+  background-color: white;
+  border-radius: 6px;
+  padding: 30px;
+  color: black;
+  width: 350px;
+  position: relative;
+}
+#formStyle{
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+}
+#formCloseBtn{
+  position: absolute;
+  right: 25px;
+  top: 19px;
+  color: gray;
+  font-size: 17px;
+  border: 0;
+  background-color: transparent;
+}
+#formCloseBtn:hover{
+  background-color: #f0f0f0;
+  border-radius: 6px;
+} 
+
 
 @keyframes spin {
   0% {

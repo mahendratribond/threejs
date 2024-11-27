@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        .modelDesc tr:nth-child(odd) {
+        /* body{
+            background-color: #f0f0f0;
+        } */
+        .modelDesc tr:nth-child(odd):not(.notThis) {
             background-color: #e6e7e8;
         }
-        .modelDesc tr:nth-child(even) {
+        .modelDesc tr:nth-child(even):not(.notThis) {
             background-color: white;
         }
         .modelDesc td{
@@ -55,9 +58,7 @@
                     foreach($data['params']['hangerAdded'] as $hangerKey => $hangerVal){
                         $hangerPartkey = explode('-',$hangerKey);
                         if($hangerPartkey[0] == $groupName){
-                            if($hangerPartkey[2] == "Front"){
-                                $HangerArr[] = $hangerPartkey[3];   
-                            } 
+                            $HangerArr[] = $hangerPartkey[3];    
                         }
                     }
                 }
@@ -104,14 +105,14 @@
                             <?php } ?>
                         </td>
                         <td width="45%" style="padding:130px 70px 0px 90px; padding-top: 0px;">
-                            <table style="width:100%; border-bottom:1px solid #007b71;">
+                            <table style="width:100%;">
                                 <tr style="background-color:#e6e7e9;">
                                     <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">MODEL <?php echo $index + 1 ?></td>
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="padding:0px; margin:0px;">
                                         <table class="modelDesc" style="width:100%; vertical-align:top;">
-                                            <tr style="background-color:#007b71;">
+                                            <tr class="notThis" style="background-color:#007b71;">
                                                 <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
                                                 <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
                                             </tr>
@@ -200,18 +201,24 @@
                                                     ?>
                                                 </td>
                                             </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            <table style="width:100%; padding-top:5px;">
-                                <tr style="background-color:#e6e7e9;">
-                                    <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">FIXTURES</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" style="padding:0px; margin:0px;">
-                                        <table class="modelDesc" style="width:100%;">
-                                            <tr style="background-color:#007b71;">
+                                            <tr>
+                                                <td colspan="2" style="border-bottom:1px solid #007b71; padding:0px; height:1px"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="padding:0px; height:10px; background-color:white;"></td>
+                                            </tr>
+                                                            <!-- </table>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                <table style="width:100%; padding-top:5px;">
+                                                    <tr>
+                                                        <td colspan="2" style="padding:0px; margin:0px;">
+                                                            <table class="modelDesc" style="width:100%; vertical-align:top;"> -->
+                                            <tr class="notThis" style="background-color:#e6e7e9;">
+                                                <td colspan="2" style="height: 40px; font-size:14px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">FIXTURES</td>
+                                            </tr>
+                                            <tr class="notThis" style="background-color:#007b71;">
                                                 <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
                                                 <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
                                             </tr>
@@ -297,7 +304,7 @@
                                             if(empty($HangerArr)){
                                                 ?>
                                                 <tr>
-                                                    <td colspan="2" style="width:100%;">
+                                                    <td colspan="2" style="background-color:white;">
                                                         <div>
                                                             <span style="font-family:gothambook; font-weight:bold;">NONE</span>
                                                         </div> 
@@ -314,6 +321,150 @@
                     </tr>
                 </table>
                 <pagebreak />
+                <?php foreach($HangerArr as $HangerModleKey => $HangerModleValue){
+                ?>
+                    <table style="width:100%; table-layout: fixed;"> 
+                        <tr>
+                            <td colspan="2">
+                                <table width="100%">
+                                    <tr>
+                                        <td style="padding:18px 0px 0px 32px;">
+                                            <p style="font-size:13.5px; font-family:gotham; font-weight:bold; letter-spacing:1px;">MODEL <?php echo $index + 1 ?>&nbsp;| <span style="font-family:gothambook; letter-spacing:1px; font-weight:normal;">SPECIFICATION</span></p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="55%" style="padding-top: 50px;">
+                                <?php foreach($data['ModelImageName'] as $imageLink){ ?>
+                                    <?php
+                                        $trimmedPath = str_replace('./screenshots/', '', $imageLink);
+                                        $parts = explode('-', $trimmedPath);
+                                        if($parts[1] == $groupName && str_starts_with($parts[2], "Hanger") && $HangerModleValue == $parts[2]) {
+                                    ?> 
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                                        <tr>
+                                            <td valign="middle" align="center" height="520" style="">
+                                                <img src="<?php echo $imageLink ?>" style="display:block; max-width:500px; max-height:510px; width:auto; height:auto; ">
+                                            </td>
+                                        </tr>
+                                    </table>         
+                                    <?php } ?>
+                                <?php } ?>
+                            </td>
+                            <td width="45%" style="padding:130px 70px 0px 90px; padding-top: 0px;">
+                                <table style="width:100%;">
+                                    <tr style="background-color:#e6e7e9;">
+                                        <td colspan="2" style="height: 40px; padding-left:10px; font-family:gotham; font-weight:bold; letter-spacing:2px;">MODEL <?php echo $index + 1 ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" style="padding:0px; margin:0px;">
+                                            <table class="modelDesc" style="width:100%; vertical-align:top;">
+                                                <tr class="notThis" style="background-color:#007b71;">
+                                                    <td style="width:50%; padding-left:8px; border-right:0.1px solid white; font-size:9px; font-family:gotham; font-weight:bold; color:white; height: 30px; letter-spacing:2px;">COMPONENTS</td>
+                                                    <td style="width:50%; padding-left:8px; color:white; height: 30px;font-size:9px; font-family:gotham; font-weight:bold; letter-spacing:2px;">SIZE</td>
+                                                </tr>
+                                                <?php 
+                                                if (in_array('Hanger_Rail_Step', $HangerArr) && $HangerModleValue == 'Hanger_Rail_Step') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">RAIL STEP</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if (in_array('Hanger_Rail_Single', $HangerArr) && $HangerModleValue == 'Hanger_Rail_Single') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">RAIL SINGLE</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if (in_array('Hanger_Rail_D_500mm', $HangerArr) && $HangerModleValue == 'Hanger_Rail_D_500mm') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">RAIL D 500M</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if (in_array('Hanger_Rail_D_1000mm', $HangerArr) && $HangerModleValue == 'Hanger_Rail_D_1000mm') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">RAIL D 1000M</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if (in_array('Hanger_Golf_Club_Driver', $HangerArr) && $HangerModleValue == 'Hanger_Golf_Club_Driver') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">DRIVER ARMS</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if (in_array('Hanger_Golf_Club_Iron', $HangerArr) && $HangerModleValue == 'Hanger_Golf_Club_Iron') {
+                                                    ?>
+                                                    <tr>
+                                                        <td style="width:50%;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">IRON ARMS</span>
+                                                                <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
+                                                            </div> 
+                                                        </td>
+                                                        <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm'; ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if(empty($HangerArr)){
+                                                    ?>
+                                                    <tr>
+                                                        <td colspan="2" style="background-color:white;">
+                                                            <div>
+                                                                <span style="font-family:gothambook; font-weight:bold;">NONE</span>
+                                                            </div> 
+                                                        </td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                ?>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <pagebreak />
+                <?php } ?>
                 <?php switch ($value['defaultModel']) {
                     case 'Model_1061':
                         ?>
@@ -524,7 +675,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="210px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -573,7 +724,7 @@
                                 <td width="100%">
                                     <table width="100%">
                                         <tr>
-                                            <td width="70%" style="padding-top:75px;  text-align:center;">
+                                            <td width="60%" style="padding-top:75px;  text-align:center;">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -627,7 +778,7 @@
                                                     <?php } ?>
                                                 <?php } ?>
                                             </td>
-                                            <td width="30%" style="padding-top:75px; ">
+                                            <td width="40%" style="padding-top:75px; ">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -644,7 +795,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="210px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -693,7 +844,7 @@
                                 <td width="100%">
                                     <table width="100%">
                                         <tr>
-                                            <td width="70%" style="padding-top:75px;  text-align:center;">
+                                            <td width="60%" style="padding-top:75px;  text-align:center;">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -747,7 +898,7 @@
                                                     <?php } ?>
                                                 <?php } ?>
                                             </td>
-                                            <td width="30%" style="padding-top:75px; ">
+                                            <td width="40%" style="padding-top:75px; ">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -764,7 +915,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="210px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -813,7 +964,7 @@
                                 <td width="100%">
                                     <table width="100%">
                                         <tr>
-                                            <td width="70%" style="padding-top:75px;  text-align:center;">
+                                            <td width="60%" style="padding-top:75px;  text-align:center;">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -844,7 +995,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="560px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" width="500px" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -867,14 +1018,14 @@
                                                     <?php } ?>
                                                 <?php } ?>
                                             </td>
-                                            <td width="30%" style="padding-top:75px; ">
+                                            <td width="40%" style="padding-top:75px; ">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
                                                         $parts = explode('-', $trimmedPath);
                                                         if($parts[1] == $groupName && $parts[2] == "side"){
                                                     ?> 
-                                                    <table style="margin: 0; padding-left:0px;">
+                                                    <table style="margin: 0; padding-left:10px;">
                                                         <tr>
                                                             <td></td>
                                                             <td style="padding-bottom: 38px; text-align:center;">
@@ -884,7 +1035,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="210px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -1004,7 +1155,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="240px" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
                                                             </td>
                                                         </tr>
                                                         <tr>

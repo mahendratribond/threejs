@@ -59,6 +59,7 @@ import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { ColladaLoader } from "three/addons/loaders/ColladaLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import {
+  cloneWithCustomHangerProperties,
   drawMeasurementBoxesWithLabels,
   setupHeaderWoodenShelfModel,
   setupHeaderGlassShelfModel,
@@ -186,6 +187,9 @@ const cropButton = document.getElementById("crop-button");
 const closeButton = document.getElementById("close-button");
 const closeButtonAR = document.getElementById("closeButtonAR");
 const createQrButton = document.getElementById("createQrButton");
+const formSubmition = document.getElementById("formSubmition");
+const formCloseBtn = document.getElementById("formCloseBtn");
+const submitForm = document.querySelector(".submitForm");
 
 const accordionModel = document.getElementById("accordionModel");
 const moveLeftModel = document.getElementById("moveLeftModel");
@@ -326,7 +330,6 @@ async function init() {
   renderer.setAnimationLoop(render);
 
   container.appendChild(renderer.domElement);
-  
 
   // renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMapping = THREE.NoToneMapping;
@@ -670,7 +673,6 @@ async function loadPreviousModels() {
   await loaderShowHide(false);
 }
 
-
 async function loadHangerModels() {
   if (!hanger_rail_step) {
     hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
@@ -897,6 +899,7 @@ async function onMouseClick(event) {
         if (hangerArrayKey) {
           params.hangerCount[hangerArrayKey] -= 1;
         }
+        await showHideNodes(modelGroup, scene, camera);
       } else if (iconName.startsWith("removeRack-")) {
         let nodeName = iconName.replace("removeRack-", "");
         let hangerToRemove = await findParentNodeByName(selectedNode, nodeName);
@@ -1539,11 +1542,11 @@ async function updateMaterial(
   }
 
   if (dropdownType === "frame") {
-    if (type && type == "color" && value && value == "0xffffff") {
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    } else {
-      renderer.toneMapping = THREE.AgXToneMapping;
-    }
+    // if (type && type == "color" && value && value == "0xffffff") {
+    //   renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // } else {
+    //   renderer.toneMapping = THREE.AgXToneMapping;
+    // }
     await lightSetup();
   }
   // console.log(main_model)
@@ -1891,6 +1894,24 @@ if (measurementToggle) {
   });
 }
 
+async function saveCropImage(cropper){
+  const base64Image = cropper.getCroppedCanvas().toDataURL("image/png");  
+  const formData = new FormData();
+  formData.append("modelCropImage", base64Image);
+  formData.append("action", "saveModelCropImage");
+  try {
+    const response = await fetch("api.php", {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+    return data; // Ensure the resolved data is returned
+  } catch (error) {
+    console.error("Error saving image:", error);
+    throw error; // Re-throw the error to handle it at the calling point
+  }
+}
+
 if (cropButton) {
   cropButton.addEventListener("click", async function (event) {
     console.log("cropper", cropper);
@@ -1900,11 +1921,11 @@ if (cropButton) {
       let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
       if (params.fileUploadFlag == "MainFrame") {
         mainFrameCropedImage = mainFrameCropedImage || {};
-        mainFrameCropedImage[selectedGroupName] =
-          mainFrameCropedImage[selectedGroupName] || {};
-        mainFrameCropedImage[selectedGroupName][defaultModel] = cropper
-          .getCroppedCanvas()
-          .toDataURL("image/png");
+        mainFrameCropedImage[selectedGroupName] = mainFrameCropedImage[selectedGroupName] || {};     
+        // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas().toDataURL("image/png");
+        // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
+        let mainFrameSaveImageURl = await saveCropImage(cropper);  
+        mainFrameCropedImage[selectedGroupName][defaultModel] = mainFrameSaveImageURl.imageUrl;
         await setMainFrameCropedImage();
       } else if (params.fileUploadFlag == "TopFrame") {
         topFrameCropedImage = topFrameCropedImage || {};
@@ -1912,9 +1933,10 @@ if (cropButton) {
           topFrameCropedImage[selectedGroupName] || {};
         topFrameCropedImage[selectedGroupName][defaultModel] =
           topFrameCropedImage[selectedGroupName][defaultModel] || {};
-        topFrameCropedImage[selectedGroupName][defaultModel][
-          defaultHeaderSize
-        ] = cropper.getCroppedCanvas().toDataURL("image/png");
+        // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas().toDataURL("image/png");
+        // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
+        let topFrameSaveImageURl = await saveCropImage(cropper);
+        topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;
         await setTopFrameCropedImage();
       }
     }
@@ -2249,10 +2271,6 @@ function hideLoadingModal() {
   document.getElementById("loadingModal").style.display = "none";
 }
 
-closeButton.addEventListener("click", () => {
-  document.body.removeChild(document.getElementById("ArView"));
-});
-
 if (closeButtonAR) {
   closeButtonAR.addEventListener("click", () => {
     let arviewer = document.getElementById("ArView");
@@ -2377,13 +2395,13 @@ async function renderAndDownload(
   name,
   imagesNameArr
 ) {
-  // tempRenderer.render(scene, camera);
-  // const screenshotData2 = tempRenderer.domElement.toDataURL("image/png");
-  // const unixTime2 = Math.floor(Date.now() / 1000);
-  // const link2 = document.createElement("a");
-  // link2.href = screenshotData2;
-  // link2.download = `model-${name}-${viewName}-${unixTime2}.png`;
-  // link2.click();
+  tempRenderer.render(scene, camera);
+  const screenshotData2 = tempRenderer.domElement.toDataURL("image/png");
+  const unixTime2 = Math.floor(Date.now() / 1000);
+  const link2 = document.createElement("a");
+  link2.href = screenshotData2;
+  link2.download = `model-${name}-${viewName}-${unixTime2}.png`;
+  link2.click();
   // Store original renderer size and camera properties
   const originalWidth = tempRenderer.domElement.width;
   const originalHeight = tempRenderer.domElement.height;
@@ -2392,14 +2410,22 @@ async function renderAndDownload(
   const originalRotation = camera.rotation.clone();
   const originalQuaternion = camera.quaternion.clone();
   console.log(viewName, " _ ", originalWidth);
-  
 
   try {
     // Set higher resolution (2x or 3x the original resolution)
-    const scaleFactor =
-      ((viewName == "diagonal" || viewName == "wholeModel") && originalWidth * 3 > 5000) || (viewName == "front" && (originalWidth >= 3000 || originalWidth * 3 > 5000))
-        ? 3
-        : 3; // Adjust this factor as needed
+    let scaleFactor = 3; // Default scale factor
+
+    if (
+      (viewName === "diagonal" || viewName === "wholeModel") &&
+      originalWidth * 3 > 5000
+    ) {
+      scaleFactor = 2;
+    } else if (
+      viewName === "front" &&
+      (originalWidth >= 3000 || originalWidth * 3 > 5000)
+    ) {
+      scaleFactor = 2;
+    }
     tempRenderer.setSize(
       originalWidth * scaleFactor,
       originalHeight * scaleFactor,
@@ -2410,7 +2436,6 @@ async function renderAndDownload(
     camera.aspect =
       (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
     camera.updateProjectionMatrix();
-
     // Render the scene and capture the screenshot
     tempRenderer.render(scene, camera);
     const screenshotData = tempRenderer.domElement.toDataURL("image/png");
@@ -2465,7 +2490,6 @@ async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
   } catch (error) {
     console.error("Fetch error:", error);
   }
-
 }
 
 function removeBlankSpacesFromImage(imageSrc) {
@@ -2474,8 +2498,8 @@ function removeBlankSpacesFromImage(imageSrc) {
     img.src = imageSrc;
     img.onload = function () {
       // Create a canvas to work with the image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       canvas.width = img.width;
       canvas.height = img.height;
 
@@ -2486,7 +2510,10 @@ function removeBlankSpacesFromImage(imageSrc) {
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const { data, width, height } = imageData;
 
-      let top = 0, bottom = height, left = 0, right = width;
+      let top = 0,
+        bottom = height,
+        left = 0,
+        right = width;
 
       // Find the top boundary
       for (let y = 0; y < height; y++) {
@@ -2541,15 +2568,21 @@ function removeBlankSpacesFromImage(imageSrc) {
       const cropHeight = bottom - top + 1;
 
       // Draw the cropped image
-      const croppedCanvas = document.createElement('canvas');
-      const croppedCtx = croppedCanvas.getContext('2d');
+      const croppedCanvas = document.createElement("canvas");
+      const croppedCtx = croppedCanvas.getContext("2d");
       croppedCanvas.width = cropWidth;
       croppedCanvas.height = cropHeight;
 
       croppedCtx.drawImage(
         canvas,
-        left, top, cropWidth, cropHeight,
-        0, 0, cropWidth, cropHeight
+        left,
+        top,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        cropWidth,
+        cropHeight
       );
 
       // Convert cropped canvas to a new image
@@ -2561,242 +2594,111 @@ function removeBlankSpacesFromImage(imageSrc) {
   });
 }
 
-
-
-async function captureModelImages1(modelGroup) {
-  let imagesNameArr = [];
-  scene.background = null; // No background color for transparency
-
-  // Convert forEach to for...of loop for proper async handling
-  for (const model of modelGroup.children) {
-    let isCorn = false;
-
-    // Step 1: Calculate the bounding box for the current model
-    let modelSize = await cloneModelGroup(model);
-    const box = new THREE.Box3().setFromObject(modelSize[0]);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-
-    // Prepare a temporary canvas for rendering
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = size.x;
-    tempCanvas.height = size.y;
-    const tempRenderer = new THREE.WebGLRenderer({
-      canvas: tempCanvas,
-      alpha: true,
-      
-    });
-    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-    tempRenderer.setClearColor(0x000000, 0);
-
-    // Check for Cone nodes
-    for (const modelChild of model.children) {
-      if (modelChild.visible) {
-        modelChild.traverse((node) => {
-          if (node.name === "Cone" && node.visible === true) {
-            isCorn = true;
-            node.visible = false;
-          }
-        });
-      }
-    }
-
-    // Hide other models
-    scene.children.forEach((childScene) => {
-      if (childScene.name === "main_group") {
-        childScene.children.forEach((child) => {
-          if (child.name !== model.name) {
-            child.visible = false;
-          }
-        });
-      }
-    });
-
-    // Front view
-    const frontCamera = new THREE.PerspectiveCamera(
-      45,
-      size.x / size.y,
-      0.1,
-      10000
-    );
-    let adjustedMultiplier = 3.4;
-    var s = 700 * adjustedMultiplier;
-    frontCamera.position.set(center.x, center.y, center.z + s);
-    frontCamera.lookAt(center);
-
-    // Wait for front view render to complete
-    await renderAndDownload(
-      "front",
-      frontCamera,
-      tempRenderer,
-      model.name,
-      imagesNameArr
-    );
-
-    // Side view
-    tempCanvas.width = size.z * 2;
-    tempCanvas.height = size.y;
-    console.log(size);
-    
-    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-    const sideCamera = new THREE.PerspectiveCamera(
-      45,
-      (size.z * 2) / size.y,
-      1,
-      10000
-    );
-
-    var sr = box.max.x + 2000;
-    sideCamera.position.set(sr, center.y, center.z);
-    sideCamera.lookAt(center);
-
-    // Wait for side view render to complete
-    await renderAndDownload(
-      "side",
-      sideCamera,
-      tempRenderer,
-      model.name,
-      imagesNameArr
-    );
-
-    // Diagonal view setup
-    tempCanvas.width = size.x + size.z / 2;
-    tempCanvas.height = size.y;
-    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-    const diagonalCamera = new THREE.PerspectiveCamera(
-      45,
-      (size.x + size.z / 2) / size.y,
-      10,
-      100000
-    );
-
-    // Calculate camera position for diagonal view
-    let xMultiplier = 0.8;
-    let yMultiplier = 0.4;
-    let zMultiplier =
-      size.x <= 800 ? 3.2 : size.x < 1500 ? 3.4 : size.x <= 3000 ? 3.5 : 3.7;
-
-    const cameraPos = {
-      x: center.x + size.x * xMultiplier,
-      y: 500,
-      z: center.z + 700 * zMultiplier,
-    };
-
-    diagonalCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-    diagonalCamera.fov = 45;
-    diagonalCamera.updateProjectionMatrix();
-    diagonalCamera.lookAt(center);
-
-    // Wait for diagonal view render to complete
-    await renderAndDownload(
-      "diagonal",
-      diagonalCamera,
-      tempRenderer,
-      model.name,
-      imagesNameArr
-    );
-
-    // Restore visibility
-    scene.children.forEach((childScene) => {
-      if (childScene.name === "main_group") {
-        childScene.children.forEach((child) => {
-          child.visible = true;
-        });
-      }
-    });
-
-    // Restore Cone visibility
-    if (isCorn) {
-      for (const modelChild of model.children) {
-        modelChild.traverse((node) => {
-          if (node.name === "Cone") {
-            node.visible = true;
-          }
-        });
+async function captureMainFixtureImage(
+  camera,
+  tempRenderer,
+  CloneModel,
+  MainmodelName,
+  imagesNameArr,
+  modelChild
+) {
+  const Frame  = CloneModel.getObjectByName("Frame");
+  for(const child of Frame.children){
+    if (child.name.startsWith("Hanger_")) {
+      let HangerModel;
+      await traverseAsync(child, async (subChild) => {
+        if (
+          subChild.parent.name !== "Frame" &&
+          subChild.name !== "Hanger_Stand" &&
+          subChild.parent !== null
+        ) {
+          subChild.parent.remove(subChild);
+        } else if (subChild.name !== "Hanger_Stand") {
+          subChild.visible = false;
+        } else {
+          HangerModel = subChild;
+        }
+      });
+      const hangerNames = imagesNameArr
+        .map((url) => url.split("/").pop()) // Get the file name
+        .filter((name) => name.includes("Hanger") && name.includes(MainmodelName)) // Check for "Hanger" and "MainmodelName"
+        .map((name) => name.split("-")[2]); // Extract the part starting with "Hanger"
+      if (!hangerNames.includes(child.name) && HangerModel) {
+        modelChild.visible = false; // hide the model
+        HangerModel.rotation.y = Math.PI;
+        HangerModel.name = "hangerForPreview_";
+        scene.add(HangerModel);
+        const box = new THREE.Box3().setFromObject(HangerModel);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        if (child.name === "Hanger_Rail_Step") {
+          tempRenderer.setSize((size.x + size.z) * 5, size.z * 5);
+        } else if (child.name === "Hanger_Rail_Single") {
+          tempRenderer.setSize((size.x + size.z) * 4, size.z * 4);
+        } else if (child.name === "Hanger_Rail_D_500mm") {
+          tempRenderer.setSize(size.x * 2, (size.x + size.y) * 2);
+        } else if (child.name === "Hanger_Rail_D_1000mm") {
+          tempRenderer.setSize(size.x * 1.5, (size.x + size.y) * 2);
+        } else {
+          tempRenderer.setSize((size.x + size.z) * 3, size.z * 3);
+        }
+        const maxDim = Math.max(size.x, size.y, size.x);
+        console.log(maxDim);
+        console.log(size);
+        console.log(center);
+        const cameraDistance = maxDim + 350; // Adjust multiplier as needed
+        // const hangerPosition = child.hangerArrayKey.split("-")[2];        
+        // if(hangerPosition === "Front"){
+        //   camera.position.set(
+        //     center.x - cameraDistance, // Offset in X for diagonal perspective
+        //     center.y + 200, // Offset in Y for better centering
+        //     center.z + cameraDistance + 500 // Offset in Z for distance
+        //   );
+        // }else{
+          camera.position.set(
+            center.x + cameraDistance, // Offset in X for diagonal perspective
+            center.y + 200, // Offset in Y for better centering
+            center.z + (cameraDistance + 500) // Offset in Z for distance
+          );
+        // }
+        camera.lookAt(center);
+        await renderAndDownload(
+          child.name,
+          camera,
+          tempRenderer,
+          MainmodelName,
+          imagesNameArr
+        );
+        scene.remove(HangerModel);
+        modelChild.visible = true;
       }
     }
   }
+  return;
+}
 
-  // Whole model capture
-  const Outerbox = await cloneMainModelGroup(modelGroup);
-  const outerSize = Outerbox.getSize(new THREE.Vector3());
-  const outerCenter = Outerbox.getCenter(new THREE.Vector3());
-
-  const outerTempCanvas = document.createElement("canvas");
-  // document.body.appendChild(outerTempCanvas);
-
-  outerTempCanvas.width =
-    outerSize.x < 1000 ? outerSize.x + outerSize.x / 2 : outerSize.x;
-  outerTempCanvas.height = outerSize.y;
-
-  const outerTempRenderer = new THREE.WebGLRenderer({
-    canvas: outerTempCanvas,
-    alpha: true,
-  });
-  outerTempRenderer.setSize(outerTempCanvas.width, outerTempCanvas.height);
-  outerTempRenderer.setClearColor(0x000000, 0);
-
-  let parentName,
-    grandparentName,
-    isCorn = false;
-
-  // Find and handle Cone visibility
-  modelGroup.traverse((node) => {
-    if (node.name === "Cone" && node.visible) {
-      parentName = node.parent.name;
-      grandparentName = node.parent.parent.name;
-      node.visible = false;
-      isCorn = true;
-    }
-  });
-
-  const outerCamera = new THREE.PerspectiveCamera(
-    45,
-    (outerSize.x + outerSize.z / 2) / outerSize.y,
-    10,
-    100000
-  );
-  // Calculate camera position for diagonal view
-  let xMultiplier = 0.8;
-  let yMultiplier = 0.4;
-  let zMultiplier =
-    outerSize.x < 1500
-      ? 3.4
-      : outerSize.x <= 3000
-      ? 4.6
-      : outerSize.x <= 5000
-      ? 3.8
-      : 7;
-  console.log("s", outerSize.x);
-  console.log("m", zMultiplier);
-
-  const cameraPos = {
-    x: outerCenter.x + outerSize.x * xMultiplier,
-    y: outerCenter.y + 100,
-    z: outerCenter.z + 700 * zMultiplier,
-  };
-
-  outerCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-  outerCamera.fov = 45;
-  outerCamera.updateProjectionMatrix();
-  outerCamera.lookAt(outerCenter);
-
-  // Wait for diagonal view render to complete
-  await renderAndDownload(
-    "wholeModel",
-    outerCamera,
-    outerTempRenderer,
-    modelGroup.name,
-    imagesNameArr
-  );
-
-  // Restore scene background
-  scene.backgroundBlurriness = params.blurriness;
-  texture_background.mapping = THREE.EquirectangularReflectionMapping;
-  scene.background = texture_background;
-  scene.environment = texture_background;
-
-  return imagesNameArr;
+async function captureFixtureImage(
+  camera,
+  tempRenderer,
+  model,
+  name,
+  imagesNameArr
+) {
+  for (const modelChild of model.children) {
+    if (!modelChild.visible) continue;
+    const CloneModel = modelChild.clone();
+    await cloneWithCustomHangerProperties(modelChild, CloneModel);
+    console.log("Original Model:", modelChild);
+    console.log("Cloned Model:", CloneModel);
+    await captureMainFixtureImage(
+      camera,
+      tempRenderer,
+      CloneModel,
+      name,
+      imagesNameArr,
+      modelChild
+    );
+  }
 }
 
 function cloneRenderer(renderer) {
@@ -2809,7 +2711,7 @@ function cloneRenderer(renderer) {
     // preserveDrawingBuffer: renderer.preserveDrawingBuffer,
     // powerPreference: renderer.powerPreference,
   };
-  
+
   const newRenderer = new THREE.WebGLRenderer(parameters);
 
   // Copy size
@@ -2834,8 +2736,6 @@ function cloneRenderer(renderer) {
   return newRenderer;
 }
 
-
-
 async function captureModelImages2(model, imagesNameArr) {
   // Step 1: Calculate the bounding box for the current model
   let modelSize = await cloneModelGroup(model);
@@ -2847,7 +2747,6 @@ async function captureModelImages2(model, imagesNameArr) {
   const tempCanvas = document.createElement("canvas");
   tempCanvas.width = size.x;
   tempCanvas.height = size.y;
-  // const tempRenderer = renderer.clone();
   const tempRenderer = cloneRenderer(renderer);
   tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
   tempRenderer.setClearColor(0x000000, 0);
@@ -2865,7 +2764,7 @@ async function captureModelImages2(model, imagesNameArr) {
   // Step 2a: Front view - Set the camera position to capture the front of the model
   frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
   frontCamera.lookAt(center);
-  renderAndDownload(
+  await renderAndDownload(
     "front",
     frontCamera,
     tempRenderer,
@@ -2884,15 +2783,15 @@ async function captureModelImages2(model, imagesNameArr) {
 
   tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
   const sideCamera = new THREE.OrthographicCamera(
-    -1602 / 2,
-    1602 / 2,
-    2005 / 1.5,
-    -2005 / 1.5,
+    -1602,
+    1602,
+    2005,
+    -2005,
     1,
     10000
   );
   // Position the camera along the positive X-axis for a side view
-  const sideViewDistance = size.x * 1.5;
+  const sideViewDistance = size.x + 1000;
   sideCamera.position.set(center.x + sideViewDistance, center.y, center.z);
   sideCamera.lookAt(center);
 
@@ -2915,21 +2814,35 @@ async function captureModelImages2(model, imagesNameArr) {
     100,
     100000
   );
-  
+
   const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-  const cameraDistance = maxDim + 200; // Adjust multiplier as needed
+  const cameraDistance = maxDim + 350; // Adjust multiplier as needed
 
   diagonalCamera.position.set(
     center.x + cameraDistance, // Offset in X for diagonal perspective
     center.y, // Offset in Y for better centering
-    center.z + cameraDistance // Offset in Z for distance
+    center.z + cameraDistance + 500 // Offset in Z for distance
   );
 
   diagonalCamera.lookAt(center);
-  renderAndDownload(
+  await renderAndDownload(
     "diagonal",
     diagonalCamera,
     tempRenderer,
+    model.name,
+    imagesNameArr
+  );
+
+  diagonalCamera.position.set(
+    center.x + cameraDistance, // Offset in X for diagonal perspective
+    center.y + 100, // Offset in Y for better centering
+    center.z + cameraDistance + 500 // Offset in Z for distance
+  );
+
+  await captureFixtureImage(
+    diagonalCamera,
+    tempRenderer,
+    model,
     model.name,
     imagesNameArr
   );
@@ -3016,43 +2929,6 @@ async function captureModelImages(modelGroup) {
     });
   }
 
-  // // Prepare a temporary canvas for rendering
-  // const tempCanvas = document.createElement("canvas");
-  // tempCanvas.width = size.x;
-  // tempCanvas.height = size.y;
-  // // const tempRenderer = renderer.clone();
-  // const tempRenderer = cloneRenderer(renderer);
-  // tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
-  // tempRenderer.setClearColor(0x000000, 0);
-
-  // tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-  // tempCanvas.height = size.y; // Use both y and z for better height coverage
-  // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-  // const diagonalCamera = new THREE.PerspectiveCamera(
-  //   45,
-  //   size.x / size.y,
-  //   100,
-  //   100000
-  // );
-
-  // const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-  // const cameraDistance = maxDim + 200; // Adjust multiplier as needed
-
-  // diagonalCamera.position.set(
-  //   center.x + cameraDistance, // Offset in X for diagonal perspective
-  //   center.y, // Offset in Y for better centering
-  //   center.z + cameraDistance // Offset in Z for distance
-  // );
-
-  // diagonalCamera.lookAt(center);
-  // renderAndDownload(
-  //   "diagonal",
-  //   diagonalCamera,
-  //   tempRenderer,
-  //   model.name,
-  //   imagesNameArr
-  // );
-
   const wholeModelDistance = distance + 1000; // Slightly closer for wholeModel view
   camera.position.set(
     wholeModelDistance * Math.cos(Math.PI / 4) + 500,
@@ -3081,17 +2957,6 @@ async function captureModelImages(modelGroup) {
 
   return imagesNameArr;
 }
-// Modified download function with proper async handling
-// async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
-//   return new Promise((resolve, reject) => {
-//     const link = document.createElement("a");
-//     link.href = dataUrl;
-//     link.download = filename;
-//     link.onclick = () => resolve();
-//     link.onerror = () => reject(new Error("Download failed"));
-//     link.click();
-//   });
-// }
 
 if (takeScreenShot) {
   takeScreenShot.addEventListener("click", async function () {
@@ -3100,18 +2965,17 @@ if (takeScreenShot) {
 }
 // ----------------------------------------------------------------------------------------------------------
 
-
 if (createQrButton) {
   createQrButton.addEventListener("click", async function () {
     const unixTimestamp = Math.floor(Date.now() / 1000);
     const modelName = `main_group_${unixTimestamp}`;
     const exportedModelFileUrl = `/export_models/${modelName}`;
-    const isQr = true
+    const isQr = true;
     const closeBtn = document.getElementById("closeBtn");
     const showQRHere = document.getElementById("showQRHere");
     closeBtn.addEventListener("click", async function () {
       showQRHere.style.display = "none";
-    })
+    });
     await exportUsdz(modelGroup, modelName, isQr);
     const data = {};
     data["action"] = "create_qr_code";
@@ -3125,21 +2989,18 @@ if (createQrButton) {
       },
       body: qr_data,
     })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        console.log("Qr Code generate successfully!");
-        document.getElementById("qrImage").src = data.url;
-        showQRHere.style.display = "flex";
-      } else {
-        console.error("Error saving model data:", data.error);
-      }
-    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          console.log("Qr Code generate successfully!");
+          document.getElementById("qrImage").src = data.url;
+          showQRHere.style.display = "flex";
+        } else {
+          console.error("Error saving model data:", data.error);
+        }
+      });
   });
 }
-
-
-
 
 // ----------------------------------------------------------------------------------------------------------
 if (showInAR) {
@@ -3226,6 +3087,51 @@ if (savePdfButton) {
     await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
   });
 }
+// ----------------------------------------------------------------------------------------------------------
+if(formSubmition){
+  formSubmition.addEventListener("click", function () {
+    const formModel = document.getElementById("formModel");
+    formModel.style.display = "flex";
+  });
+}
+if(formCloseBtn){
+  formCloseBtn.addEventListener("click", function () {
+    const formModel = document.getElementById("formModel");
+    formModel.style.display = "none";
+    const form = document.querySelector(".FormSubmitionForMonday");
+    if (form) {
+      form.classList.remove("was-validated");
+    }
+  })
+}
+if (submitForm) {
+  submitForm.addEventListener("click", function () {
+    const form = document.querySelector(".FormSubmitionForMonday");
+    if (form) {
+      if (!form.checkValidity()) {
+        form.classList.add("was-validated");
+      } else {
+        // Prevent the default form submission
+        event.preventDefault();
+        // Ask the user a question
+        const userChoice = confirm(
+          "Would you like to save your design as a PDF and view it in AR?\n\nClick 'OK' for Yes or 'Cancel' for No."
+        );
+
+        if (userChoice) {
+          // User selected "Yes"
+          alert("Your design will be saved as a PDF and opened in VR!");
+          form.submit(); // Submit the form programmatically
+        } else {
+          // User selected "No"
+          alert("Your design will be submitted without saving as a PDF.");
+          form.submit(); // Submit the form programmatically
+        }
+      }
+    }
+  });
+}
+
 // ----------------------------------------------------------------------------------------------------------
 if (zoomInButton) {
   zoomInButton.addEventListener("click", function () {

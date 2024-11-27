@@ -1,5 +1,10 @@
 <?php
 ini_set('memory_limit', '-1');
+ini_set('max_allowed_packet', '1073741824');
+ini_set('post_max_size', '1073741824');
+ini_set('upload_max_filesize', '1073741824');
+ini_set('max_input_time', '300');
+ini_set('max_execution_time', '300');
 set_time_limit(0);
  
 require_once 'connection.php';
@@ -13,7 +18,6 @@ session_start();
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
     
 if (!empty($data['action']) && $data['action'] == 'save_model_data') {
-    // print_r($data);
     // Prepare and bind the SQL statement
     $id = $data['id'];
     $userId = $_SESSION['user_id'];
@@ -40,8 +44,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $group_names = json_encode($data['group_names'] ?? null);
     $top_frame_croped_image = json_encode($data['top_frame_croped_image'] ?? null);
     $main_frame_croped_image = json_encode($data['main_frame_croped_image'] ?? null);
-
-
 
     // Check if model state exists for the id
     $sql = "SELECT * FROM threejs_models WHERE id = ?";
@@ -335,7 +337,39 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Output the link to the saved QR code
     echo json_encode(["success" => true, "message" => "QR Created successfully", "url" => $qrCodeUrl]);
-}else {
+} else if (isset($_REQUEST['action']) && $_REQUEST['action'] = 'saveModelCropImage') {
+    $base64Image = $_REQUEST['modelCropImage'];
+
+    // Extract the image data from the Base64 string (it may include the data URL prefix, so we remove it)
+    $modelCropImage = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
+    
+    // Define the folder where the images will be saved (ensure this folder is writable)
+    $targetDir = 'images/modelCropImage/';
+    
+    // Ensure the target directory exists
+    if (!file_exists($targetDir)) {
+        mkdir($targetDir, 0777, true);
+    }
+    
+    // Create a unique file name (for example, using a timestamp or UUID)
+    $fileName = 'image_' . time() . '.png';
+    $filePath = $targetDir . $fileName;
+    
+    // Save the image to the server
+    if (file_put_contents($filePath, $modelCropImage)) {
+        // Return the URL of the saved image
+        $imageUrl = $targetDir . $fileName; // Relative URL path
+
+        // Respond with success and the image URL
+        echo json_encode([
+            'success' => true,
+            'imageUrl' => $imageUrl
+        ]);
+    } else {
+        // If there's an error saving the image
+        echo json_encode(['success' => false, 'message' => 'Error saving image']);
+    }
+} else {
     echo json_encode("No Action Found"); // No action found    
 }
 
