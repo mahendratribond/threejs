@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
-import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import {
   CSS2DObject,
   CSS2DRenderer,
 } from "three/addons/renderers/CSS2DRenderer.js";
-
+import {
+  clothsMaterial,
+  commonMaterial,
+} from "./src/managers/materialManager.js";
 import {
   heightMeasurementNames,
   baseFrameTextureNames,
@@ -29,70 +30,16 @@ import {
   params,
   setting,
 } from "./config.js";
-
+import {getModelSize,getHeaderSize,computeBoundingBox,calculateBoundingBox,getNodeSize,getCurrentModelSize } from "./src/core/MeasurementManager.js";
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
 
 export async function getHex(value) {
   return value.replace("0x", "#");
 }
 
-export async function getHeaderSize(value) {
-  return value.replace("Header_", "");
-}
-
-export async function getModelSize(model_name) {
-  return model_name.replace("Model_", "");
-}
-
 // Helper function to create a delay
 export async function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export async function commonMaterial(color) {
-  const material = new THREE.MeshPhysicalMaterial({
-    color: color, // Black color
-    metalness: 0.5, // Full metallic
-    roughness: 0.1, // Adjust roughness as needed
-  });
-
-  return material;
-}
-
-export async function clothsMaterial(color) {
-  const material = new THREE.MeshStandardMaterial({
-    color: color, // Black color
-    metalness: 0, // Full metallic
-    roughness: 0.8, // Adjust roughness as needed
-  });
-
-  return material;
-}
-
-export async function restoreMaterials(materialDataObject, loader) {
-  for (let [modelName, materialData] of Object.entries(materialDataObject)) {
-    if (!params.lastInnerMaterial[modelName]) {
-      let restoredMaterials = {}; // Reset restoredMaterials for each modelName
-      for (const materialName in materialData) {
-        restoredMaterials[materialName] = loader.parse(
-          materialData[materialName]
-        );
-      }
-      params.lastInnerMaterial[modelName] = restoredMaterials;
-    }
-  }
-}
-
-export async function addNewMaterials(materialDataObject) {
-  for (let [modelName, materialData] of Object.entries(materialDataObject)) {
-    if (!params.lastInnerMaterial[modelName]) {
-      let restoredMaterials = {}; // Reset restoredMaterials for each modelName
-      for (const materialName in materialData) {
-        restoredMaterials[materialName] = materialData[materialName];
-      }
-      params.lastInnerMaterial[modelName] = restoredMaterials;
-    }
-  }
 }
 
 export async function getRemoveIcon(removeIconName) {
@@ -139,62 +86,6 @@ export async function getRemoveIcon(removeIconName) {
   removeIconGroup.visible = true;
 
   return removeIconGroup;
-}
-
-export async function checkMeshType(type) {
-  switch (type) {
-    case "MeshBasicMaterial":
-      console.log("This is a MeshBasicMaterial.");
-      break;
-    case "MeshStandardMaterial":
-      console.log("This is a MeshStandardMaterial.");
-      break;
-    case "MeshPhongMaterial":
-      console.log("This is a MeshPhongMaterial.");
-      break;
-    case "MeshLambertMaterial":
-      console.log("This is a MeshLambertMaterial.");
-      break;
-    case "MeshPhysicalMaterial":
-      console.log("This is a MeshPhysicalMaterial.");
-      break;
-    case "MeshNormalMaterial":
-      console.log("This is a MeshNormalMaterial.");
-      break;
-    case "MeshToonMaterial":
-      console.log("This is a MeshToonMaterial.");
-      break;
-    case "MeshMatcapMaterial":
-      console.log("This is a MeshMatcapMaterial.");
-      break;
-    case "LineBasicMaterial":
-      console.log("This is a LineBasicMaterial.");
-      break;
-    case "LineDashedMaterial":
-      console.log("This is a LineDashedMaterial.");
-      break;
-    case "PointsMaterial":
-      console.log("This is a PointsMaterial.");
-      break;
-    default:
-      console.log("Unknown material type.");
-      break;
-  }
-}
-
-export async function getCurrentModelSize(model, node) {
-  const cubeNode = model.getObjectByName(node);
-  return getNodeSize(cubeNode);
-}
-
-export async function getNodeSize(cubeNode) {
-  if (cubeNode) {
-    const boundingBox = new THREE.Box3().setFromObject(cubeNode);
-    const size = boundingBox.getSize(new THREE.Vector3());
-    return size; // Returns an object with x, y, and z dimensions
-  } else {
-    return false; // Default size in case node is not found
-  }
 }
 
 export async function setTextureParams(texture) {
@@ -285,17 +176,6 @@ export async function getSupportBaseCount(modelSize) {
   return additionalMiddleBase;
 }
 
-export async function loadModel(modelLoader, model_name) {
-  let model_load = await modelLoader.loadAsync(model_name);
-  let model = model_load.scene;
-  model.scale.set(1, 1, 1);
-  model.position.set(0, -params.cameraPosition, 0);
-  model.castShadow = true;
-  // model.visible = false;
-  // scene.add(model);
-  return model;
-}
-
 export async function setPositionCenter(model) {
   const box = new THREE.Box3().setFromObject(model);
   const center = box.getCenter(new THREE.Vector3()); // Get the center of the bounding box
@@ -304,32 +184,6 @@ export async function setPositionCenter(model) {
   // model.position.set(-center.x, -center.y, -center.z); // Center it in the scene
   model.position.sub(center);
   return model;
-}
-
-// Create a function to load GLTF models using a Promise
-export async function loadGLTFModel(loader, url) {
-  return new Promise((resolve, reject) => {
-    loader.load(
-      url,
-      async function (model_load) {
-        let model = model_load.scene;
-        // model.position.set(0, 0, 0);  // Reset position to the origin
-        // model.position.set(0, -params.cameraPosition, 0);
-
-        model = await setPositionCenter(model); // Center it in the scene
-
-        model.scale.set(1, 1, 1);
-        model.updateMatrixWorld();
-        // Scale down the model
-        // model.scale.set(0.1, 0.1, 0.1); // Adjust the scale if necessary
-        resolve(model);
-      },
-      undefined,
-      function (error) {
-        reject(error);
-      }
-    );
-  });
 }
 
 export async function setupMainModel(main_model) {
@@ -389,16 +243,6 @@ export async function setupMainModel(main_model) {
   });
 
   // console.log(main_model)
-}
-
-export async function cleanModelName(modelName) {
-  // Remove the "Other_" prefix if it exists
-  let cleanedName = modelName.replace(/^Other_/, "");
-
-  // Remove the trailing "_1", "_2", "_3" or any underscore followed by digits
-  cleanedName = cleanedName.replace(/_\d+$/, "");
-
-  return cleanedName;
 }
 
 export async function getModelNode(model, prefix) {
@@ -1277,199 +1121,6 @@ export async function setupHangerGolfClubModel(hanger_golf_club_model) {
   }
 }
 
-export async function setupModel(
-  main_model,
-  header_500_height_model,
-  header_wooden_shelf_model,
-  header_rod_model,
-  header_glass_shelf_fixing_model,
-  header_glass_shelf_model,
-  slotted_sides_model,
-  hanger_model,
-  rack_wooden_model,
-  rack_glass_model
-) {
-  let modelSize, model, header, slotted_left_side, slotted_right_side, frame;
-
-  if (header_glass_shelf_model) {
-    header_glass_shelf_model.traverse(async function (child) {
-      if (child.material) {
-        child.material = await generateGlassMaterial(texture_background);
-        // child.material = await commonMaterial(0xffffff)
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-
-  if (header_rod_model) {
-    header_rod_model.traverse(async function (child) {
-      if (child.material && rodFrameTextureNames.includes(child.name)) {
-        const material = await commonMaterial(
-          parseInt(params.rodFrameColor, 16)
-        );
-        child.material = material;
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-
-  if (hanger_model) {
-    hanger_model.traverse(async function (child) {
-      if (child.material && ["Clothing"].includes(child.name)) {
-        const material = await clothsMaterial(
-          parseInt(params.defaultClothingColor, 16)
-        );
-        child.material = material;
-        child.material.needsUpdate = true;
-      }
-      if (child.material && ["Hanger_Stand"].includes(child.name)) {
-        const material = await commonMaterial(
-          parseInt(params.defaultHangerStandColor, 16)
-        );
-        child.material = material;
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-
-  if (rack_wooden_model) {
-    rack_wooden_model.traverse(async function (child) {
-      if (child.material && rackNames.includes(child.name)) {
-        const material = await commonMaterial(
-          parseInt(params.defaultRackColor, 16)
-        );
-        child.material = material;
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-
-  if (rack_glass_model) {
-    // Create materials once
-    const glassMaterial = await generateGlassMaterial(texture_background);
-    const defaultMaterial = await commonMaterial(
-      parseInt(params.defaultRackColor, 16)
-    );
-
-    rack_glass_model.traverse(async function (child) {
-      if (rackNames.includes(child.name)) {
-        let material =
-          child.name === "Rack_Glass_Shelf" ? glassMaterial : defaultMaterial;
-
-        // Assign material to the child
-        child.material = material;
-        child.material.needsUpdate = true;
-
-        // If the child has nested meshes, apply the same material
-        child.traverse(function (mesh) {
-          mesh.material = material;
-          mesh.material.needsUpdate = true;
-        });
-      }
-    });
-  }
-
-  main_model.traverse(async function (modelNode) {
-    if (modelNode.material && baseFrameTextureNames.includes(modelNode.name)) {
-      const material = await commonMaterial(
-        parseInt(params.baseFrameColor, 16)
-      );
-      modelNode.material = material;
-      modelNode.material.needsUpdate = true;
-    }
-    if (allModelNames.includes(modelNode.name)) {
-      modelSize = await getModelSize(modelNode.name);
-      frame = await modelNode.getObjectByName("Frame");
-
-      if (header_500_height_model) {
-        model = await header_500_height_model.getObjectByName(modelNode.name);
-        header = await model.getObjectByName("Header");
-        if (header) {
-          header.name = header.name + "_" + 500;
-          header.visible = false;
-          modelNode.attach(header);
-        }
-      }
-
-      if (slotted_sides_model) {
-        model = await slotted_sides_model.getObjectByName(modelNode.name);
-        if (model) {
-          slotted_left_side = await model.getObjectByName("Left_Ex_Slotted");
-          if (slotted_left_side) {
-            slotted_left_side.visible = false;
-            frame.attach(slotted_left_side);
-          }
-
-          slotted_right_side = await model.getObjectByName("Right_Ex_Slotted");
-          if (slotted_right_side) {
-            slotted_right_side.visible = false;
-            frame.attach(slotted_right_side);
-          }
-        }
-      }
-
-      if (header_wooden_shelf_model) {
-        model = await header_wooden_shelf_model.getObjectByName(modelNode.name);
-        if (model) {
-          model.name = "Header_Wooden_Shelf";
-          model.visible = false;
-          modelNode.attach(model);
-        }
-      }
-
-      if (header_rod_model && header_glass_shelf_fixing_model) {
-        await createRod(
-          modelNode,
-          modelSize,
-          header_rod_model,
-          header_glass_shelf_fixing_model
-        );
-      }
-
-      if (header_glass_shelf_model) {
-        model = await header_glass_shelf_model.getObjectByName(modelNode.name);
-        if (model) {
-          model.name = "Header_Glass_Shelf";
-          model.visible = false;
-          model.position.y = params.glassShelfFixingSize.y / 2;
-          modelNode.attach(model);
-        }
-      }
-
-      if (modelNode.name === params.defaultModel) {
-        modelNode.visible = true;
-      } else {
-        modelNode.visible = false;
-      }
-
-      let header_300 = await modelNode.getObjectByName("Header");
-      if (header_300) {
-        header_300.name = header_300.name + "_" + 300;
-      }
-    }
-  });
-
-  console.log(main_model);
-}
-
-export async function updateFrameSize(main_model, scene, camera) {
-  if (main_model) {
-    let model = main_model.getObjectByName(params.selectedGroupName);
-    model.traverse(function (modelNode) {
-      if (modelNode.name && allModelNames.includes(modelNode.name)) {
-        if (modelNode.name === setting[params.selectedGroupName].defaultModel) {
-          modelNode.visible = true; // Show the selected model
-        } else {
-          modelNode.visible = false; // Hide other models
-        }
-      }
-    });
-  }
-
-  await showHideNodes(main_model, scene, camera);
-  await centerMainModel(main_model);
-}
-
 // Traverse main model asynchronously
 export async function traverseAsync(modelNode, callback) {
   await callback(modelNode);
@@ -1480,6 +1131,7 @@ export async function traverseAsync(modelNode, callback) {
 }
 
 export async function showHideNodes(modelGroup, scene, camera) {
+  console.log(modelGroup);
   // let currentModelNode = params.selectedGroupName;
   let current_setting = setting[params.selectedGroupName];
 
@@ -1994,60 +1646,6 @@ export async function isActiveGroup(currentModelName) {
   return isActive;
 }
 
-// Function to find the next visible child
-export async function getPrevVisibleChild(main_model, currentModel) {
-  const children = main_model.children; // Get all children of main_model
-  let currentIndex = -1;
-
-  // Find the current model index
-  for (let i = 0; i < children.length; i++) {
-    if (children[i].visible && children[i].name === currentModel.name) {
-      currentIndex = i;
-      break;
-    }
-  }
-
-  // Loop through the children to find the next visible child
-  for (
-    let i = (currentIndex + 1) % children.length;
-    i !== currentIndex;
-    i = (i + 1) % children.length
-  ) {
-    if (children[i].visible) {
-      return children[i];
-    }
-  }
-
-  return null; // No next visible child found
-}
-
-// Function to find the previous visible child
-export async function getNextVisibleChild(main_model, currentModel) {
-  const children = main_model.children; // Get all children of main_model
-  let currentIndex = -1;
-
-  // Find the current model index
-  for (let i = 0; i < children.length; i++) {
-    if (children[i].visible && children[i].name === currentModel.name) {
-      currentIndex = i;
-      break;
-    }
-  }
-
-  // Loop through the children to find the previous visible child
-  for (
-    let i = (currentIndex - 1 + children.length) % children.length;
-    i !== currentIndex;
-    i = (i - 1 + children.length) % children.length
-  ) {
-    if (children[i].visible) {
-      return children[i];
-    }
-  }
-
-  return null; // No previous visible child found
-}
-
 export async function loaderShowHide(isShow = false) {
   if (isShow) {
     document.body.classList.remove("loaded");
@@ -2073,114 +1671,6 @@ export async function getMainParentNode(child, nodeNames, isVisible = true) {
   let result = await Promise.all(findParentPromises);
   currentModelNode = result.find((node) => node !== null) || {};
   return currentModelNode;
-}
-
-export async function updateFrameMaterial(
-  main_model,
-  dropdownType,
-  type,
-  value
-) {
-  // Update Three.js material
-  main_model.traverse(async function (child) {
-    // console.log('child.name', child.name)
-    if (allFrameBorderNames.includes(child.name) && dropdownType === "frame") {
-      // let currentModelNode = params.selectedGroupName;
-      let currentModelNode = await getMainParentNode(
-        child,
-        allModelNames,
-        false
-      );
-      let isActive = await isActiveGroup(currentModelNode);
-      if (isActive) {
-        // console.log('currentModelNode.name', currentModelNode.name)
-        if (setting[params.selectedGroupName].frameMaterialType === "texture") {
-          // console.log('child.name', child.name)
-
-          // Load texture
-          let texture_border = new THREE.TextureLoader().load(
-            "./assets/images/borders/" +
-              setting[params.selectedGroupName].frameBorderColor
-          );
-          texture_border = await setTextureParams(texture_border);
-          let material = border_texture_material.clone();
-          material.map = texture_border;
-          // // child.material = child.material.clone()
-          child.material = material;
-          child.material.needsUpdate = true;
-          // let texture_border = new THREE.TextureLoader().load("./assets/images/borders/" + "Black-Wallnut.jpg");
-
-          // texture_border = await setTextureParams(texture_border);
-          // const newMaterial = new THREE.MeshStandardMaterial({
-          //     map: texture_border,            // Base color texture
-          //     roughness: 0.2,          // Adjust as needed
-          //     metalness: 0.7           // Adjust as needed
-          // });
-          // child.material = newMaterial;
-          // child.material.needsUpdate = true;
-        } else if (
-          setting[params.selectedGroupName].frameMaterialType === "color"
-        ) {
-          // Apply color
-          const material = await commonMaterial(
-            parseInt(setting[params.selectedGroupName].frameBorderColor, 16)
-          );
-          // child.material = child.material.clone()
-          child.material = material;
-          child.material.needsUpdate = true;
-
-          // if (child instanceof THREE.Group) {
-          //     console.log("group")
-
-          //     child.traverse(async (child1) => {
-
-          //         if (child1.name == "Top_Ex_Metal") {
-          //             child1.material = material;
-          //             child1.material.needsUpdate = true;
-          //         }
-          //         else{
-          //             // console.log("child1.name", child1.name)
-          //             // child1.material = material;
-          //             // child1.material.needsUpdate = true;
-          //         }
-
-          //     });
-          // }
-          // else {
-          //     child.material = material;
-          //     child.material.needsUpdate = true;
-
-          // }
-        }
-      }
-    }
-    if (child.name == "Header_Wooden_Shelf" && dropdownType === "shelf") {
-      // console.log('Header_Wooden_Shelf', dropdownType, child.name)
-      if (setting[params.selectedGroupName].shelfMaterialType === "texture") {
-        // Load texture
-        let texture_border = new THREE.TextureLoader().load(
-          "./assets/images/borders/" +
-            setting[params.selectedGroupName].defaultShelfColor
-        );
-        texture_border = await setTextureParams(texture_border);
-        let material = border_texture_material.clone();
-        material.map = texture_border;
-        child.material = material;
-        // child.material = [border_texture_material, shadow];
-        child.material.needsUpdate = true;
-      } else if (
-        setting[params.selectedGroupName].shelfMaterialType === "color"
-      ) {
-        // Apply color
-        const material = await commonMaterial(
-          parseInt(setting[params.selectedGroupName].defaultShelfColor, 16)
-        );
-        child.material = material;
-        // child.material = [material, shadow];
-        child.material.needsUpdate = true;
-      }
-    }
-  });
 }
 
 export async function centerMainModel(modelGroup) {
@@ -2267,81 +1757,6 @@ export async function centerMainModel(modelGroup) {
   // console.log("models:", models);
 }
 
-export async function centerMainModel1(modelGroup) {
-  const spacing = 1; // Base space between models
-  let currentX = 0; // Start positioning from 0 along the x-axis
-
-  // Get total width of all models to center the group
-  let totalWidth = 0;
-  const models = [];
-
-  // First pass: Calculate total width and collect visible models
-  allGroupNames.forEach((modelName) => {
-    const main_model = modelGroup.getObjectByName(modelName);
-    main_model.children.forEach((model) => {
-      if (allModelNames.includes(model.name) && model && model.visible) {
-        // Only consider visible models
-        models.push(model);
-
-        // Ensure the bounding box is computed
-        model.traverse((child) => {
-          if (child.isMesh && child.geometry) {
-            child.geometry.computeBoundingBox();
-          }
-        });
-
-        // Get bounding box for the model
-        const boundingBox = new THREE.Box3().setFromObject(model);
-        const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-        // Get model-specific spacing (manual movement)
-        const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
-        totalWidth += modelWidth + spacing + modelSpacing;
-      }
-    });
-  });
-
-  // Center the starting position by shifting based on half the total width
-  currentX = -(totalWidth / 2);
-
-  // Second pass: Position each model with spacing and manual offsets
-  // models.forEach(async model => {
-  for (const model of models) {
-    // Get bounding box again for this model
-    const boundingBox = new THREE.Box3().setFromObject(model);
-    const modelWidth = boundingBox.max.x - boundingBox.min.x;
-
-    // Get the original y position
-    const originalYPosition = model.position.y; // Maintain the original y position
-
-    // Get model-specific spacing (manual movement)
-    const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
-
-    // Position the model along the x-axis with added spacing and manual offset
-    let updateSpacing = 0;
-    if (currentX + modelWidth / 2 > 0) {
-      updateSpacing = modelSpacing;
-    }
-    (model.parent.position.x = currentX + modelWidth / 2 + updateSpacing),
-      originalYPosition;
-
-    // model.position.set(currentX + modelWidth / 2 + updateSpacing, originalYPosition, 0); // Use original y position
-
-    // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
-    currentX += modelWidth + spacing + modelSpacing;
-  }
-  // });
-
-  // Ensure the bounding box is computed
-  modelGroup.traverse((modelchild) => {
-    modelchild.traverse((child) => {
-      if (child.isMesh && child.geometry) {
-        child.geometry.computeBoundingBox();
-      }
-    });
-  });
-}
-
 // Function to check for collision
 export async function checkForCollision(
   modelGroup,
@@ -2370,28 +1785,6 @@ export async function checkForCollision(
   return true; // No collision, safe to move
 }
 
-// // Function to check for collision
-// export async function checkForCollision(main_model, movingModel, moveAmount) {
-//     const movingModelBoundingBox = new THREE.Box3().setFromObject(movingModel);
-//     movingModelBoundingBox.translate(new THREE.Vector3(moveAmount, 0, 0)); // Move bounding box based on movement
-
-//     // Check against all other models
-//     for (let otherModelName of main_model.children) {
-//         const otherModel = main_model.getObjectByName(otherModelName.name);
-
-//         if (otherModel && otherModel !== movingModel && otherModel.visible) {
-//             const otherModelBoundingBox = new THREE.Box3().setFromObject(otherModel);
-
-//             // Check if the bounding boxes intersect
-//             if (movingModelBoundingBox.intersectsBox(otherModelBoundingBox)) {
-//                 return false; // Collision detected
-//             }
-//         }
-//     }
-
-//     return true; // No collision, safe to move
-// }
-
 export async function clearMeasurementBoxes(scene) {
   const objectsToRemove = [];
 
@@ -2418,50 +1811,6 @@ export async function clearMeasurementBoxes(scene) {
   // scene.children = scene.children.filter(child => {
   //     return child.name && !child.name.startsWith('Measurement');
   // });
-}
-
-export async function computeBoundingBox(object, frameNames) {
-  const bbox = new THREE.Box3();
-
-  // Traverse the object and expand the bounding box for visible nodes
-  object.traverse(async function (modelNode) {
-    if (frameNames.includes(modelNode.name)) {
-      let isNodeVisible = modelNode.visible;
-
-      // Expand the bounding box only if the node is visible and has visible parents
-      if (isNodeVisible) {
-        // console.log('modelNode.name', modelNode.name)
-        bbox.expandByObject(modelNode);
-      }
-    }
-  });
-
-  return bbox;
-}
-
-export async function calculateBoundingBox(object) {
-  const bbox = new THREE.Box3();
-
-  let nodes = ["Frame"];
-
-  object.traverse(async function (modelNode) {
-    if (allModelNames.includes(modelNode.name)) {
-      // Ensure the object for modelNode.name exists
-      if (!params.calculateBoundingBox[modelNode.name]) {
-        params.calculateBoundingBox[modelNode.name] = {}; // Initialize if it doesn't exist
-      }
-
-      for (let val of nodes) {
-        let thisNode = modelNode.getObjectByName(val);
-        if (thisNode) {
-          const boundingBox = new THREE.Box3().setFromObject(thisNode);
-          params.calculateBoundingBox[modelNode.name][val] = boundingBox; // Now safe to assign
-        }
-      }
-    }
-  });
-
-  return bbox;
 }
 
 export async function computeVisibleNodeBoundingBox(
@@ -2686,112 +2035,6 @@ export async function updateLabelOcclusion(
       }
     }
   });
-}
-
-export async function createLabel1(text) {
-  const labelGroup = new THREE.Group();
-
-  if (!params.font) {
-    params.font = await fontLoader.loadAsync("helvetiker_bold.typeface.json");
-  }
-
-  const textGeometry = new TextGeometry(text, {
-    font: params.font,
-    size: params.fontSize,
-    // depth: 0.2,
-    // height: 0.2, // Depth of the text
-    // curveSegments: 20 // Smoother text
-    depth: 5,
-    curveSegments: 12,
-    // bevelEnabled: false,
-    // bevelThickness: 10,
-    // bevelSize: 1,
-    // bevelOffset: 0,
-    // bevelSegments: 5
-  });
-
-  textGeometry.computeBoundingBox();
-  const textSize = textGeometry.boundingBox.getSize(new THREE.Vector3());
-
-  const padding = 30;
-  const backgroundWidth = textSize.x + padding;
-  const backgroundHeight = textSize.y + padding;
-  const cornerRadius = 10;
-
-  const roundedRectShape = await createRoundedRectShape(
-    backgroundWidth,
-    backgroundHeight,
-    cornerRadius
-  );
-  const extrudesetting = {
-    depth: 0.1,
-    bevelEnabled: false,
-  };
-  const backgroundGeometry = new THREE.ExtrudeGeometry(
-    roundedRectShape,
-    extrudesetting
-  );
-  const backgroundMaterial = new THREE.MeshBasicMaterial({
-    color: params.measurementLineColor,
-    opacity: 0.1,
-    transparent: false, // Make transparent if needed
-    // depthTest: false,
-    // depthWrite: false,
-  });
-
-  const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-  const textMaterial = new THREE.MeshBasicMaterial({
-    color: params.measurementTextColor,
-    opacity: 1,
-    transparent: true,
-    // depthTest: false,
-    // depthWrite: false
-  });
-
-  if (textMaterial.map) {
-    textMaterial.map.minFilter = THREE.LinearMipMapLinearFilter;
-  }
-
-  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-  textMesh.position.set(-textSize.x / 2, -textSize.y / 2, 1); // Offset slightly to avoid z-fighting
-
-  textMesh.renderOrder = 1;
-  backgroundMesh.renderOrder = 0;
-
-  labelGroup.add(backgroundMesh);
-  labelGroup.add(textMesh);
-
-  return labelGroup;
-}
-
-export async function createRoundedRectShape(width, height, radius) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-width / 2 + radius, -height / 2);
-  shape.lineTo(width / 2 - radius, -height / 2);
-  shape.quadraticCurveTo(
-    width / 2,
-    -height / 2,
-    width / 2,
-    -height / 2 + radius
-  );
-  shape.lineTo(width / 2, height / 2 - radius);
-  shape.quadraticCurveTo(width / 2, height / 2, width / 2 - radius, height / 2);
-  shape.lineTo(-width / 2 + radius, height / 2);
-  shape.quadraticCurveTo(
-    -width / 2,
-    height / 2,
-    -width / 2,
-    height / 2 - radius
-  );
-  shape.lineTo(-width / 2, -height / 2 + radius);
-  shape.quadraticCurveTo(
-    -width / 2,
-    -height / 2,
-    -width / 2 + radius,
-    -height / 2
-  );
-  return shape;
 }
 
 export async function updateMeasurementGroups(main_model, scene, camera) {
@@ -3421,7 +2664,7 @@ export async function addHangers(
             let count = params.hangerCount[hangerArrayKey];
             hanger.hangerCount = count;
             hanger.hangerArrayKey = hangerArrayKey;
-            hanger.side = side;
+            hanger.side = side;            
 
             // params.hangerAdded = params.hangerAdded || {};
             // params.hangerAdded[hangerArrayKey] = params.hangerAdded[hangerArrayKey] || {};
@@ -3553,7 +2796,7 @@ export async function addRacks(
         };
 
         params.rackCount = params.rackCount || {};
-        params.rackCount[rackPrefix] = params.rackCount[rackPrefix] || 0;
+        params.rackCount[rackArrayKey] = params.rackCount[rackArrayKey] || 0;
         params.rackCount[rackArrayKey] += 1;
 
         let count = params.rackCount[rackArrayKey];
@@ -3618,155 +2861,6 @@ export async function getModelData(id) {
   } catch (error) {
     console.error("Fetch error:", error);
     return null; // Return null on error
-  }
-}
-
-// Utility function to set opacity for a model and its children
-export async function setModelOpacity(
-  main_model,
-  selectedModel,
-  opacityForOthers = 0.5
-) {
-  main_model.traverse((child) => {
-    if (child.isGroup) {
-      // If it's the selected model, set full opacity
-      if (child.name === selectedModel.name) {
-        console.log("child.name", child.name);
-        child.material.opacity = 1;
-        child.material.emissive = new THREE.Color(0x00ff00); // Optional: Add glow-like effect
-        child.material.emissiveIntensity = 0.5;
-      } else {
-        // Otherwise, reduce opacity for other models
-        child.material.opacity = opacityForOthers;
-        child.material.emissive = new THREE.Color(0x000000); // Reset any glow effect
-        child.material.emissiveIntensity = 0;
-      }
-
-      child.material.transparent = true; // Ensure transparency is enabled
-      child.material.needsUpdate = true;
-    }
-  });
-}
-
-async function takeAngleShots(
-  modelGroup,
-  camera,
-  renderer,
-  angleImages,
-  scene
-) {
-  const camPosition = [camera.position.x, camera.position.y, camera.position.z];
-  // Save the original size of the renderer for high-res images
-  const originalWidth = renderer.domElement.width;
-  const originalHeight = renderer.domElement.height;
-  const scaleFactor = 3; // Increase resolution
-  renderer.setSize(
-    originalWidth * scaleFactor,
-    originalHeight * scaleFactor,
-    false
-  );
-  camera.aspect =
-    (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
-  camera.updateProjectionMatrix();
-
-  // Get the model's bounding box to determine its size
-  const boundingBox = new THREE.Box3().setFromObject(modelGroup);
-  const size = boundingBox.getSize(new THREE.Vector3());
-  const center = boundingBox.getCenter(new THREE.Vector3());
-
-  console.log("Model Size:", size); // Check if the size values are reasonable
-  console.log("Model Center:", center);
-
-  // Adjust camera distance based on model size (add a safety check for large values)
-  let maxDim = Math.max(size.x, size.y, size.z);
-  if (maxDim === 0 || isNaN(maxDim)) {
-    maxDim = 1; // Fallback if the model size is too small or undefined
-  }
-
-  const cameraDistance = Math.min(maxDim * 2, size.x * 0.7); // Limit max camera distance
-
-  // Define four dynamic angles based on the model's size
-  const angles = [
-    {
-      x: cameraDistance,
-      y: cameraDistance > 1000 ? 1000 : cameraDistance,
-      z: cameraDistance * 0.7,
-    }, // Front-Top-Right
-    {
-      x: -cameraDistance,
-      y: cameraDistance > 1000 ? 1000 : cameraDistance,
-      z: -cameraDistance * 0.7,
-    }, // Back-Top-Left
-    {
-      x: 0,
-      y: cameraDistance > 1000 ? 1000 : cameraDistance,
-      z: cameraDistance,
-    }, // Front-Top-Center
-    {
-      x: 0,
-      y: cameraDistance > 1000 ? 1000 : cameraDistance,
-      z: -cameraDistance,
-    }, // Back-Top-Center
-    {
-      x: cameraDistance,
-      y: cameraDistance > 1000 ? 1000 : cameraDistance,
-      z: 0,
-    }, // Right-Top-Center
-  ];
-
-  let counter = 1;
-  const fetchPromises = angles.map((angle) =>
-    captureScreenshot(angle.x, angle.y, angle.z, scene, angleImages, counter++)
-  );
-
-  await Promise.all(fetchPromises);
-
-  // Revert the renderer back to its original size
-  renderer.setSize(originalWidth, originalHeight, false);
-  camera.aspect = originalWidth / originalHeight;
-  camera.position.x = camPosition[0];
-  camera.position.y = camPosition[1];
-  camera.position.z = camPosition[2];
-  camera.updateProjectionMatrix();
-
-  // Re-render the scene at the original size
-  renderer.render(scene, camera);
-
-  async function captureScreenshot(
-    angleX,
-    angleY,
-    angleZ,
-    scene,
-    angleImages,
-    counter
-  ) {
-    // Rotate the camera around the model
-    camera.position.set(angleX, angleY, angleZ);
-    camera.lookAt(scene.position); // Ensure camera is looking at the model's position
-    renderer.render(scene, camera);
-
-    // Capture the screenshot from the current camera angle
-    const screenshotData = renderer.domElement.toDataURL(); // Get screenshot as data URL
-    const unixTime = Math.floor(Date.now() / 1000);
-    // Send screenshot to PHP
-    try {
-      const response = await fetch("api.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: screenshotData,
-          filename: `screenshot_angle_${unixTime}_${counter}.png`,
-        }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        angleImages[`Counter${counter}`] = data.path;
-      } else {
-        console.error("Error saving screenshot:", data.error);
-      }
-    } catch (error) {
-      console.error("Fetch error:", error);
-    }
   }
 }
 
@@ -3863,12 +2957,8 @@ async function getComponentSize(model, modelComponentsData) {
 
 
 export async function savePdfData(
-  name = "test",
   dataToSave,
   modelGroup,
-  camera,
-  renderer,
-  scene
 ) {
   const CreatingPdfFile = document.getElementById("CreatingPdfFile");
   let modelMeasurementData = {};
@@ -3896,8 +2986,6 @@ export async function savePdfData(
     console.log(error);    
   }
 
-  // let angleImages = {};
-  // await takeAngleShots(modelGroup, camera, renderer, angleImages, scene);
   const username = localStorage.getItem("username");
   const unixTimestamp = Math.floor(Date.now() / 1000);
   const fileName = `${username}_${unixTimestamp}.pdf`;
@@ -3905,8 +2993,6 @@ export async function savePdfData(
   dataToSave["action"] = "save_Pdf_data";
   dataToSave["fileName"] = fileName;
 
-  // console.log(dataToSave);
-  // return
   const pdf_data = JSON.stringify(dataToSave);
   fetch("api.php", {
     method: "POST",
@@ -3932,102 +3018,3 @@ export async function savePdfData(
 }
 // --------------------------------export models--------------------------------------------
 
-async function saveModel(blob, filename) {
-  if (blob) {
-    await saveArrayBuffer(blob, filename); // Save the file only if blob is not null
-  }
-}
-
-async function exportGLB(clone, name) {
-  const gltfExporter = new GLTFExporter();
-  // Define the export options
-  const options = {
-    // Mesh compression options
-    compressed: true, // Enable mesh compression
-    bufferStreamed: true, // Stream the buffer data
-    compressMaterials: true, // Compress materials
-
-    // Texture compression options
-    embedImages: false, // Embed images in the GLB file
-    forcePowerOfTwoTextures: true, // Ensure textures have power-of-two dimensions
-    textureCompressionFormat: THREE.RGBA_ASTC_4x4_Format, // Use ASTC texture compression
-
-    // Other options
-    includeCustomExtensions: false, // Exclude custom extensions
-    includeImages: false, // Include images in the GLB file
-    includeAnimations: false, // Exclude animations
-    includeMaterials: true, // Include materials
-    includeGeometries: true, // Include geometries
-
-    // Normal options
-    includeNormals: false, // Set to false to exclude normals
-    binary: true
-  };
-  const result = await gltfExporter.parseAsync(clone, options);
-  const blob = new Blob([result], { type: "application/octet-stream" });
-  console.log(blob);
-  // const modellink = document.createElement("a");
-  // modellink.href = URL.createObjectURL(blob);
-  // modellink.download = name + ".glb";
-  // modellink.click();
-  await saveModel(blob, `${name}.glb`);
-}
-
-async function exportUSDZ(clone, name) {
-  const usdzExporter = new USDZExporter();
-  const result = await usdzExporter.parse(clone);
-  const blob = new Blob([result], { type: "application/octet-stream" });
-  await saveModel(blob, `${name}.usdz`);
-}
-
-export async function exportUsdz(model, name, isQr = false) {
-  const clone = model.clone();
-
-  // Scale the clone model proportionally
-  const box = new THREE.Box3().setFromObject(clone);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  // const scaleFactor = 1 / Math.min(size.x, size.y, size.z);
-  // clone.scale.set(scaleFactor, scaleFactor, scaleFactor);
-  // alert(scaleFactor);
-  // clone.scale.multiplyScalar(0.001);
-  clone.scale.set(0.001, 0.001, 0.001);
-  clone.updateMatrixWorld();
-  clone.position.set(0, 0, 0);
-
-  // Detect device type and export accordingly
-  const isIOS = /iPhone|iPad|iPod/.test(
-    navigator.userAgent || navigator.vendor || window.opera
-  );
-  if(isQr){
-    await exportUSDZ(clone, name); // Export USDZ for iOS devices
-    await exportGLB(clone, name); // Export only GLB for other devices
-  }else{
-    if (isIOS) {
-      await exportUSDZ(clone, name); // Export USDZ for iOS devices
-    } else {
-      await exportGLB(clone, name); // Export only GLB for other devices
-    }
-  }
-
-}
-
-async function saveArrayBuffer(blob, filename) {
-  const formData = new FormData();
-  formData.append("file", blob, filename);
-  formData.append("action", "saveModelFile");
-
-  return fetch("api.php", {
-    method: "POST",
-    body: formData,
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("File saved:", data);
-      return data; // Ensure data is returned so that exportUsdz can await it
-    })
-    .catch((error) => {
-      console.error("Error saving file:", error);
-      throw error; // Re-throw to handle error in exportUsdz
-    });
-}

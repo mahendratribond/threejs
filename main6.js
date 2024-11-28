@@ -54,10 +54,31 @@ import * as THREE from "three";
 // import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
-
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
-import { ColladaLoader } from "three/addons/loaders/ColladaLoader.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import {
+  loadGLTFModel,
+  manager,
+  rgbeLoader,
+  TextureLoaderJpg,
+} from "./src/managers/loadingManager.js";
+import { exportModelForAr } from "./src/managers/exportModelManager.js";
+import {
+  clothsMaterial,
+  commonMaterial,
+  addNewMaterials,
+  restoreMaterials
+} from "./src/managers/materialManager.js";
+import {Camera} from "./src/core/Camera.js";
+import {Renderer} from "./src/core/Renderer.js";
+import {Scene } from "./src/core/Scene.js";
+import {Controls } from "./src/core/Controls.js";
+import {
+  getModelSize,
+  getHeaderSize,
+  computeBoundingBox,
+  calculateBoundingBox,
+  getNodeSize,
+  getCurrentModelSize,
+} from "./src/core/MeasurementManager.js";
 import {
   cloneWithCustomHangerProperties,
   drawMeasurementBoxesWithLabels,
@@ -74,14 +95,14 @@ import {
   setupWoodenRackModel,
   updateLabelOcclusion,
   findParentNodeByName,
-  calculateBoundingBox,
-  getCurrentModelSize,
-  updateFrameMaterial,
+  // calculateBoundingBox,
+  // getCurrentModelSize,
+  // updateFrameMaterial,
   setupGlassRackModel,
-  getNextVisibleChild,
-  getPrevVisibleChild,
+  // getNextVisibleChild,
+  // getPrevVisibleChild,
   addAnotherModelView,
-  computeBoundingBox,
+  // computeBoundingBox,
   getMainParentNode,
   checkForCollision,
   setPositionCenter,
@@ -90,30 +111,30 @@ import {
   addAnotherModels,
   isVisibleParents,
   setTextureParams,
-  restoreMaterials,
-  addNewMaterials,
-  updateFrameSize,
+  // restoreMaterials,
+  // addNewMaterials,
+  // updateFrameSize,
   centerMainModel,
   setupArrowModel,
-  commonMaterial,
+  // commonMaterial,
   setupMainModel,
-  cleanModelName,
+  // cleanModelName,
   loaderShowHide,
   traverseAsync,
   getRemoveIcon,
   saveModelData,
-  checkMeshType,
-  loadGLTFModel,
+  // checkMeshType,
+  // loadGLTFModel,
   showHideNodes,
   getModelData,
-  getModelSize,
+  // getModelSize,
   isHangerAdd,
-  getNodeSize,
+  // getNodeSize,
   savePdfData,
-  setupModel,
-  exportUsdz,
+  // setupModel,
+  // exportUsdz,
   addHangers,
-  loadModel,
+  // loadModel,
   addRacks,
   getHex,
   delay,
@@ -143,7 +164,6 @@ import {
 } from "./config.js";
 
 const container = document.getElementById("container");
-
 // Select the elements by class instead of id
 const frameSize = document.querySelector(".frameSize");
 const topDropdown = document.querySelector(".topDropdown");
@@ -206,23 +226,6 @@ const rotateRightButton = document.getElementById("cropper-rotate-right");
 const scaleXButton = document.getElementById("cropper-scale-x");
 const scaleYButton = document.getElementById("cropper-scale-y");
 const resetButton = document.getElementById("cropper-reset");
-// Set up the loading manager
-const manager = new THREE.LoadingManager();
-
-// Initialize the loaders with the manager
-const rgbeLoader = new RGBELoader(manager).setPath(
-  "./assets/images/background/"
-);
-const TextureLoaderJpg = new THREE.TextureLoader(manager).setPath(
-  "./assets/images/background/"
-);
-const borderTextureLoaderJpg = new THREE.TextureLoader(manager).setPath(
-  "./assets/images/borders/"
-);
-const colladaLoader = new ColladaLoader(manager).setPath("./assets/models/");
-const glftLoader = new GLTFLoader(manager).setPath("./assets/models/glb/");
-const textureLoader = new THREE.TextureLoader(manager);
-// const loader = new GLTFLoader();
 
 let gui, stats;
 let renderer,
@@ -316,56 +319,54 @@ manager.onError = (url) => {
 async function init() {
   texture_background = await TextureLoaderJpg.loadAsync("background.png");
 
-  window["border_texture_material"] = new THREE.MeshPhongMaterial({
-    // specular: 3355443,
-    specular: new THREE.Color(0x111111),
-    map: texture_background,
-    // shininess: 0.5,
-    shininess: 30,
-  });
+  // window["border_texture_material"] = new THREE.MeshPhongMaterial({
+  //   // specular: 3355443,
+  //   specular: new THREE.Color(0x111111),
+  //   map: texture_background,
+  //   // shininess: 0.5,
+  //   shininess: 30,
+  // });
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer = new Renderer(container,render);
   renderer.setAnimationLoop(render);
+  
+  // renderer = new THREE.WebGLRenderer({ antialias: true });
+  // renderer.setPixelRatio(window.devicePixelRatio);
+  // renderer.setSize(window.innerWidth, window.innerHeight);
 
-  container.appendChild(renderer.domElement);
+  // container.appendChild(renderer.domElement);
 
-  // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMapping = THREE.NoToneMapping;
-  renderer.toneMappingExposure = params.exposure;
+  // // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  // renderer.toneMapping = THREE.NoToneMapping;
+  // renderer.toneMappingExposure = params.exposure;
 
-  scene = new THREE.Scene();
-  scene.backgroundBlurriness = params.blurriness;
-  texture_background.mapping = THREE.EquirectangularReflectionMapping;
-  scene.background = texture_background;
-  scene.environment = texture_background;
+  scene = new Scene();
+  scene.setupScene(window, texture_background, lights, lightHelpers)
+  // scene.backgroundBlurriness = params.blurriness;
+  // texture_background.mapping = THREE.EquirectangularReflectionMapping;
+  // scene.background = texture_background;
+  // scene.environment = texture_background;
 
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
   direction = new THREE.Vector3(); // Initialize direction vector
 
-  await lightSetup();
+  // await lightSetup();
 
-  camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    1,
-    500000
-  );
-
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-
-  camera.position.x = 2000;
-  camera.position.y = 1000;
-  camera.position.z = 2000;
-
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.maxPolarAngle = Math.PI / 2; // Adjust the value as needed
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.25;
-  controls.screenSpacePanning = false;
+  camera = new Camera(
+      45,
+      window.innerWidth / window.innerHeight,
+      1,
+      500000
+  );  
+  // Set initial camera position
+  camera.position.set(2000, 1000, 2000);  
+  controls = new Controls(camera, renderer.domElement);
+  // controls = new OrbitControls(camera, renderer.domElement);
+  // controls.maxPolarAngle = Math.PI / 2; // Adjust the value as needed
+  // controls.enableDamping = true;
+  // controls.dampingFactor = 0.25;
+  // controls.screenSpacePanning = false;
 
   modelGroup = new THREE.Group();
   scene.add(modelGroup);
@@ -383,7 +384,7 @@ async function init() {
   //   renderer.render(scene, camera);
   // });
 
-  main_model = await loadGLTFModel(glftLoader, params.defaultModel + ".glb");
+  main_model = await loadGLTFModel( params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
   modelGroup.add(main_model);
@@ -395,7 +396,7 @@ async function init() {
     let model_name = val + ".glb";
     let already_added = modelGroup.getObjectByName(val);
     if (!already_added) {
-      let model_load = await loadGLTFModel(glftLoader, model_name);
+      let model_load = await loadGLTFModel( model_name);
       await setupMainModel(model_load);
       let model = model_load.getObjectByName(val);
       model.visible = false;
@@ -450,37 +451,25 @@ async function init() {
 
   if (!hanger_golf_club_model) {
     hanger_golf_club_model = await loadGLTFModel(
-      glftLoader,
+      
       "hanger_golf_club_model.glb"
     );
-    // hanger_golf_club_model = await loadModel(colladaLoader, 'hanger_golf_club_model.dae');
     await setupHangerGolfClubModel(hanger_golf_club_model);
     let Golfloader = document.querySelector(".Hanger_Golf_Club_Driver_loader");
     removeLoader(Golfloader);
     let Golfloader2 = document.querySelector(".Hanger_Golf_Club_Iron_loader");
     removeLoader(Golfloader2);
   }
-  // if (!hanger_model) {
-  //   // console.log("hanger_model lodeding");
-  //   hanger_model = await loadGLTFModel(glftLoader, "hanger_model.glb");
-  //   console.log("hanger_model loded", hanger_model);
-  //   // hanger_model = await loadModel(colladaLoader, 'hanger_model.dae');
-  //   await setupHangerModel(hanger_model);
-  //   // console.log("hanger_model update", hanger_model);
-  // }
 
   if (!rack_glass_model) {
-    rack_glass_model = await loadGLTFModel(glftLoader, "rack_glass_model.glb");
-    // rack_glass_model = await loadModel(colladaLoader, 'rack_glass_model.dae');
+    rack_glass_model = await loadGLTFModel( "rack_glass_model.glb");
     await setupGlassRackModel(rack_glass_model, texture_background);
   }
   if (!rack_wooden_model) {
     rack_wooden_model = await loadGLTFModel(
-      glftLoader,
+      
       "rack_wooden_model.glb"
     );
-    // rack_wooden_model = await loadModel(colladaLoader, 'rack_wooden_model.dae');
-    // console.log('hanger_model', hanger_model)
     await setupWoodenRackModel(rack_wooden_model);
   }
 
@@ -675,7 +664,7 @@ async function loadPreviousModels() {
 
 async function loadHangerModels() {
   if (!hanger_rail_step) {
-    hanger_rail_step = await loadGLTFModel(glftLoader, "Hanger_Rail_Step.glb");
+    hanger_rail_step = await loadGLTFModel( "Hanger_Rail_Step.glb");
     await setupHangerModel(hanger_rail_step);
     hanger_model = hanger_rail_step;
     let loader = document.querySelector(".Hanger_Rail_Step_loader");
@@ -683,7 +672,7 @@ async function loadHangerModels() {
   }
   if (!hanger_rail_single) {
     hanger_rail_single = await loadGLTFModel(
-      glftLoader,
+      
       "Hanger_Rail_Single.glb"
     );
     await setupHangerModel(hanger_rail_single);
@@ -696,7 +685,7 @@ async function loadHangerModels() {
 
   if (!hanger_rail_d_500) {
     hanger_rail_d_500 = await loadGLTFModel(
-      glftLoader,
+      
       "Hanger_Rail_D_500mm.glb"
     );
     await setupHangerModel(hanger_rail_d_500);
@@ -710,7 +699,7 @@ async function loadHangerModels() {
 
   if (!hanger_rail_d_1000) {
     hanger_rail_d_1000 = await loadGLTFModel(
-      glftLoader,
+      
       "Hanger_Rail_D_1000mm.glb"
     );
     await setupHangerModel(hanger_rail_d_1000);
@@ -741,23 +730,18 @@ function removeLoader(loader) {
 // Handle mouse move for hover
 async function otherModelSetup() {
   if (!arrow_model) {
-    arrow_model = await loadGLTFModel(glftLoader, "arrow_model.glb");
-    // header_rod_model = await loadModel(colladaLoader, 'arrow_model.dae');
+    arrow_model = await loadGLTFModel( "arrow_model.glb");
     await setupArrowModel(modelGroup, arrow_model);
   }
   if (!header_rod_model) {
-    header_rod_model = await loadGLTFModel(glftLoader, "header_rod_model.glb");
-    // console.log('header_rod_model', header_rod_model)
-    // header_rod_model = await loadModel(colladaLoader, 'header_rod_model.dae');
+    header_rod_model = await loadGLTFModel( "header_rod_model.glb");
     params.rodSize = await getNodeSize(header_rod_model);
-    // console.log('params.rodSize', params.rodSize)
   }
   if (!header_glass_shelf_fixing_model) {
     header_glass_shelf_fixing_model = await loadGLTFModel(
-      glftLoader,
+      
       "header_glass_shelf_fixing_model.glb"
     );
-    // header_glass_shelf_fixing_model = await loadModel(colladaLoader, 'header_glass_shelf_fixing_model.dae');
     params.glassShelfFixingSize = await getNodeSize(
       header_glass_shelf_fixing_model
     );
@@ -769,28 +753,23 @@ async function otherModelSetup() {
   }
   if (!header_500_height_model) {
     header_500_height_model = await loadGLTFModel(
-      glftLoader,
+      
       "header_500_height_model.glb"
     );
-    // header_500_height_model = await loadModel(colladaLoader, 'header_500_height_model.dae');
     await setupHeader500HeightModel(modelGroup, header_500_height_model);
-    // await updateMaterial(params.frameBorderColor, "frame");
   }
   if (!header_wooden_shelf_model) {
     header_wooden_shelf_model = await loadGLTFModel(
-      glftLoader,
+      
       "header_wooden_shelf_model.glb"
     );
-    // header_wooden_shelf_model = await loadModel(colladaLoader, 'header_wooden_shelf_model.dae');
     await setupHeaderWoodenShelfModel(modelGroup, header_wooden_shelf_model);
-    // await updateMaterial(params.defaultShelfColor, "shelf");
   }
   if (!header_glass_shelf_model) {
     header_glass_shelf_model = await loadGLTFModel(
-      glftLoader,
+      
       "header_glass_shelf_model.glb"
     );
-    // header_glass_shelf_model = await loadModel(colladaLoader, 'header_glass_shelf_model.dae');
     await setupHeaderGlassShelfModel(
       modelGroup,
       header_glass_shelf_model,
@@ -799,21 +778,19 @@ async function otherModelSetup() {
   }
   if (!slotted_sides_model) {
     slotted_sides_model = await loadGLTFModel(
-      glftLoader,
+      
       "slotted_sides_model.glb"
     );
-    // slotted_sides_model = await loadModel(colladaLoader, 'slotted_sides_model.dae');
     await setupSlottedSidesModel(modelGroup, slotted_sides_model);
-    // await updateMaterial(params.frameBorderColor, "frame");
   }
 
   if (!support_base_middle || !support_base_side) {
     support_base_middle = await loadGLTFModel(
-      glftLoader,
+      
       "support_base_middle.glb"
     );
     support_base_side = await loadGLTFModel(
-      glftLoader,
+      
       "support_base_sides.glb"
     );
     await setupSupportBaseModel(
@@ -1149,79 +1126,6 @@ async function enforceRackBounds() {
   }
 }
 
-async function lightSetup() {
-  let radius = 1000;
-  let lightIntensity1 = 1;
-  let lightIntensity2 = 2.3;
-
-  if (params.defaultModel) {
-    const model_size = parseInt(await getModelSize(params.defaultModel));
-    if (model_size >= 2000) {
-      radius = 170;
-    }
-  }
-
-  const customDropdownButton = document.querySelector(
-    `.custom-dropdown[data-type="frame"]`
-  );
-  const selectedItem = customDropdownButton.querySelector(
-    ".dropdown-item.selected"
-  );
-  if (selectedItem) {
-    const dataType = selectedItem.getAttribute("data-type");
-    const dataColor = selectedItem.getAttribute("data-value");
-    if (dataType == "color" && dataColor == "0xffffff") {
-      lightIntensity1 = 0;
-    }
-  }
-
-  // Remove previously added lights and helpers
-  lights.forEach((light) => {
-    scene.remove(light);
-    light.dispose(); // Optional: Dispose of light resources
-  });
-  lightHelpers.forEach((helper) => {
-    scene.remove(helper);
-    // No need to dispose of helper resources explicitly in most cases
-  });
-
-  // Clear the arrays
-  lights.length = 0;
-  lightHelpers.length = 0;
-
-  // const radius = customRadius;
-  const height = 550;
-
-  for (let i = 0; i < 4; i++) {
-    const angle = (i / 4) * Math.PI * 2;
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-
-    const directionalLight = new THREE.DirectionalLight(
-      0xffffff,
-      i % 2 === 0 ? lightIntensity1 : lightIntensity2
-    );
-    directionalLight.position.set(x, height, z);
-
-    const targetObject = new THREE.Object3D();
-    targetObject.position.set(0, -90, 0);
-    scene.add(targetObject);
-
-    directionalLight.target = targetObject;
-    directionalLight.target.updateMatrixWorld();
-
-    scene.add(directionalLight);
-    lights.push(directionalLight);
-
-    const directionalLightHelper = new THREE.DirectionalLightHelper(
-      directionalLight,
-      5
-    );
-    // scene.add(directionalLightHelper);
-    lightHelpers.push(directionalLightHelper);
-  }
-}
-
 async function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -1415,53 +1319,53 @@ async function setUploadedTexture(mesh, texture, frameNames) {
   }
 }
 
-async function updateUploadedTexture(mesh, texture, frameNames) {
-  texture = await setTextureParams(texture);
+// async function updateUploadedTexture(mesh, texture, frameNames) {
+//   texture = await setTextureParams(texture);
 
-  if (frameNames.includes(mesh.name)) {
-    // Check if the mesh is a mesh
-    if (mesh.isMesh) {
-      // Clone the geometry and material if not already unique
-      if (!mesh.userData.isUnique) {
-        mesh.geometry = mesh.geometry.clone();
-        mesh.material = mesh.material.map((mat) => mat.clone());
-        mesh.userData.isUnique = true; // Mark this node as having unique instances
-      }
+//   if (frameNames.includes(mesh.name)) {
+//     // Check if the mesh is a mesh
+//     if (mesh.isMesh) {
+//       // Clone the geometry and material if not already unique
+//       if (!mesh.userData.isUnique) {
+//         mesh.geometry = mesh.geometry.clone();
+//         mesh.material = mesh.material.map((mat) => mat.clone());
+//         mesh.userData.isUnique = true; // Mark this node as having unique instances
+//       }
 
-      // // Loop through each material and update the texture
-      mesh.material.forEach((material) => {
-        material.map = texture;
-        material.needsUpdate = true; // Update the material
-      });
-    }
-  }
-}
+//       // // Loop through each material and update the texture
+//       mesh.material.forEach((material) => {
+//         material.map = texture;
+//         material.needsUpdate = true; // Update the material
+//       });
+//     }
+//   }
+// }
 
-async function updateTexture(mesh, texture, frameNames) {
-  texture = await setTextureParams(texture);
+// async function updateTexture(mesh, texture, frameNames) {
+//   texture = await setTextureParams(texture);
 
-  // texture.repeat.set(10, 10);
-  if (mesh.isMesh) {
-    if (frameNames.includes(mesh.name)) {
-      // console.log(mesh.name)
-      if (Array.isArray(mesh.material)) {
-        // If the mesh has multiple materials
-        mesh.material.forEach((mat) => {
-          mat.map = texture;
-          mat.map.wrapS = THREE.RepeatWrapping;
-          mat.map.wrapT = THREE.RepeatWrapping;
-          mat.needsUpdate = true;
-        });
-      } else {
-        // If the mesh has a single material
-        mesh.material.map = texture;
-        mesh.material.map.wrapS = THREE.RepeatWrapping;
-        mesh.material.map.wrapT = THREE.RepeatWrapping;
-        mesh.material.needsUpdate = true;
-      }
-    }
-  }
-}
+//   // texture.repeat.set(10, 10);
+//   if (mesh.isMesh) {
+//     if (frameNames.includes(mesh.name)) {
+//       // console.log(mesh.name)
+//       if (Array.isArray(mesh.material)) {
+//         // If the mesh has multiple materials
+//         mesh.material.forEach((mat) => {
+//           mat.map = texture;
+//           mat.map.wrapS = THREE.RepeatWrapping;
+//           mat.map.wrapT = THREE.RepeatWrapping;
+//           mat.needsUpdate = true;
+//         });
+//       } else {
+//         // If the mesh has a single material
+//         mesh.material.map = texture;
+//         mesh.material.map.wrapS = THREE.RepeatWrapping;
+//         mesh.material.map.wrapT = THREE.RepeatWrapping;
+//         mesh.material.needsUpdate = true;
+//       }
+//     }
+//   }
+// }
 
 // Function to update texture or color on selection
 async function updateMaterial(
@@ -1547,7 +1451,8 @@ async function updateMaterial(
     // } else {
     //   renderer.toneMapping = THREE.AgXToneMapping;
     // }
-    await lightSetup();
+    // await lightSetup();
+    await scene.lightSetup(lights, lightHelpers);
   }
   // console.log(main_model)
 }
@@ -1588,7 +1493,8 @@ if (frameSize) {
       setting[params.selectedGroupName].defaultModel = event.target.value;
       await showHideNodes(modelGroup, scene, camera);
       await centerMainModel(modelGroup);
-      await lightSetup();
+      // await lightSetup();
+      await scene.lightSetup(lights, lightHelpers);
     }
   });
 }
@@ -2019,7 +1925,7 @@ if (saveModelDataButton) {
       group_names: allGroupNames || null,
       top_frame_croped_image: topFrameCropedImage || null,
       main_frame_croped_image: mainFrameCropedImage || null,
-    };
+    };    
 
     let projectName = (previousData && previousData.name) || null;
     let dataSave;
@@ -2107,85 +2013,6 @@ moveRightModel.addEventListener("click", async () => {
     console.log(`Group ${selectedGroupName} not found.`);
   }
 });
-
-// moveLeftModel.addEventListener("click", async () => {
-//   let defaultModelName = setting[params.selectedGroupName].defaultModel
-//   let defaultModel = modelGroup.getObjectByName(defaultModelName);
-
-//   if (defaultModel) {
-//     // Check for collision before moving left
-//     const canMoveLeft = await checkForCollision(
-//       modelGroup,
-//       defaultModel,
-//       -params.moveLeftRight
-//     );
-
-//     if (canMoveLeft) {
-//       defaultModel.position.x -= params.moveLeftRight; // Adjust the value to control the speed of movement
-//       if (!defaultModel.spacing) {
-//         defaultModel.spacing = 0;
-//       }
-//       defaultModel.spacing += params.moveLeftRight;
-//       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
-//     } else {
-//       console.log("Collision detected! Cannot move further left.");
-//     }
-//   }
-// });
-
-// moveRightModel.addEventListener("click", async () => {
-//   let defaultModelName = setting[params.selectedGroupName].defaultModel
-//   let defaultModel = modelGroup.getObjectByName(defaultModelName);
-
-//   if (defaultModel) {
-//     // Check for collision before moving right
-//     const canMoveRight = await checkForCollision(
-//       main_model,
-//       defaultModel,
-//       params.moveLeftRight
-//     );
-
-//     if (canMoveRight) {
-//       defaultModel.position.x += params.moveLeftRight; // Adjust the value to control the speed of movement
-//       if (!defaultModel.spacing) {
-//         defaultModel.spacing = 0;
-//       }
-//       defaultModel.spacing += params.moveLeftRight;
-//       await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
-//     } else {
-//       console.log("Collision detected! Cannot move further right.");
-//     }
-//   }
-// });
-
-// // Add event listeners for move buttons
-// moveLeftModel.addEventListener("click", async () => {
-//     let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
-//     let defaultModel = main_model.getObjectByName(defaultModelName);
-
-//     if (defaultModel) {
-//         defaultModel.position.x -= params.moveLeftRight; // Adjust the value to control the speed of movement
-//         if (!defaultModel.spacing) {
-//             defaultModel.spacing = 0
-//         }
-//         defaultModel.spacing -= params.moveLeftRight
-//         console.log('defaultModel', defaultModel)
-//         await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
-//     }
-// });
-
-// moveRightModel.addEventListener("click", async () => {
-//     let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
-//     let defaultModel = main_model.getObjectByName(defaultModelName);
-//     if (defaultModel) {
-//         defaultModel.position.x += params.moveLeftRight; // Adjust the value to control the speed of movement
-//         if (!defaultModel.spacing) {
-//             defaultModel.spacing = 0
-//         }
-//         defaultModel.spacing += params.moveLeftRight
-//         await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
-//     }
-// });
 
 if (captureButton) {
   captureButton.addEventListener("click", async function () {
@@ -2349,44 +2176,6 @@ async function cloneMainModelGroup(model) {
   });
   return combinedBox;
 }
-// Helper function to render and download a screenshot
-// async function renderAndDownload1(
-//   viewName,
-//   camera,
-//   tempRenderer,
-//   name,
-//   imagesNameArr
-// ) {
-//   // tempRenderer.render(scene, camera);
-//   // const screenshotData = tempRenderer.domElement.toDataURL("image/png");
-//   // const unixTime = Math.floor(Date.now() / 1000);
-//   // const link = document.createElement("a");
-//   // link.href = screenshotData;
-//   // link.download = `model-${name}-${viewName}-${unixTime}.png`;
-//   // link.click();
-//   // return;
-//   const originalWidth = tempRenderer.domElement.width;
-//   const originalHeight = tempRenderer.domElement.height;
-
-//   // Set higher resolution (2x or 3x the original resolution)
-//   const scaleFactor = (viewName == "diagonal" || viewName == "wholeModel" ) && originalWidth * 3 > 5000 ? 1 : 3; // You can adjust this factor
-//   tempRenderer.setSize(
-//     originalWidth * scaleFactor,
-//     originalHeight * scaleFactor,
-//     true
-//   );
-//   camera.aspect =
-//     (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
-//   camera.updateProjectionMatrix();
-//   tempRenderer.render(scene, camera);
-//   const screenshotData = tempRenderer.domElement.toDataURL("image/png");
-//   const unixTime = Math.floor(Date.now() / 1000);
-//   await downloadScreenshotwithDiffCanvas(
-//     screenshotData,
-//     `model-${name}-${viewName}-${unixTime}.png`
-//   );
-//   imagesNameArr.push(`./screenshots/model-${name}-${viewName}-${unixTime}.png`);
-// }
 
 async function renderAndDownload(
   viewName,
@@ -2395,13 +2184,6 @@ async function renderAndDownload(
   name,
   imagesNameArr
 ) {
-  tempRenderer.render(scene, camera);
-  const screenshotData2 = tempRenderer.domElement.toDataURL("image/png");
-  const unixTime2 = Math.floor(Date.now() / 1000);
-  const link2 = document.createElement("a");
-  link2.href = screenshotData2;
-  link2.download = `model-${name}-${viewName}-${unixTime2}.png`;
-  link2.click();
   // Store original renderer size and camera properties
   const originalWidth = tempRenderer.domElement.width;
   const originalHeight = tempRenderer.domElement.height;
@@ -2409,8 +2191,6 @@ async function renderAndDownload(
   const originalPosition = camera.position.clone();
   const originalRotation = camera.rotation.clone();
   const originalQuaternion = camera.quaternion.clone();
-  console.log(viewName, " _ ", originalWidth);
-
   try {
     // Set higher resolution (2x or 3x the original resolution)
     let scaleFactor = 3; // Default scale factor
@@ -2440,11 +2220,7 @@ async function renderAndDownload(
     tempRenderer.render(scene, camera);
     const screenshotData = tempRenderer.domElement.toDataURL("image/png");
     const unixTime = Math.floor(Date.now() / 1000);
-    // const link = document.createElement("a");
-    // link.href = screenshotData;
-    // link.download = `model-${name}-${viewName}-${unixTime}_dummy.png`;
-    // link.click();
-
+    
     // Download or save the screenshot
     await downloadScreenshotwithDiffCanvas(
       screenshotData,
@@ -2643,24 +2419,12 @@ async function captureMainFixtureImage(
           tempRenderer.setSize((size.x + size.z) * 3, size.z * 3);
         }
         const maxDim = Math.max(size.x, size.y, size.x);
-        console.log(maxDim);
-        console.log(size);
-        console.log(center);
         const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-        // const hangerPosition = child.hangerArrayKey.split("-")[2];        
-        // if(hangerPosition === "Front"){
-        //   camera.position.set(
-        //     center.x - cameraDistance, // Offset in X for diagonal perspective
-        //     center.y + 200, // Offset in Y for better centering
-        //     center.z + cameraDistance + 500 // Offset in Z for distance
-        //   );
-        // }else{
-          camera.position.set(
-            center.x + cameraDistance, // Offset in X for diagonal perspective
-            center.y + 200, // Offset in Y for better centering
-            center.z + (cameraDistance + 500) // Offset in Z for distance
-          );
-        // }
+        camera.position.set(
+          center.x + cameraDistance, // Offset in X for diagonal perspective
+          center.y + 200, // Offset in Y for better centering
+          center.z + (cameraDistance + 500) // Offset in Z for distance
+        );
         camera.lookAt(center);
         await renderAndDownload(
           child.name,
@@ -2688,8 +2452,6 @@ async function captureFixtureImage(
     if (!modelChild.visible) continue;
     const CloneModel = modelChild.clone();
     await cloneWithCustomHangerProperties(modelChild, CloneModel);
-    console.log("Original Model:", modelChild);
-    console.log("Cloned Model:", CloneModel);
     await captureMainFixtureImage(
       camera,
       tempRenderer,
@@ -2721,131 +2483,7 @@ function cloneRenderer(renderer) {
   // Copy pixel ratio
   newRenderer.setPixelRatio(renderer.getPixelRatio());
   newRenderer.toneMapping = THREE.NoToneMapping;
-
-  // Copy shadow map settings
-  // newRenderer.shadowMap.enabled = renderer.shadowMap.enabled;
-  // newRenderer.shadowMap.type = renderer.shadowMap.type;
-
-  // Copy tone mapping
-  // newRenderer.toneMapping = renderer.toneMapping;
-  // newRenderer.toneMappingExposure = renderer.toneMappingExposure;
-
-  // Copy output encoding
-  // newRenderer.outputEncoding = renderer.outputEncoding;
-
   return newRenderer;
-}
-
-async function captureModelImages2(model, imagesNameArr) {
-  // Step 1: Calculate the bounding box for the current model
-  let modelSize = await cloneModelGroup(model);
-  const box = new THREE.Box3().setFromObject(modelSize[0]);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-
-  // Prepare a temporary canvas for rendering
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = size.x;
-  tempCanvas.height = size.y;
-  const tempRenderer = cloneRenderer(renderer);
-  tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
-  tempRenderer.setClearColor(0x000000, 0);
-
-  // Set up an orthographic camera based on the bounding box size
-  const frontCamera = new THREE.OrthographicCamera(
-    -size.x / 2,
-    size.x / 2,
-    size.y / 2,
-    -size.y / 2,
-    0.5,
-    10000
-  );
-
-  // Step 2a: Front view - Set the camera position to capture the front of the model
-  frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
-  frontCamera.lookAt(center);
-  await renderAndDownload(
-    "front",
-    frontCamera,
-    tempRenderer,
-    model.name,
-    imagesNameArr
-  );
-
-  // Side view
-  // tempCanvas.width = size.z < size.y ? size.z : size.y;
-  // tempCanvas.height = size.z > size.y ? size.z : size.y;
-  tempCanvas.width = 1602;
-  tempCanvas.height = 2005;
-  console.log(size);
-  // console.log(tempCanvas.width);
-  // console.log(tempCanvas.height);
-
-  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-  const sideCamera = new THREE.OrthographicCamera(
-    -1602,
-    1602,
-    2005,
-    -2005,
-    1,
-    10000
-  );
-  // Position the camera along the positive X-axis for a side view
-  const sideViewDistance = size.x + 1000;
-  sideCamera.position.set(center.x + sideViewDistance, center.y, center.z);
-  sideCamera.lookAt(center);
-
-  // Wait for side view render to complete
-  await renderAndDownload(
-    "side",
-    sideCamera,
-    tempRenderer,
-    model.name,
-    imagesNameArr
-  );
-
-  // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
-  tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-  tempCanvas.height = size.y; // Use both y and z for better height coverage
-  tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-  const diagonalCamera = new THREE.PerspectiveCamera(
-    45,
-    size.x / size.y,
-    100,
-    100000
-  );
-
-  const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-  const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-
-  diagonalCamera.position.set(
-    center.x + cameraDistance, // Offset in X for diagonal perspective
-    center.y, // Offset in Y for better centering
-    center.z + cameraDistance + 500 // Offset in Z for distance
-  );
-
-  diagonalCamera.lookAt(center);
-  await renderAndDownload(
-    "diagonal",
-    diagonalCamera,
-    tempRenderer,
-    model.name,
-    imagesNameArr
-  );
-
-  diagonalCamera.position.set(
-    center.x + cameraDistance, // Offset in X for diagonal perspective
-    center.y + 100, // Offset in Y for better centering
-    center.z + cameraDistance + 500 // Offset in Z for distance
-  );
-
-  await captureFixtureImage(
-    diagonalCamera,
-    tempRenderer,
-    model,
-    model.name,
-    imagesNameArr
-  );
 }
 
 async function captureModelImages(modelGroup) {
@@ -2859,16 +2497,16 @@ async function captureModelImages(modelGroup) {
 
   // Calculate bounding box for the model group
   const Outerbox = await cloneMainModelGroup(modelGroup);
-  const size = Outerbox.getSize(new THREE.Vector3());
-  const center = Outerbox.getCenter(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
+  const outerSize = Outerbox.getSize(new THREE.Vector3());
+  const outerCenter = Outerbox.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(outerSize.x, outerSize.y, outerSize.z);
   const fov = camera.fov * (Math.PI / 180);
 
   // Adjusted distance calculation - reduced divisor for closer view
   const distance = Math.abs(maxDim / Math.sin(fov / 2) / 2.5); // Changed from 1.5 to 3.5 for closer view
 
   // Optional: Add a slight elevation to the camera
-  const heightOffset = size.y * 0.1; // 10% of model height
+  const heightOffset = outerSize.y * 0.1; // 10% of model height
 
   for (const model of modelGroup.children) {
     let isCorn = false;
@@ -2897,8 +2535,109 @@ async function captureModelImages(modelGroup) {
       }
     });
 
-    // Front view - slightly elevated
-    await captureModelImages2(model, imagesNameArr);
+    // Step 1: Calculate the bounding box for the current model
+    let modelSize = await cloneModelGroup(model);
+    const box = new THREE.Box3().setFromObject(modelSize[0]);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Prepare a temporary canvas for rendering
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = size.x;
+    tempCanvas.height = size.y;
+    const tempRenderer = cloneRenderer(renderer);
+    tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
+    tempRenderer.setClearColor(0x000000, 0);
+
+    // Set up an orthographic camera based on the bounding box size
+    const frontCamera = new THREE.OrthographicCamera(
+      -size.x / 2,
+      size.x / 2,
+      size.y / 2,
+      -size.y / 2,
+      0.5,
+      10000
+    );
+
+    // Step 2a: Front view - Set the camera position to capture the front of the model
+    frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
+    frontCamera.lookAt(center);
+    await renderAndDownload(
+      "front",
+      frontCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    // Side view
+    tempCanvas.width = 1602;
+    tempCanvas.height = 2005;
+    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+    const sideCamera = new THREE.OrthographicCamera(
+      -1602,
+      1602,
+      2005,
+      -2005,
+      1,
+      10000
+    );
+    // Position the camera along the positive X-axis for a side view
+    const sideViewDistance = size.x + 1000;
+    sideCamera.position.set(center.x + sideViewDistance, center.y, center.z);
+    sideCamera.lookAt(center);
+
+    // Wait for side view render to complete
+    await renderAndDownload(
+      "side",
+      sideCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
+    tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
+    tempCanvas.height = size.y; // Use both y and z for better height coverage
+    tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+    const diagonalCamera = new THREE.PerspectiveCamera(
+      45,
+      size.x / size.y,
+      100,
+      100000
+    );
+
+    const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
+    const cameraDistance = maxDim + 350; // Adjust multiplier as needed
+
+    diagonalCamera.position.set(
+      center.x + cameraDistance, // Offset in X for diagonal perspective
+      center.y, // Offset in Y for better centering
+      center.z + cameraDistance + 500 // Offset in Z for distance
+    );
+
+    diagonalCamera.lookAt(center);
+    await renderAndDownload(
+      "diagonal",
+      diagonalCamera,
+      tempRenderer,
+      model.name,
+      imagesNameArr
+    );
+
+    diagonalCamera.position.set(
+      center.x + cameraDistance, // Offset in X for diagonal perspective
+      center.y + 100, // Offset in Y for better centering
+      center.z + cameraDistance + 500 // Offset in Z for distance
+    );
+
+    await captureFixtureImage(
+      diagonalCamera,
+      tempRenderer,
+      model,
+      model.name,
+      imagesNameArr
+    );
 
     // Restore visibility
     scene.children.forEach((childScene) => {
@@ -2935,7 +2674,7 @@ async function captureModelImages(modelGroup) {
     heightOffset,
     wholeModelDistance * Math.cos(Math.PI / 4) + 500
   );
-  camera.lookAt(center);
+  camera.lookAt(outerCenter);
   await renderAndDownload(
     "wholeModel",
     camera,
@@ -2976,7 +2715,7 @@ if (createQrButton) {
     closeBtn.addEventListener("click", async function () {
       showQRHere.style.display = "none";
     });
-    await exportUsdz(modelGroup, modelName, isQr);
+    await exportModelForAr(modelGroup, modelName, isQr);
     const data = {};
     data["action"] = "create_qr_code";
     data["url"] = exportedModelFileUrl;
@@ -3010,7 +2749,7 @@ if (showInAR) {
     const modelName = `main_group_${unixTimestamp}`;
     const exportedModelFileUrl = `./export_models/${modelName}`;
 
-    await exportUsdz(modelGroup, modelName);
+    await exportModelForAr(modelGroup, modelName);
 
     // Check if the file exists
     if (await checkFileExists(exportedModelFileUrl)) {
@@ -3045,6 +2784,7 @@ if (showInAR) {
 if (savePdfButton) {
   savePdfButton.addEventListener("click", async function () {
     CreatingPdfFile.style.display = "flex";
+    transformControls.detach();
     await traverseAsync(modelGroup, async (child) => {
       if (
         hangerNames.includes(child.name) &&
@@ -3072,7 +2812,6 @@ if (savePdfButton) {
         params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
       }
     });
-
     let ModelImageName = await captureModelImages(modelGroup);
 
     const dataToSave = {
@@ -3084,7 +2823,7 @@ if (savePdfButton) {
       ModelImageName: ModelImageName || null,
     };
     await delay(1000);
-    await savePdfData("test", dataToSave, modelGroup, camera, renderer, scene);
+    await savePdfData(dataToSave, modelGroup);
   });
 }
 // ----------------------------------------------------------------------------------------------------------
