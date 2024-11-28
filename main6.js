@@ -78,16 +78,27 @@ import {
   calculateBoundingBox,
   getNodeSize,
   getCurrentModelSize,
-} from "./src/core/MeasurementManager.js";
+} from "./src/managers/MeasurementManager.js";
 import {
+  setTopFrameCropedImage,
+  setMainFrameCropedImage,
+  setTextureParams,
+} from "./src/managers/frameImagesManager.js";
+import {
+  addHangers,
   cloneWithCustomHangerProperties,
+  setupHangerModel,
+  setupHangerGolfClubModel,
+} from "./src/managers/hangerManager.js";
+import {
+  // cloneWithCustomHangerProperties,
   drawMeasurementBoxesWithLabels,
   setupHeaderWoodenShelfModel,
   setupHeaderGlassShelfModel,
   setupGlassShelfFixingModel,
   cloneWithCustomProperties,
   setupHeader500HeightModel,
-  setupHangerGolfClubModel,
+  // setupHangerGolfClubModel,
   updateMeasurementGroups,
   setupSlottedSidesModel,
   generateGlassMaterial,
@@ -97,7 +108,6 @@ import {
   findParentNodeByName,
   // calculateBoundingBox,
   // getCurrentModelSize,
-  // updateFrameMaterial,
   setupGlassRackModel,
   // getNextVisibleChild,
   // getPrevVisibleChild,
@@ -107,10 +117,10 @@ import {
   checkForCollision,
   setPositionCenter,
   initLabelRenderer,
-  setupHangerModel,
+  // setupHangerModel,
   addAnotherModels,
   isVisibleParents,
-  setTextureParams,
+  // setTextureParams,
   // restoreMaterials,
   // addNewMaterials,
   // updateFrameSize,
@@ -128,12 +138,12 @@ import {
   showHideNodes,
   getModelData,
   // getModelSize,
-  isHangerAdd,
+  // isHangerAdd,
   // getNodeSize,
   savePdfData,
   // setupModel,
   // exportUsdz,
-  addHangers,
+  // addHangers,
   // loadModel,
   addRacks,
   getHex,
@@ -295,10 +305,6 @@ manager.onProgress = (url, itemsLoaded, itemsTotal) => {
     simulatedProgress = actualProgress; // Sync simulated progress with real progress
   }
 
-  // console.log('url', url);
-  // console.log('assetsLoaded', assetsLoaded);
-  // console.log('totalAssets', totalAssets);
-
   if (assetsLoaded === totalAssets) {
     simulatedProgress = 100; // Ensure we finish at 100%
   }
@@ -306,7 +312,6 @@ manager.onProgress = (url, itemsLoaded, itemsTotal) => {
 
 // Hide the loader once all items are loaded
 manager.onLoad = () => {
-  // loaderElement.style.display = 'none';
   console.log("All assets loaded");
 };
 
@@ -319,39 +324,15 @@ manager.onError = (url) => {
 async function init() {
   texture_background = await TextureLoaderJpg.loadAsync("background.png");
 
-  // window["border_texture_material"] = new THREE.MeshPhongMaterial({
-  //   // specular: 3355443,
-  //   specular: new THREE.Color(0x111111),
-  //   map: texture_background,
-  //   // shininess: 0.5,
-  //   shininess: 30,
-  // });
-
   renderer = new Renderer(container,render);
   renderer.setAnimationLoop(render);
-  
-  // renderer = new THREE.WebGLRenderer({ antialias: true });
-  // renderer.setPixelRatio(window.devicePixelRatio);
-  // renderer.setSize(window.innerWidth, window.innerHeight);
-
-  // container.appendChild(renderer.domElement);
-
-  // // renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  // renderer.toneMapping = THREE.NoToneMapping;
-  // renderer.toneMappingExposure = params.exposure;
 
   scene = new Scene();
   scene.setupScene(window, texture_background, lights, lightHelpers)
-  // scene.backgroundBlurriness = params.blurriness;
-  // texture_background.mapping = THREE.EquirectangularReflectionMapping;
-  // scene.background = texture_background;
-  // scene.environment = texture_background;
 
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
   direction = new THREE.Vector3(); // Initialize direction vector
-
-  // await lightSetup();
 
   camera = new Camera(
       45,
@@ -362,11 +343,6 @@ async function init() {
   // Set initial camera position
   camera.position.set(2000, 1000, 2000);  
   controls = new Controls(camera, renderer.domElement);
-  // controls = new OrbitControls(camera, renderer.domElement);
-  // controls.maxPolarAngle = Math.PI / 2; // Adjust the value as needed
-  // controls.enableDamping = true;
-  // controls.dampingFactor = 0.25;
-  // controls.screenSpacePanning = false;
 
   modelGroup = new THREE.Group();
   scene.add(modelGroup);
@@ -404,14 +380,7 @@ async function init() {
     }
   }
 
-  // await updateFrameMaterial(
-  //   modelGroup,
-  //   "frame",
-  //   "color",
-  //   params.frameBorderColor
-  // );
   await showHideNodes(modelGroup, scene, camera);
-  // backupMainModel = main_model.clone();
 
   // Transform controls
   transformControls = new TransformControls(camera, renderer.domElement);
@@ -552,8 +521,8 @@ async function loadPreviousModels() {
             !setting[params.selectedGroupName].headerRodToggle;
         }
 
-        await setTopFrameCropedImage();
-        await setMainFrameCropedImage();
+        await setTopFrameCropedImage(topFrameCropedImage, modelGroup);
+        await setMainFrameCropedImage(mainFrameCropedImage, modelGroup);
         await showHideNodes(modelGroup, scene, camera);
         await centerMainModel(modelGroup);
 
@@ -1144,229 +1113,6 @@ async function render() {
   }
 }
 
-async function setMainFrameCropedImage() {
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModel = setting[selectedGroupName].defaultModel;
-
-  if (
-    mainFrameCropedImage &&
-    mainFrameCropedImage[selectedGroupName] &&
-    mainFrameCropedImage[selectedGroupName][defaultModel]
-  ) {
-    const mainFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].mainFrameBackgroundColor
-    );
-    const tempCanvas = document.createElement("canvas");
-    const ctx = tempCanvas.getContext("2d");
-
-    // Create a new image element
-    const img = new Image();
-    img.src = mainFrameCropedImage[selectedGroupName][defaultModel]; // Assign the base64 string to the image's src
-
-    // Wait for the image to load
-    img.onload = function () {
-      // Set canvas dimensions to match the image dimensions
-      tempCanvas.width = img.width;
-      tempCanvas.height = img.height;
-
-      // Draw the background color
-      ctx.fillStyle = mainFrameBackgroundColor;
-      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // Draw the cropped image on top
-      ctx.drawImage(img, 0, 0);
-
-      // Convert the canvas to a blob and create a texture from it
-      tempCanvas.toBlob(async (blob) => {
-        const url = URL.createObjectURL(blob);
-        const texture = new THREE.TextureLoader().load(url, async function () {
-          await updateMainFrameImageTexture(texture);
-        });
-        await closeCropper();
-      });
-    };
-
-    // Handle any errors during image loading
-    img.onerror = function (err) {
-      console.error("Image loading failed", err);
-    };
-  } else {
-    const mainFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].mainFrameBackgroundColor
-    );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
-    main_model.traverse(async function (child) {
-      if (frameMainNames.includes(child.name)) {
-        child.material = child.material.clone();
-        child.material.color.set(mainFrameBackgroundColor);
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-}
-
-async function setTopFrameCropedImage() {
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModel = setting[selectedGroupName].defaultModel;
-  let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
-
-  if (
-    topFrameCropedImage &&
-    topFrameCropedImage[selectedGroupName] &&
-    topFrameCropedImage[selectedGroupName][defaultModel] &&
-    topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]
-  ) {
-    const topFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].topFrameBackgroundColor
-    );
-    const tempCanvas = document.createElement("canvas");
-    const ctx = tempCanvas.getContext("2d");
-
-    // Create a new image element
-    const img = new Image();
-    img.src =
-      topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]; // Assign the base64 string to the image's src
-
-    // Wait for the image to load
-    img.onload = function () {
-      // Set canvas dimensions to match the image dimensions
-      tempCanvas.width = img.width;
-      tempCanvas.height = img.height;
-
-      // Draw the background color
-      ctx.fillStyle = topFrameBackgroundColor;
-      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // Draw the cropped image on top
-      ctx.drawImage(img, 0, 0);
-
-      // Convert the canvas to a blob and create a texture from it
-      tempCanvas.toBlob(async (blob) => {
-        const url = URL.createObjectURL(blob);
-        const texture = new THREE.TextureLoader().load(url, async function () {
-          await updateTopFrameImageTexture(texture);
-        });
-        await closeCropper();
-      });
-    };
-
-    // Handle any errors during image loading
-    img.onerror = function (err) {
-      console.error("Image loading failed", err);
-    };
-  } else {
-    const topFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].topFrameBackgroundColor
-    );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
-    main_model.traverse(async function (child) {
-      if (frameTop1Names.includes(child.name)) {
-        child.material = child.material.clone();
-        child.material.color.set(topFrameBackgroundColor);
-        child.material.needsUpdate = true;
-      }
-    });
-  }
-}
-
-async function updateMainFrameImageTexture(texture) {
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModel = setting[selectedGroupName].defaultModel;
-  let main_model = modelGroup.getObjectByName(selectedGroupName);
-  const currentModel = main_model.getObjectByName(defaultModel);
-  const frame = currentModel.getObjectByName("Frame");
-  if (frame) {
-    frame.traverse(async function (child) {
-      await setUploadedTexture(child, texture, frameMainNames);
-    });
-  }
-}
-
-async function updateTopFrameImageTexture(texture) {
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModel = setting[selectedGroupName].defaultModel;
-  let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
-
-  let main_model = modelGroup.getObjectByName(selectedGroupName);
-  const currentModel = main_model.getObjectByName(defaultModel);
-  // currentModel.traverse(function (modelNode) {
-  const header = currentModel.getObjectByName(defaultHeaderSize);
-  if (header) {
-    header.traverse(async function (child) {
-      await setUploadedTexture(child, texture, frameTop1Names);
-    });
-  }
-
-  // });
-}
-
-async function setUploadedTexture(mesh, texture, frameNames) {
-  texture = await setTextureParams(texture);
-  texture.flipY = false;
-
-  if (frameNames.includes(mesh.name)) {
-    // Check if the mesh is a mesh
-    if (mesh.isMesh) {
-      var met = mesh.material.clone();
-      met.map = texture;
-      met.map.wrapS = THREE.RepeatWrapping;
-      met.map.wrapT = THREE.RepeatWrapping;
-      met.needsUpdate = true;
-
-      mesh.material = met;
-      mesh.needsUpdate = true;
-    }
-  }
-}
-
-// async function updateUploadedTexture(mesh, texture, frameNames) {
-//   texture = await setTextureParams(texture);
-
-//   if (frameNames.includes(mesh.name)) {
-//     // Check if the mesh is a mesh
-//     if (mesh.isMesh) {
-//       // Clone the geometry and material if not already unique
-//       if (!mesh.userData.isUnique) {
-//         mesh.geometry = mesh.geometry.clone();
-//         mesh.material = mesh.material.map((mat) => mat.clone());
-//         mesh.userData.isUnique = true; // Mark this node as having unique instances
-//       }
-
-//       // // Loop through each material and update the texture
-//       mesh.material.forEach((material) => {
-//         material.map = texture;
-//         material.needsUpdate = true; // Update the material
-//       });
-//     }
-//   }
-// }
-
-// async function updateTexture(mesh, texture, frameNames) {
-//   texture = await setTextureParams(texture);
-
-//   // texture.repeat.set(10, 10);
-//   if (mesh.isMesh) {
-//     if (frameNames.includes(mesh.name)) {
-//       // console.log(mesh.name)
-//       if (Array.isArray(mesh.material)) {
-//         // If the mesh has multiple materials
-//         mesh.material.forEach((mat) => {
-//           mat.map = texture;
-//           mat.map.wrapS = THREE.RepeatWrapping;
-//           mat.map.wrapT = THREE.RepeatWrapping;
-//           mat.needsUpdate = true;
-//         });
-//       } else {
-//         // If the mesh has a single material
-//         mesh.material.map = texture;
-//         mesh.material.map.wrapS = THREE.RepeatWrapping;
-//         mesh.material.map.wrapT = THREE.RepeatWrapping;
-//         mesh.material.needsUpdate = true;
-//       }
-//     }
-//   }
-// }
-
 // Function to update texture or color on selection
 async function updateMaterial(
   value,
@@ -1416,12 +1162,6 @@ async function updateMaterial(
     setting[params.selectedGroupName].defaultShelfColor = value;
     setting[params.selectedGroupName].shelfMaterialType = type;
   }
-
-  // console.log('value', value)
-  // console.log('type', type)
-  // console.log('displayText', displayText)
-
-  // await updateFrameMaterial(modelGroup, dropdownType, type, value);
   await showHideNodes(modelGroup, scene, camera);
 
   // Update dropdown button with selected image/color and name
@@ -1457,7 +1197,7 @@ async function updateMaterial(
   // console.log(main_model)
 }
 
-async function closeCropper() {
+export async function closeCropper() {
   cropperContainer.style.display = "none";
   document.body.classList.remove("modal-open");
   if (cropper) {
@@ -1832,7 +1572,11 @@ if (cropButton) {
         // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
         let mainFrameSaveImageURl = await saveCropImage(cropper);  
         mainFrameCropedImage[selectedGroupName][defaultModel] = mainFrameSaveImageURl.imageUrl;
-        await setMainFrameCropedImage();
+        await setMainFrameCropedImage(mainFrameCropedImage, modelGroup);
+        console.log(setting);
+        console.log(params.selectedGroupName);
+        console.log(setting[selectedGroupName].defaultModel);
+        console.log(mainFrameCropedImage);
       } else if (params.fileUploadFlag == "TopFrame") {
         topFrameCropedImage = topFrameCropedImage || {};
         topFrameCropedImage[selectedGroupName] =
@@ -1842,8 +1586,8 @@ if (cropButton) {
         // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas().toDataURL("image/png");
         // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
         let topFrameSaveImageURl = await saveCropImage(cropper);
-        topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;
-        await setTopFrameCropedImage();
+        topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;      
+        await setTopFrameCropedImage(topFrameCropedImage, modelGroup);
       }
     }
   });

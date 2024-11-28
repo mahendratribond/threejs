@@ -100,6 +100,13 @@ Vector3 {x: 307.6876017470631, y: 129.61141967773438, z: 224.19418334960778}
 Vector3 {x: -219.10731576252135, y: 129.61141967773438, z: 224.19418334960778}
 
 
+frame/header =  colormaterial 
+frame/header =  texturematerial 
+base = colormaterial
+glassRack = glassMaterial
+woodenRack = woodenMaterial
+
+create global black and white material
 
 
 

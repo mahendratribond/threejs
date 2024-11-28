@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { params } from "../../config.js";
-import {getModelSize} from "./MeasurementManager.js";
+import {getModelSize} from "../managers/MeasurementManager.js";
 // core/Scene.js
 export class Scene extends THREE.Scene {
   constructor() {
