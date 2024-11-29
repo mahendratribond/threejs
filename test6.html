@@ -437,7 +437,7 @@
           </a>
           <div id="loadingModal" class="extraModel">
             <div>
-              <p>Please wait... we are creating your AR model file</p>
+              <p id="loadingText"></p>
               <div class="modelWaitingloader"></div> <!-- Optionally, add a CSS spinner here -->
             </div>
           </div>
@@ -448,9 +448,29 @@
             </div>
           </div>
           <div id="formModel" class="extraModel" style="background: rgba(0, 0, 0, 0.5)">
+            <!-- Modal Structure -->
+            <div class="modal" id="confirmationModal" tabindex="-1" role="dialog">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Confirm Action</h5>
+                    <button type="button" id="confirModelCloseButtton" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    <p>Would you like to save your design as a PDF and view it in AR?</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" id="yesButton" class="btn btn-primary">Yes</button>
+                    <button type="button" id="noButton" class="btn btn-secondary" data-dismiss="modal">No</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="formBase">
               <button id="formCloseBtn">X</button>
-              <form action="" method="post" class="FormSubmitionForMonday" id="formStyle">
+              <form action="api.php" method="post" id="FormSubmitionForMonday">
                 <label class="form-label" for="">Name</label>
                 <input type="text" name="name" id="name" class="form-control" placeholder="Enter your Name" required>
                 <div class="invalid-feedback">Please provide your name.</div>
@@ -470,6 +490,7 @@
                 <label class="form-label mt-3" for="">Date required</label>
                 <input type="date" name="date" id="date" class="form-control" placeholder="Enter your Date" required>
                 <div class="invalid-feedback">Please provide delivery date.</div>
+                <input type="hidden" name="action" value="formSubmitionForMonday">
 
                 <button class="mt-3 btn btn-primary submitForm" type="button">Submit</button>
               </form>

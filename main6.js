@@ -65,12 +65,12 @@ import {
   clothsMaterial,
   commonMaterial,
   addNewMaterials,
-  restoreMaterials
+  restoreMaterials,
 } from "./src/managers/materialManager.js";
-import {Camera} from "./src/core/Camera.js";
-import {Renderer} from "./src/core/Renderer.js";
-import {Scene } from "./src/core/Scene.js";
-import {Controls } from "./src/core/Controls.js";
+import { Camera } from "./src/core/Camera.js";
+import { Renderer } from "./src/core/Renderer.js";
+import { Scene } from "./src/core/Scene.js";
+import { Controls } from "./src/core/Controls.js";
 import {
   getModelSize,
   getHeaderSize,
@@ -220,6 +220,7 @@ const createQrButton = document.getElementById("createQrButton");
 const formSubmition = document.getElementById("formSubmition");
 const formCloseBtn = document.getElementById("formCloseBtn");
 const submitForm = document.querySelector(".submitForm");
+const formModel = document.getElementById("formModel");
 
 const accordionModel = document.getElementById("accordionModel");
 const moveLeftModel = document.getElementById("moveLeftModel");
@@ -324,24 +325,19 @@ manager.onError = (url) => {
 async function init() {
   texture_background = await TextureLoaderJpg.loadAsync("background.png");
 
-  renderer = new Renderer(container,render);
+  renderer = new Renderer(container, render);
   renderer.setAnimationLoop(render);
 
   scene = new Scene();
-  scene.setupScene(window, texture_background, lights, lightHelpers)
+  scene.setupScene(window, texture_background, lights, lightHelpers);
 
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
   direction = new THREE.Vector3(); // Initialize direction vector
 
-  camera = new Camera(
-      45,
-      window.innerWidth / window.innerHeight,
-      1,
-      500000
-  );  
+  camera = new Camera(45, window.innerWidth / window.innerHeight, 1, 500000);
   // Set initial camera position
-  camera.position.set(2000, 1000, 2000);  
+  camera.position.set(2000, 1000, 2000);
   controls = new Controls(camera, renderer.domElement);
 
   modelGroup = new THREE.Group();
@@ -360,7 +356,7 @@ async function init() {
   //   renderer.render(scene, camera);
   // });
 
-  main_model = await loadGLTFModel( params.defaultModel + ".glb");
+  main_model = await loadGLTFModel(params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
   modelGroup.add(main_model);
@@ -372,7 +368,7 @@ async function init() {
     let model_name = val + ".glb";
     let already_added = modelGroup.getObjectByName(val);
     if (!already_added) {
-      let model_load = await loadGLTFModel( model_name);
+      let model_load = await loadGLTFModel(model_name);
       await setupMainModel(model_load);
       let model = model_load.getObjectByName(val);
       model.visible = false;
@@ -419,10 +415,7 @@ async function init() {
   });
 
   if (!hanger_golf_club_model) {
-    hanger_golf_club_model = await loadGLTFModel(
-      
-      "hanger_golf_club_model.glb"
-    );
+    hanger_golf_club_model = await loadGLTFModel("hanger_golf_club_model.glb");
     await setupHangerGolfClubModel(hanger_golf_club_model);
     let Golfloader = document.querySelector(".Hanger_Golf_Club_Driver_loader");
     removeLoader(Golfloader);
@@ -431,14 +424,11 @@ async function init() {
   }
 
   if (!rack_glass_model) {
-    rack_glass_model = await loadGLTFModel( "rack_glass_model.glb");
+    rack_glass_model = await loadGLTFModel("rack_glass_model.glb");
     await setupGlassRackModel(rack_glass_model, texture_background);
   }
   if (!rack_wooden_model) {
-    rack_wooden_model = await loadGLTFModel(
-      
-      "rack_wooden_model.glb"
-    );
+    rack_wooden_model = await loadGLTFModel("rack_wooden_model.glb");
     await setupWoodenRackModel(rack_wooden_model);
   }
 
@@ -633,17 +623,14 @@ async function loadPreviousModels() {
 
 async function loadHangerModels() {
   if (!hanger_rail_step) {
-    hanger_rail_step = await loadGLTFModel( "Hanger_Rail_Step.glb");
+    hanger_rail_step = await loadGLTFModel("Hanger_Rail_Step.glb");
     await setupHangerModel(hanger_rail_step);
     hanger_model = hanger_rail_step;
     let loader = document.querySelector(".Hanger_Rail_Step_loader");
     removeLoader(loader);
   }
   if (!hanger_rail_single) {
-    hanger_rail_single = await loadGLTFModel(
-      
-      "Hanger_Rail_Single.glb"
-    );
+    hanger_rail_single = await loadGLTFModel("Hanger_Rail_Single.glb");
     await setupHangerModel(hanger_rail_single);
     hanger_rail_single =
       hanger_rail_single.getObjectByName("Hanger_Rail_Single");
@@ -653,10 +640,7 @@ async function loadHangerModels() {
   }
 
   if (!hanger_rail_d_500) {
-    hanger_rail_d_500 = await loadGLTFModel(
-      
-      "Hanger_Rail_D_500mm.glb"
-    );
+    hanger_rail_d_500 = await loadGLTFModel("Hanger_Rail_D_500mm.glb");
     await setupHangerModel(hanger_rail_d_500);
     hanger_rail_d_500 = hanger_rail_d_500.getObjectByName(
       "Hanger_Rail_D_500mm"
@@ -667,10 +651,7 @@ async function loadHangerModels() {
   }
 
   if (!hanger_rail_d_1000) {
-    hanger_rail_d_1000 = await loadGLTFModel(
-      
-      "Hanger_Rail_D_1000mm.glb"
-    );
+    hanger_rail_d_1000 = await loadGLTFModel("Hanger_Rail_D_1000mm.glb");
     await setupHangerModel(hanger_rail_d_1000);
     hanger_rail_d_1000 = hanger_rail_d_1000.getObjectByName(
       "Hanger_Rail_D_1000mm"
@@ -699,16 +680,15 @@ function removeLoader(loader) {
 // Handle mouse move for hover
 async function otherModelSetup() {
   if (!arrow_model) {
-    arrow_model = await loadGLTFModel( "arrow_model.glb");
+    arrow_model = await loadGLTFModel("arrow_model.glb");
     await setupArrowModel(modelGroup, arrow_model);
   }
   if (!header_rod_model) {
-    header_rod_model = await loadGLTFModel( "header_rod_model.glb");
+    header_rod_model = await loadGLTFModel("header_rod_model.glb");
     params.rodSize = await getNodeSize(header_rod_model);
   }
   if (!header_glass_shelf_fixing_model) {
     header_glass_shelf_fixing_model = await loadGLTFModel(
-      
       "header_glass_shelf_fixing_model.glb"
     );
     params.glassShelfFixingSize = await getNodeSize(
@@ -722,21 +702,18 @@ async function otherModelSetup() {
   }
   if (!header_500_height_model) {
     header_500_height_model = await loadGLTFModel(
-      
       "header_500_height_model.glb"
     );
     await setupHeader500HeightModel(modelGroup, header_500_height_model);
   }
   if (!header_wooden_shelf_model) {
     header_wooden_shelf_model = await loadGLTFModel(
-      
       "header_wooden_shelf_model.glb"
     );
     await setupHeaderWoodenShelfModel(modelGroup, header_wooden_shelf_model);
   }
   if (!header_glass_shelf_model) {
     header_glass_shelf_model = await loadGLTFModel(
-      
       "header_glass_shelf_model.glb"
     );
     await setupHeaderGlassShelfModel(
@@ -746,22 +723,13 @@ async function otherModelSetup() {
     );
   }
   if (!slotted_sides_model) {
-    slotted_sides_model = await loadGLTFModel(
-      
-      "slotted_sides_model.glb"
-    );
+    slotted_sides_model = await loadGLTFModel("slotted_sides_model.glb");
     await setupSlottedSidesModel(modelGroup, slotted_sides_model);
   }
 
   if (!support_base_middle || !support_base_side) {
-    support_base_middle = await loadGLTFModel(
-      
-      "support_base_middle.glb"
-    );
-    support_base_side = await loadGLTFModel(
-      
-      "support_base_sides.glb"
-    );
+    support_base_middle = await loadGLTFModel("support_base_middle.glb");
+    support_base_side = await loadGLTFModel("support_base_sides.glb");
     await setupSupportBaseModel(
       modelGroup,
       support_base_middle,
@@ -1540,15 +1508,15 @@ if (measurementToggle) {
   });
 }
 
-async function saveCropImage(cropper){
-  const base64Image = cropper.getCroppedCanvas().toDataURL("image/png");  
+async function saveCropImage(cropper) {
+  const base64Image = cropper.getCroppedCanvas().toDataURL("image/png");
   const formData = new FormData();
   formData.append("modelCropImage", base64Image);
   formData.append("action", "saveModelCropImage");
   try {
     const response = await fetch("api.php", {
       method: "POST",
-      body: formData
+      body: formData,
     });
     const data = await response.json();
     return data; // Ensure the resolved data is returned
@@ -1567,11 +1535,13 @@ if (cropButton) {
       let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
       if (params.fileUploadFlag == "MainFrame") {
         mainFrameCropedImage = mainFrameCropedImage || {};
-        mainFrameCropedImage[selectedGroupName] = mainFrameCropedImage[selectedGroupName] || {};     
+        mainFrameCropedImage[selectedGroupName] =
+          mainFrameCropedImage[selectedGroupName] || {};
         // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas().toDataURL("image/png");
         // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
-        let mainFrameSaveImageURl = await saveCropImage(cropper);  
-        mainFrameCropedImage[selectedGroupName][defaultModel] = mainFrameSaveImageURl.imageUrl;
+        let mainFrameSaveImageURl = await saveCropImage(cropper);
+        mainFrameCropedImage[selectedGroupName][defaultModel] =
+          mainFrameSaveImageURl.imageUrl;
         await setMainFrameCropedImage(mainFrameCropedImage, modelGroup);
         console.log(setting);
         console.log(params.selectedGroupName);
@@ -1586,7 +1556,9 @@ if (cropButton) {
         // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas().toDataURL("image/png");
         // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
         let topFrameSaveImageURl = await saveCropImage(cropper);
-        topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;      
+        topFrameCropedImage[selectedGroupName][defaultModel][
+          defaultHeaderSize
+        ] = topFrameSaveImageURl.imageUrl;
         await setTopFrameCropedImage(topFrameCropedImage, modelGroup);
       }
     }
@@ -1669,7 +1641,7 @@ if (saveModelDataButton) {
       group_names: allGroupNames || null,
       top_frame_croped_image: topFrameCropedImage || null,
       main_frame_croped_image: mainFrameCropedImage || null,
-    };    
+    };
 
     let projectName = (previousData && previousData.name) || null;
     let dataSave;
@@ -1834,8 +1806,9 @@ async function checkFileExists(url) {
   }
   return false; // File not found after max attempts
 }
-function showLoadingModal() {
+function showLoadingModal(message) {
   document.getElementById("loadingModal").style.display = "flex";
+  document.getElementById("loadingText").innerHTML = message;
 }
 
 function hideLoadingModal() {
@@ -1964,7 +1937,7 @@ async function renderAndDownload(
     tempRenderer.render(scene, camera);
     const screenshotData = tempRenderer.domElement.toDataURL("image/png");
     const unixTime = Math.floor(Date.now() / 1000);
-    
+
     // Download or save the screenshot
     await downloadScreenshotwithDiffCanvas(
       screenshotData,
@@ -2122,8 +2095,8 @@ async function captureMainFixtureImage(
   imagesNameArr,
   modelChild
 ) {
-  const Frame  = CloneModel.getObjectByName("Frame");
-  for(const child of Frame.children){
+  const Frame = CloneModel.getObjectByName("Frame");
+  for (const child of Frame.children) {
     if (child.name.startsWith("Hanger_")) {
       let HangerModel;
       await traverseAsync(child, async (subChild) => {
@@ -2141,7 +2114,9 @@ async function captureMainFixtureImage(
       });
       const hangerNames = imagesNameArr
         .map((url) => url.split("/").pop()) // Get the file name
-        .filter((name) => name.includes("Hanger") && name.includes(MainmodelName)) // Check for "Hanger" and "MainmodelName"
+        .filter(
+          (name) => name.includes("Hanger") && name.includes(MainmodelName)
+        ) // Check for "Hanger" and "MainmodelName"
         .map((name) => name.split("-")[2]); // Extract the part starting with "Hanger"
       if (!hangerNames.includes(child.name) && HangerModel) {
         modelChild.visible = false; // hide the model
@@ -2450,6 +2425,7 @@ if (takeScreenShot) {
 
 if (createQrButton) {
   createQrButton.addEventListener("click", async function () {
+    showLoadingModal("Please wait... we are creating your QR Code");
     const unixTimestamp = Math.floor(Date.now() / 1000);
     const modelName = `main_group_${unixTimestamp}`;
     const exportedModelFileUrl = `/export_models/${modelName}`;
@@ -2477,142 +2453,182 @@ if (createQrButton) {
         if (data.success) {
           console.log("Qr Code generate successfully!");
           document.getElementById("qrImage").src = data.url;
+          hideLoadingModal();
           showQRHere.style.display = "flex";
         } else {
           console.error("Error saving model data:", data.error);
+          hideLoadingModal();
         }
       });
   });
 }
 
 // ----------------------------------------------------------------------------------------------------------
+async function generateArModel(){
+  const unixTimestamp = Math.floor(Date.now() / 1000);
+  const modelName = `main_group_${unixTimestamp}`;
+  const exportedModelFileUrl = `./export_models/${modelName}`;
+  
+  await exportModelForAr(modelGroup, modelName);
+  
+  // Check if the file exists
+  if (await checkFileExists(exportedModelFileUrl)) {
+    hideLoadingModal();
+    // Configure model viewer attributes
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/iPhone|iPad|iPod/.test(userAgent)) {
+      let ViewArForIos = document.getElementById("ViewArForIos");
+      ViewArForIos.style.display = "block";
+      ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+      ViewArForIos.click();
+    } else if (/Android/.test(userAgent)) {
+      // Create or update the AR viewer
+      const modelViewer = document.getElementById("modelViewer");
+      let ArViewer = document.getElementById("ArView");
+      ArViewer.style.display = "block";
+      modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+      modelViewer.setAttribute("ar-modes", "scene-viewer");
+      modelViewer.addEventListener("load", () => {
+        modelViewer.enterAR();
+      });
+    } else {
+      alert("This feature is only supported on iOS and Android devices.");
+    }
+  } else {
+    console.error("File was not found within the expected time.");
+    hideLoadingModal();
+  }
+}
 if (showInAR) {
   showInAR.addEventListener("click", async function () {
-    showLoadingModal();
-    const unixTimestamp = Math.floor(Date.now() / 1000);
-    const modelName = `main_group_${unixTimestamp}`;
-    const exportedModelFileUrl = `./export_models/${modelName}`;
-
-    await exportModelForAr(modelGroup, modelName);
-
-    // Check if the file exists
-    if (await checkFileExists(exportedModelFileUrl)) {
-      hideLoadingModal();
-      // Configure model viewer attributes
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      if (/iPhone|iPad|iPod/.test(userAgent)) {
-        let ViewArForIos = document.getElementById("ViewArForIos");
-        ViewArForIos.style.display = "block";
-        ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-        ViewArForIos.click();
-      } else if (/Android/.test(userAgent)) {
-        // Create or update the AR viewer
-        const modelViewer = document.getElementById("modelViewer");
-        let ArViewer = document.getElementById("ArView");
-        ArViewer.style.display = "block";
-        modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-        modelViewer.setAttribute("ar-modes", "scene-viewer");
-        modelViewer.addEventListener("load", () => {
-          modelViewer.enterAR();
-        });
-      } else {
-        alert("This feature is only supported on iOS and Android devices.");
-      }
-    } else {
-      console.error("File was not found within the expected time.");
-      hideLoadingModal();
-    }
+    showLoadingModal("Please wait... we are creating your AR model file");
+    await generateArModel();
   });
 }
 // ----------------------------------------------------------------------------------------------------------
+async function creatingPDF(){
+  transformControls.detach();
+  await traverseAsync(modelGroup, async (child) => {
+    if (
+      hangerNames.includes(child.name) &&
+      child.hangerArrayKey &&
+      child.hangerCount
+    ) {
+      params.hangerAdded = params.hangerAdded || {};
+      params.hangerAdded[child.hangerArrayKey] =
+        params.hangerAdded[child.hangerArrayKey] || {};
+      params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
+        child.position;
+    }
+    if (
+      rackNames.includes(child.name) &&
+      child.rackArrayKey &&
+      child.rackCount
+    ) {
+      console.log("params.rackAdded", params.rackAdded);
+      console.log("child", child);
+      console.log("child.name", child.name);
+  
+      params.rackAdded = params.rackAdded || {};
+      params.rackAdded[child.rackArrayKey] =
+        params.rackAdded[child.rackArrayKey] || {};
+      params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
+    }
+  });
+  let ModelImageName = await captureModelImages(modelGroup);
+  
+  const dataToSave = {
+    params: params || null,
+    setting: setting || null,
+    group_names: allGroupNames || null,
+    top_frame_croped_image: topFrameCropedImage || null,
+    main_frame_croped_image: mainFrameCropedImage || null,
+    ModelImageName: ModelImageName || null,
+  };
+  await delay(1000);
+  await savePdfData(dataToSave, modelGroup);
+}
+
 if (savePdfButton) {
   savePdfButton.addEventListener("click", async function () {
     CreatingPdfFile.style.display = "flex";
-    transformControls.detach();
-    await traverseAsync(modelGroup, async (child) => {
-      if (
-        hangerNames.includes(child.name) &&
-        child.hangerArrayKey &&
-        child.hangerCount
-      ) {
-        params.hangerAdded = params.hangerAdded || {};
-        params.hangerAdded[child.hangerArrayKey] =
-          params.hangerAdded[child.hangerArrayKey] || {};
-        params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
-          child.position;
-      }
-      if (
-        rackNames.includes(child.name) &&
-        child.rackArrayKey &&
-        child.rackCount
-      ) {
-        console.log("params.rackAdded", params.rackAdded);
-        console.log("child", child);
-        console.log("child.name", child.name);
-
-        params.rackAdded = params.rackAdded || {};
-        params.rackAdded[child.rackArrayKey] =
-          params.rackAdded[child.rackArrayKey] || {};
-        params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
-      }
-    });
-    let ModelImageName = await captureModelImages(modelGroup);
-
-    const dataToSave = {
-      params: params || null,
-      setting: setting || null,
-      group_names: allGroupNames || null,
-      top_frame_croped_image: topFrameCropedImage || null,
-      main_frame_croped_image: mainFrameCropedImage || null,
-      ModelImageName: ModelImageName || null,
-    };
-    await delay(1000);
-    await savePdfData(dataToSave, modelGroup);
+    await creatingPDF();
   });
 }
 // ----------------------------------------------------------------------------------------------------------
-if(formSubmition){
+if (formSubmition) {
   formSubmition.addEventListener("click", function () {
-    const formModel = document.getElementById("formModel");
     formModel.style.display = "flex";
   });
 }
-if(formCloseBtn){
+if (formCloseBtn) {
   formCloseBtn.addEventListener("click", function () {
-    const formModel = document.getElementById("formModel");
     formModel.style.display = "none";
-    const form = document.querySelector(".FormSubmitionForMonday");
+    const form = document.getElementById("FormSubmitionForMonday");
     if (form) {
       form.classList.remove("was-validated");
     }
-  })
+  });
 }
 if (submitForm) {
   submitForm.addEventListener("click", function () {
-    const form = document.querySelector(".FormSubmitionForMonday");
+    showLoadingModal("Please wait...");
+    const form = document.getElementById("FormSubmitionForMonday");
     if (form) {
       if (!form.checkValidity()) {
         form.classList.add("was-validated");
       } else {
+        const formBase = document.getElementById("formBase");
+        formBase.style.display = "none";
         // Prevent the default form submission
         event.preventDefault();
-        // Ask the user a question
-        const userChoice = confirm(
-          "Would you like to save your design as a PDF and view it in AR?\n\nClick 'OK' for Yes or 'Cancel' for No."
-        );
+        // Show the modal
+        const modal = document.getElementById("confirmationModal");
+        modal.style.display = "flex"; // Or use a library method to show
+        
+        document.getElementById("confirModelCloseButtton").onclick = ()=>{
+          modal.style.display = "none";
+        };
 
-        if (userChoice) {
-          // User selected "Yes"
-          alert("Your design will be saved as a PDF and opened in VR!");
-          form.submit(); // Submit the form programmatically
-        } else {
-          // User selected "No"
-          alert("Your design will be submitted without saving as a PDF.");
-          form.submit(); // Submit the form programmatically
-        }
+        // Handle modal buttons
+        document.getElementById("yesButton").onclick = async function () {
+          modal.style.display = "none"; // Hide modal
+          formModel.style.display = "none";
+          try {
+            await creatingPDF();
+            await delay(500);
+            await generateArModel();
+            await formSubmitionForMonday();
+          } catch (e) {
+            console.log("error while submitting Data, ", e);
+          }
+        };
+
+        document.getElementById("noButton").onclick = async function () {
+          modal.style.display = "none"; // Hide modal
+          await formSubmitionForMonday();
+          hideLoadingModal();
+        };
       }
     }
   });
+}
+
+async function formSubmitionForMonday(){  
+  const formForMonday = document.getElementById("FormSubmitionForMonday");
+  const formDataForMonday = new FormData(formForMonday);
+  try {
+    const response = await fetch("api.php", {
+      method: "POST",
+      body: formDataForMonday,
+    });
+    const data = await response.json();
+    hideLoadingModal();
+    return data; // Ensure the resolved data is returned
+  } catch (error) {
+    console.error("Error while submitting form: ", error);
+    throw error; // Re-throw the error to handle it at the calling point
+  }
 }
 
 // ----------------------------------------------------------------------------------------------------------

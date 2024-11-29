@@ -467,7 +467,7 @@ body.loaded .loader-wrapper {
   width: 350px;
   position: relative;
 }
-#formStyle{
+#FormSubmitionForMonday{
   display: flex;
   flex-direction: column;
   font-size: 16px;
@@ -486,6 +486,37 @@ body.loaded .loader-wrapper {
   border-radius: 6px;
 } 
 
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+  color: black;
+}
+
+.modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+#confirModelCloseButtton{
+  border: 0;
+  background: white;
+  width: 29px;
+  height: 30px;
+  padding: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#confirModelCloseButtton:hover{
+  background-color: #f0f0f0;
+  border-radius: 6px;
+} 
 
 @keyframes spin {
   0% {

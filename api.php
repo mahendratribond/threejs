@@ -1,10 +1,5 @@
 <?php
 ini_set('memory_limit', '-1');
-ini_set('max_allowed_packet', '1073741824');
-ini_set('post_max_size', '1073741824');
-ini_set('upload_max_filesize', '1073741824');
-ini_set('max_input_time', '300');
-ini_set('max_execution_time', '300');
 set_time_limit(0);
  
 require_once 'connection.php';
@@ -16,7 +11,6 @@ session_start();
 
 // Get JSON data from request
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
-    
 if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Prepare and bind the SQL statement
     $id = $data['id'];
@@ -337,7 +331,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Output the link to the saved QR code
     echo json_encode(["success" => true, "message" => "QR Created successfully", "url" => $qrCodeUrl]);
-} else if (isset($_REQUEST['action']) && $_REQUEST['action'] = 'saveModelCropImage') {
+} else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'saveModelCropImage') {
     $base64Image = $_REQUEST['modelCropImage'];
 
     // Extract the image data from the Base64 string (it may include the data URL prefix, so we remove it)
@@ -369,6 +363,88 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         // If there's an error saving the image
         echo json_encode(['success' => false, 'message' => 'Error saving image']);
     }
+} else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
+    $formData = $_REQUEST;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQyNzEzODgzNiwiYWFpIjoxMSwidWlkIjo2NTM5NTE5NCwiaWFkIjoiMjAyNC0xMC0yM1QxMDo1MjoyNC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjUxNjk0NjAsInJnbiI6ImFwc2UyIn0.iPmTXidx5TZKajvyDvB1qCZE5_0e5wLBZumtmf7YFAo";
+    $boardId = 1941881809;
+    $itemId = 1941881811;
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => '{"query":"query { boards (ids: [' . $boardId . ']) { columns { id title settings_str } } }"}',
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+    
+    // Execute the request and get the response
+    $response = curl_exec($curl);
+    curl_close($curl);
+    
+    // Decode the response to get the columns
+    $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
+    echo "<pre>";print_r($mondayColumns);
+    // Create an object to store the column values
+    $columnValues = [];
+
+    // Loop through the formData and match it with Monday column titles
+    foreach ($formData as $field => $value) {
+        foreach ($mondayColumns as $column) {
+            if ($column['title'] === $field) {
+                // Store the value using the column ID in the object
+                $columnValues[$column['id']] = $value;
+                break;
+            }
+        }
+    }
+    // Convert the column values to JSON format
+    $columnValuesJson = json_encode($columnValues, JSON_UNESCAPED_SLASHES);
+    print_r($columnValuesJson);
+
+    // Prepare the mutation to update multiple column values
+    $mutation = '
+        mutation {
+            change_multiple_column_values (
+                item_id: ' . $itemId . ',
+                board_id: ' . $boardId . ',
+                    column_values: "' . addslashes($columnValuesJson) . '"
+            ) { id }
+        }
+    ';
+    echo "<pre>";print_r($mutation);
+
+
+    // Initialize curl for the mutation request
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $mutation]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+    
+    // Execute the request to update the column values
+    $response = curl_exec($curl);
+    curl_close($curl);
+    echo json_encode($response);
+    exit;
 } else {
     echo json_encode("No Action Found"); // No action found    
 }

@@ -6,7 +6,13 @@ import {
   getHex,
 } from "../../utils6.js";
 import {commonMaterial} from "./materialManager.js"
-import { params, golfClubNames, setting, rackNames } from "../../config.js";
+import {
+  params,
+  golfClubNames,
+  setting,
+  rackNames,
+  hangerNames,
+} from "../../config.js";
 export async function cloneWithCustomHangerProperties(source, target) {
   for (let model of hangerNames) {
     let sourceModel = source.getObjectByName(model);

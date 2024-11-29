@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { traverseAsync } from "../../utils6.js";
 async function saveModel(blob, filename) {
   if (blob) {
     await saveArrayBuffer(blob, filename); // Save the file only if blob is not null
@@ -49,7 +50,7 @@ async function exportUSDZ(clone, name) {
 }
 
 export async function exportModelForAr(model, name, isQr = false) {
-  const clone = model.clone();
+  const clone = model.clone();  
 
   // Scale the clone model proportionally
   const box = new THREE.Box3().setFromObject(clone);
