@@ -8,7 +8,7 @@ import {
   clothsMaterial,
   commonMaterial,
 } from "./src/managers/materialManager.js";
-import { setTextureParams } from "./src/managers/frameImagesManager.js"
+import { setTextureParams } from "./src/managers/frameImagesManager.js";
 import {
   heightMeasurementNames,
   baseFrameTextureNames,
@@ -30,7 +30,14 @@ import {
   params,
   setting,
 } from "./config.js";
-import {getModelSize,getHeaderSize,computeBoundingBox,calculateBoundingBox,getNodeSize,getCurrentModelSize } from "./src/managers/MeasurementManager.js";
+import {
+  getModelSize,
+  getHeaderSize,
+  computeBoundingBox,
+  calculateBoundingBox,
+  getNodeSize,
+  getCurrentModelSize,
+} from "./src/managers/MeasurementManager.js";
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
 
 export async function getHex(value) {
@@ -886,10 +893,22 @@ export async function traverseAsync(modelNode, callback) {
 }
 
 export async function showHideNodes(modelGroup, scene, camera) {
-  console.log(modelGroup);
+  // console.log(modelGroup);
   // let currentModelNode = params.selectedGroupName;
   let current_setting = setting[params.selectedGroupName];
-
+  let border_texture_material_Clone = border_texture_material.clone();
+  border_texture_material_Clone.name = "border texture material Clone";
+  
+  let frame_material = border_texture_material_Clone;
+  if (current_setting.frameMaterialType === "texture") {
+    let frame_texture_border = new THREE.TextureLoader().load(
+      "./assets/images/borders/" + current_setting.frameBorderColor
+    );
+    frame_texture_border = await setTextureParams(frame_texture_border);
+    frame_texture_border.name = "border_texture_border";
+    frame_material.uuid = "12345678i";
+    frame_material.map = frame_texture_border;
+  }
   if (modelGroup) {
     await traverseAsync(modelGroup, async (child) => {
       if (child.name === "Cone") {
@@ -902,7 +921,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
         child,
         allModelNames,
         false
-      );      
+      );
       // console.log('currentModelNode', currentModelNode)
       // console.log('child', child)
       // console.log('child.name', child.name)
@@ -926,7 +945,6 @@ export async function showHideNodes(modelGroup, scene, camera) {
       }
       if (child.name === "Left_Ex" || child.name === "Right_Ex") {
         if (isSlottedSides && current_setting.slottedSidesToggle) {
-
           child.visible = false;
         } else {
           child.visible = true;
@@ -956,17 +974,21 @@ export async function showHideNodes(modelGroup, scene, camera) {
         let isSameSide = false;
         let currentModel = main_model.getObjectByName(rackModelName);
         let frame = currentModel.getObjectByName("Frame");
-        for(const hangerFrame of frame.children){
-          if(hangerNames.includes(hangerFrame.name) && hangerFrame.visible){    
+        for (const hangerFrame of frame.children) {
+          if (hangerNames.includes(hangerFrame.name) && hangerFrame.visible) {
             let hangerArrKey = hangerFrame.hangerArrayKey;
             let hangerModel = hangerArrKey.split("-")[1];
             let hangerSide = hangerArrKey.split("-")[2];
-            if(rackModelName === hangerModel && rackside === hangerSide){
+            if (rackModelName === hangerModel && rackside === hangerSide) {
               isSameSide = true;
-            }            
+            }
           }
         }
-        if (isSlottedSides && current_setting.slottedSidesToggle && isSameSide == false) {
+        if (
+          isSlottedSides &&
+          current_setting.slottedSidesToggle &&
+          isSameSide == false
+        ) {
           child.visible = true;
         } else {
           child.visible = false;
@@ -1003,14 +1025,14 @@ export async function showHideNodes(modelGroup, scene, camera) {
 
       if (allFrameBorderNames.includes(child.name)) {
         if (current_setting.frameMaterialType === "texture") {
-          let texture_border = new THREE.TextureLoader().load(
-            "./assets/images/borders/" + current_setting.frameBorderColor
-          );
-          texture_border = await setTextureParams(texture_border);
-          let material = border_texture_material.clone();
-          material.map = texture_border;
+          // let frame_texture_border = new THREE.TextureLoader().load(
+          //   "./assets/images/borders/" + current_setting.frameBorderColor
+          // );
+          // frame_texture_border = await setTextureParams(frame_texture_border);
+          // let frame_material = border_texture_material_Clone;
+          // frame_material.map = frame_texture_border;
           // // child.material = child.material.clone()
-          child.material = material;
+          child.material = frame_material;
           child.material.needsUpdate = true;
         } else if (current_setting.frameMaterialType === "color") {
           // Apply color
@@ -1018,6 +1040,9 @@ export async function showHideNodes(modelGroup, scene, camera) {
             parseInt(current_setting.frameBorderColor, 16)
           );
           // child.material = child.material.clone()
+          if (child.material){
+            child.material.name = "frame_color";
+          } 
           child.material = material;
           child.material.needsUpdate = true;
         }
@@ -1031,7 +1056,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
             "./assets/images/borders/" + current_setting.defaultShelfColor
           );
           texture_border = await setTextureParams(texture_border);
-          let material = border_texture_material.clone();
+          let material = border_texture_material_Clone;
           material.map = texture_border;
           child.material = material;
           // child.material = [border_texture_material, shadow];
@@ -1071,14 +1096,17 @@ export async function showHideNodes(modelGroup, scene, camera) {
         (child.name.startsWith("Base_Option") ||
           child.name === "Base_Support_Sides")
       ) {
-        if(child.name === "Base_Support_Sides"){
+        if (child.name === "Base_Support_Sides") {
           await traverseAsync(child, async (subChild) => {
             subChild.material = subChild.material.clone();
-            subChild.material.color.set(await getHex(current_setting.baseFrameColor));
+            subChild.material.color.set(
+              await getHex(current_setting.baseFrameColor)
+            );
             subChild.material.needsUpdate = true;
-          })
+          });
         }
         child.material = child.material.clone();
+        child.material.name = "base here";
         child.material.color.set(await getHex(current_setting.baseFrameColor));
         child.material.needsUpdate = true;
       }
@@ -1235,9 +1263,7 @@ export async function showHideNodes(modelGroup, scene, camera) {
     if (baseSelectorDropdown) {
       baseSelectorDropdown.value = current_setting.selectedBaseFrame;
     }
-    let baseColor = parentElement.querySelector(
-      ".baseColor"
-    );
+    let baseColor = parentElement.querySelector(".baseColor");
     if (baseColor) {
       baseColor.value = current_setting.baseFrameColor;
     }
@@ -1429,84 +1455,86 @@ export async function getMainParentNode(child, nodeNames, isVisible = true) {
 }
 
 export async function centerMainModel(modelGroup) {
-  const spacing = 1; // Base space between models
-  let currentX = 0; // Start positioning from 0 along the x-axis
+  if (modelGroup !== undefined) {
+    const spacing = 1; // Base space between models
+    let currentX = 0; // Start positioning from 0 along the x-axis
 
-  // Get total width of all models to center the group
-  let totalWidth = 0;
-  const models = [];
+    // Get total width of all models to center the group
+    let totalWidth = 0;
+    const models = [];
 
-  // First pass: Calculate total width and collect visible models
-  allGroupNames.forEach((modelName) => {
-    const main_model = modelGroup.getObjectByName(modelName);
+    // First pass: Calculate total width and collect visible models
+    allGroupNames.forEach((modelName) => {
+      const main_model = modelGroup.getObjectByName(modelName);
 
-    main_model.children.forEach((model) => {
-      if (allModelNames.includes(model.name) && model && model.visible) {
-        // Only consider visible models
-        models.push(model);
+      main_model.children.forEach((model) => {
+        if (allModelNames.includes(model.name) && model && model.visible) {
+          // Only consider visible models
+          models.push(model);
 
-        // Ensure the bounding box is computed
-        model.traverse((child) => {
-          if (child.isMesh && child.geometry) {
-            child.geometry.computeBoundingBox();
-          }
-        });
+          // Ensure the bounding box is computed
+          model.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+              child.geometry.computeBoundingBox();
+            }
+          });
 
-        // Get bounding box for the model
-        const boundingBox = new THREE.Box3().setFromObject(model);
-        const modelWidth = boundingBox.max.x - boundingBox.min.x;
+          // Get bounding box for the model
+          const boundingBox = new THREE.Box3().setFromObject(model);
+          const modelWidth = boundingBox.max.x - boundingBox.min.x;
 
-        // Get model-specific spacing (manual movement)
-        const modelSpacing = Math.abs(model.parent.spacing || 0); // Use positive spacing value
-        totalWidth += modelWidth + spacing + modelSpacing;
-      }
+          // Get model-specific spacing (manual movement)
+          const modelSpacing = Math.abs(model.parent.spacing || 0); // Use positive spacing value
+          totalWidth += modelWidth + spacing + modelSpacing;
+        }
+      });
     });
-  });
 
-  // Center the starting position by shifting based on half the total width
-  currentX = -(totalWidth / 2);
+    // Center the starting position by shifting based on half the total width
+    currentX = -(totalWidth / 2);
 
-  // console.log("totalWidth:", totalWidth);
+    // console.log("totalWidth:", totalWidth);
 
-  // Second pass: Position each model with spacing and manual offsets
-  for (const model of models) {
-    // Get bounding box again for this model
-    const boundingBox = new THREE.Box3().setFromObject(model);
-    const modelWidth = boundingBox.max.x - boundingBox.min.x;
+    // Second pass: Position each model with spacing and manual offsets
+    for (const model of models) {
+      // Get bounding box again for this model
+      const boundingBox = new THREE.Box3().setFromObject(model);
+      const modelWidth = boundingBox.max.x - boundingBox.min.x;
 
-    // Get the original y position (to preserve vertical alignment)
-    const originalYPosition = model.position.y;
+      // Get the original y position (to preserve vertical alignment)
+      const originalYPosition = model.position.y;
 
-    // Get model-specific spacing (manual movement)
-    // const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
-    const modelSpacing = Math.abs(model.parent.spacing || 0); // Use positive spacing value
-    let isPositive = Math.sign(model.parent.spacing);
-    let newPositionX;
-    if (isPositive === -1) {
-      newPositionX = -modelSpacing + currentX + modelWidth / 2 + modelSpacing;
-    } else {
-      newPositionX = currentX + modelWidth / 2 + modelSpacing;
+      // Get model-specific spacing (manual movement)
+      // const modelSpacing = Math.abs(model.spacing || 0); // Use positive spacing value
+      const modelSpacing = Math.abs(model.parent.spacing || 0); // Use positive spacing value
+      let isPositive = Math.sign(model.parent.spacing);
+      let newPositionX;
+      if (isPositive === -1) {
+        newPositionX = -modelSpacing + currentX + modelWidth / 2 + modelSpacing;
+      } else {
+        newPositionX = currentX + modelWidth / 2 + modelSpacing;
+      }
+
+      // Position the model along the x-axis with added spacing and manual offset
+      // const newPositionX = currentX + modelWidth / 2 + modelSpacing;
+
+      // model.position.set(newPositionX, originalYPosition, model.position.z); // Use original y and z positions
+      model.parent.position.x = newPositionX; // Use original y and z positions
+
+      // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
+
+      currentX += modelWidth + spacing + modelSpacing;
     }
 
-    // Position the model along the x-axis with added spacing and manual offset
-    // const newPositionX = currentX + modelWidth / 2 + modelSpacing;
-
-    // model.position.set(newPositionX, originalYPosition, model.position.z); // Use original y and z positions
-    model.parent.position.x = newPositionX; // Use original y and z positions
-
-    // Move to the next position along the x-axis (account for model width + base spacing + manual spacing)
-
-    currentX += modelWidth + spacing + modelSpacing;
-  }
-
-  // Recompute bounding boxes for all models in the group
-  modelGroup.traverse((modelchild) => {
-    modelchild.traverse((child) => {
-      if (child.isMesh && child.geometry) {
-        child.geometry.computeBoundingBox();
-      }
+    // Recompute bounding boxes for all models in the group
+    modelGroup.traverse((modelchild) => {
+      modelchild.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          child.geometry.computeBoundingBox();
+        }
+      });
     });
-  });
+  }
 
   // console.log("modelGroup:", modelGroup);
   // console.log("models:", models);
@@ -1944,21 +1972,6 @@ export async function generateGlassMaterial(texture_background) {
   return material;
 }
 
-export async function isVisibleParents(node) {
-  // Base case: If the node is null, return true (end of the hierarchy)
-  if (!node) {
-    return true;
-  }
-
-  // Check if the current node is visible
-  if (!node.visible) {
-    return false;
-  }
-
-  // Recursively check the parent node
-  return await isVisibleParents(node.parent);
-}
-
 export async function findParentNodeByName(node, parentName, isVisible = null) {
   // Base case: If the current node has no parent, return null
   if (!node || !node.parent) return null;
@@ -2036,97 +2049,100 @@ export async function addAnotherModels(
   modelName = null,
   side = null
 ) {
-  let defaultModel = modelGroup.getObjectByName("main_model");
-  // console.log('defaultModel', defaultModel);
+  if (modelGroup) {
+    let defaultModel = modelGroup.getObjectByName("main_model");
+    // console.log('defaultModel', defaultModel);
 
-  const newModel = defaultModel.clone();
-  await cloneWithCustomProperties(defaultModel, newModel);
+    const newModel = defaultModel.clone();
+    await cloneWithCustomProperties(defaultModel, newModel);
 
-  const nodesToRemove = [];
-  await traverseAsync(newModel, async (child) => {
-    if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
-      // Mark node for removal
-      nodesToRemove.push(child);
+    const nodesToRemove = [];
+    await traverseAsync(newModel, async (child) => {
+      if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+        // Mark node for removal
+        nodesToRemove.push(child);
+      }
+    });
+
+    // Remove nodes after traversal
+    nodesToRemove.forEach((node) => {
+      if (node.parent) {
+        node.parent.remove(node); // Remove the node from its parent
+      }
+    });
+
+    if (!modelName) {
+      let baseModelName = "Other_" + newModel.name;
+      let newModelName = baseModelName + "_1"; // Avoid redefining modelName
+      let suffix = 1;
+      while (allGroupModelName.includes(newModelName)) {
+        suffix++;
+        newModelName = `${baseModelName}_${suffix}`;
+      }
+
+      modelName = newModelName;
     }
-  });
 
-  // Remove nodes after traversal
-  nodesToRemove.forEach((node) => {
-    if (node.parent) {
-      node.parent.remove(node); // Remove the node from its parent
+    newModel.name = modelName; // If modelName is not null or undefined
+
+    //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
+    const modelBoundingBox = await computeBoundingBox(newModel, allModelNames);
+    const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
+
+    const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
+    const center = boundingBox.getCenter(new THREE.Vector3());
+    const cameraOnLeft = side || camera.position.x < center.x;
+
+    if (cameraOnLeft) {
+      newModel.position.x = boundingBox.max.x + modelWidth / 2;
+      allGroupNames.push(newModel.name);
+      allGroupModelName.push(newModel.name);
+    } else {
+      newModel.position.x = boundingBox.min.x - modelWidth / 2;
+      allGroupNames.unshift(newModel.name);
+      allGroupModelName.unshift(newModel.name);
     }
-  });
 
-  if (!modelName) {
-    let baseModelName = "Other_" + newModel.name;
-    let newModelName = baseModelName + "_1"; // Avoid redefining modelName
-    let suffix = 1;
-    while (allGroupModelName.includes(newModelName)) {
-      suffix++;
-      newModelName = `${baseModelName}_${suffix}`;
+    if (!setting[modelName]) {
+      setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
+      setting[modelName].topFrameBackgroundColor =
+        params.topFrameBackgroundColor;
+      setting[modelName].mainFrameBackgroundColor =
+        params.mainFrameBackgroundColor;
+      setting[modelName].defaultModel = params.addedVisibleModelName;
     }
 
-    modelName = newModelName;
-  }
-
-  newModel.name = modelName; // If modelName is not null or undefined
-
-  //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
-  const modelBoundingBox = await computeBoundingBox(newModel, allModelNames);
-  const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
-
-  const boundingBox = await computeBoundingBox(modelGroup, allModelNames);
-  const center = boundingBox.getCenter(new THREE.Vector3());
-  const cameraOnLeft = side || camera.position.x < center.x;
-
-  if (cameraOnLeft) {
-    newModel.position.x = boundingBox.max.x + modelWidth / 2;
-    allGroupNames.push(newModel.name);
-    allGroupModelName.push(newModel.name);
-  } else {
-    newModel.position.x = boundingBox.min.x - modelWidth / 2;
-    allGroupNames.unshift(newModel.name);
-    allGroupModelName.unshift(newModel.name);
-  }
-
-  if (!setting[modelName]) {
-    setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
-    setting[modelName].topFrameBackgroundColor = params.topFrameBackgroundColor;
-    setting[modelName].mainFrameBackgroundColor =
-      params.mainFrameBackgroundColor;
-    setting[modelName].defaultModel = params.addedVisibleModelName;
-  }
-
-  await traverseAsync(newModel, async (mesh) => {
-    if (
-      frameTop1Names.includes(mesh.name) ||
-      frameMainNames.includes(mesh.name)
-    ) {
-      let currentModelNode = await getMainParentNode(mesh, allModelNames);
+    await traverseAsync(newModel, async (mesh) => {
       if (
-        params.lastInnerMaterial[currentModelNode.name] &&
-        params.lastInnerMaterial[currentModelNode.name][mesh.name]
+        frameTop1Names.includes(mesh.name) ||
+        frameMainNames.includes(mesh.name)
       ) {
-        // const material = await commonMaterial(parseInt('0xffffff', 16))
-        const material =
-          params.lastInnerMaterial[currentModelNode.name][mesh.name];
-        mesh.material = material;
-        mesh.needsUpdate = true;
+        let currentModelNode = await getMainParentNode(mesh, allModelNames);
+        if (
+          params.lastInnerMaterial[currentModelNode.name] &&
+          params.lastInnerMaterial[currentModelNode.name][mesh.name]
+        ) {
+          // const material = await commonMaterial(parseInt('0xffffff', 16))
+          const material =
+            params.lastInnerMaterial[currentModelNode.name][mesh.name];
+          mesh.material = material;
+          mesh.needsUpdate = true;
+        }
       }
-    }
 
-    if (mesh.name && allModelNames.includes(mesh.name)) {
-      if (mesh.name === params.addedVisibleModelName) {
-        mesh.visible = true; // Show the selected model
-      } else {
-        mesh.visible = false; // Hide other models
+      if (mesh.name && allModelNames.includes(mesh.name)) {
+        if (mesh.name === params.addedVisibleModelName) {
+          mesh.visible = true; // Show the selected model
+        } else {
+          mesh.visible = false; // Hide other models
+        }
       }
-    }
-  });
+    });
 
-  modelGroup.add(newModel);
+    modelGroup.add(newModel);
 
-  await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
+    await addAnotherModelView(allGroupNames, cameraOnLeft, modelGroup);
+  }
 }
 
 // Function to dynamically generate and append cards for visible models
@@ -2278,113 +2294,121 @@ export async function addRacks(
   lastside = null,
   position = null
 ) {
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModelName = setting[selectedGroupName].defaultModel;
-  let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
-  let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
-  let rack_model;  
-  if (rackType == "RackGlassShelf") {
-    rack_model = rack_glass_model;
-  } else if (rackType == "RackWoodenShelf") {
-    rack_model = rack_wooden_model;
-  }
+  if (modelGroup) {
+    let selectedGroupName = params.selectedGroupName;
+    let defaultModelName = setting[selectedGroupName].defaultModel;
+    let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
+    let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
+    let rack_model;
+    if (rackType == "RackGlassShelf") {
+      rack_model = rack_glass_model;
+    } else if (rackType == "RackWoodenShelf") {
+      rack_model = rack_wooden_model;
+    }
 
-  if (rack_model) {
-    let rack_clone = rack_model.clone();
-    let frame = defaultModel.getObjectByName("Frame");
-    let rack = rack_clone.getObjectByName(defaultModelName);
-    if (rack) {
-      let side;
-      if (lastside) {
-        side = lastside;
-      } else {
-        side = camera.position.z > 0 ? "Front" : "Back";
-      }
-      let sameSide = false;
-      for(const frameHanger of frame.children){
-        if(hangerNames.includes(frameHanger.name)){
-          if(side === frameHanger.side){
-            sameSide = true;
-          }
-        }
-      }
-      rack.name = rackType;
-      // Get the Left_Ex_Slotted node
-      let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
-      let topExSide = frame.getObjectByName("Top_Ex");
-      if (topExSide && leftSideSlotted && leftSideSlotted.visible && sameSide === false) {
-
-        const rackPrefix =
-          selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
-        let rackArrayKey = rackPrefix + rackType;
-
-        // Calculate the bounding box for the frame to find the center
-        const topExSideBoundingBox = new THREE.Box3().setFromObject(topExSide);
-        const topExSideCenter = topExSideBoundingBox.getCenter(
-          new THREE.Vector3()
-        ); // Get center of frame
-
-        const boundingBox =
-          params.calculateBoundingBox[defaultModelName][frame.name];
-
-        // Now compute the bounding box relative to the world coordinates
-        const rackBoundingBox = new THREE.Box3().setFromObject(rack);
-        const rackCenter = rackBoundingBox.getCenter(new THREE.Vector3());
-        const rackLength = rackBoundingBox.max.z - rackBoundingBox.min.z;
-
-        rack.position.x = topExSideCenter.x; // Ensure it stays centered
-
-        frame.attach(rack);
-
-        let margin = 1;
-        let gmargin = 20;
-
-        if (side == "Front") {
-          rack.position.z = boundingBox.max.z + rackLength / 2 + margin;
-          rack.rotation.y = Math.PI;
-          if (rack.name == "RackGlassShelf") {
-            rack.position.z -= gmargin;
-          }
+    if (rack_model) {
+      let rack_clone = rack_model.clone();
+      let frame = defaultModel.getObjectByName("Frame");
+      let rack = rack_clone.getObjectByName(defaultModelName);
+      if (rack) {
+        let side;
+        if (lastside) {
+          side = lastside;
         } else {
-          rack.position.z = boundingBox.min.z - rackLength / 2 - margin;
-          if (rack.name == "RackGlassShelf") {
-            rack.position.z += gmargin;
+          side = camera.position.z > 0 ? "Front" : "Back";
+        }
+        let sameSide = false;
+        for (const frameHanger of frame.children) {
+          if (hangerNames.includes(frameHanger.name)) {
+            if (side === frameHanger.side) {
+              sameSide = true;
+            }
           }
         }
+        rack.name = rackType;
+        // Get the Left_Ex_Slotted node
+        let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
+        let topExSide = frame.getObjectByName("Top_Ex");
+        if (
+          topExSide &&
+          leftSideSlotted &&
+          leftSideSlotted.visible &&
+          sameSide === false
+        ) {
+          const rackPrefix =
+            selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+          let rackArrayKey = rackPrefix + rackType;
 
-        let removeRackIcon = await getRemoveIcon(`removeRack-${rackType}`);
+          // Calculate the bounding box for the frame to find the center
+          const topExSideBoundingBox = new THREE.Box3().setFromObject(
+            topExSide
+          );
+          const topExSideCenter = topExSideBoundingBox.getCenter(
+            new THREE.Vector3()
+          ); // Get center of frame
 
-        removeRackIcon.position.set(
-          rackBoundingBox.max.x, // Offset in world space
-          0,
-          -rackBoundingBox.min.z + 1
-        );
-        removeRackIcon.visible = false;
-        rack.add(removeRackIcon);
+          const boundingBox =
+            params.calculateBoundingBox[defaultModelName][frame.name];
 
-        if (position) {
-          rack.position.y = position.y;
-        }
+          // Now compute the bounding box relative to the world coordinates
+          const rackBoundingBox = new THREE.Box3().setFromObject(rack);
+          const rackCenter = rackBoundingBox.getCenter(new THREE.Vector3());
+          const rackLength = rackBoundingBox.max.z - rackBoundingBox.min.z;
 
-        // Update removeRack to always face the camera
-        scene.onBeforeRender = function () {
-          scene.traverse((obj) => {
-            if (obj.name && obj.name.includes("remove")) {
-              obj.lookAt(camera.position);
+          rack.position.x = topExSideCenter.x; // Ensure it stays centered
+
+          frame.attach(rack);
+
+          let margin = 1;
+          let gmargin = 20;
+
+          if (side == "Front") {
+            rack.position.z = boundingBox.max.z + rackLength / 2 + margin;
+            rack.rotation.y = Math.PI;
+            if (rack.name == "RackGlassShelf") {
+              rack.position.z -= gmargin;
             }
-          });
-        };
+          } else {
+            rack.position.z = boundingBox.min.z - rackLength / 2 - margin;
+            if (rack.name == "RackGlassShelf") {
+              rack.position.z += gmargin;
+            }
+          }
 
-        params.rackCount = params.rackCount || {};
-        params.rackCount[rackArrayKey] = params.rackCount[rackArrayKey] || 0;
-        params.rackCount[rackArrayKey] += 1;
+          let removeRackIcon = await getRemoveIcon(`removeRack-${rackType}`);
 
-        let count = params.rackCount[rackArrayKey];
-        rack.rackCount = count;
-        rack.rackArrayKey = rackArrayKey;
-        rack.side = side;
+          removeRackIcon.position.set(
+            rackBoundingBox.max.x, // Offset in world space
+            0,
+            -rackBoundingBox.min.z + 1
+          );
+          removeRackIcon.visible = false;
+          rack.add(removeRackIcon);
 
-        await showHideNodes(modelGroup, scene, camera);
+          if (position) {
+            rack.position.y = position.y;
+          }
+
+          // Update removeRack to always face the camera
+          scene.onBeforeRender = function () {
+            scene.traverse((obj) => {
+              if (obj.name && obj.name.includes("remove")) {
+                obj.lookAt(camera.position);
+              }
+            });
+          };
+
+          params.rackCount = params.rackCount || {};
+          params.rackCount[rackArrayKey] = params.rackCount[rackArrayKey] || 0;
+          params.rackCount[rackArrayKey] += 1;
+
+          let count = params.rackCount[rackArrayKey];
+          rack.rackCount = count;
+          rack.rackArrayKey = rackArrayKey;
+          rack.side = side;
+
+          await showHideNodes(modelGroup, scene, camera);
+        }
       }
     }
   }
@@ -2483,18 +2507,21 @@ async function getComponentSize(model, modelComponentsData) {
 
   const isValidChild = (child) => child.parent.visible && child.visible;
 
-  const isHeaderGraphic1Mat = (child) => 
-    child.name === "Header_Graphic1-Mat" && 
-    child.parent.parent.visible && 
+  const isHeaderGraphic1Mat = (child) =>
+    child.name === "Header_Graphic1-Mat" &&
+    child.parent.parent.visible &&
     ["Header_300", "Header_500"].includes(child.parent.parent.name);
 
-  const isHeaderFrame = (child, parentName) => 
+  const isHeaderFrame = (child, parentName) =>
     child.name === "Header_Frame" && child.parent.name === parentName;
 
   await traverseAsync(model, async (child) => {
     if (isValidChild(child)) {
       const modelSize = await getNodeSize(child);
-      if (isHeaderFrame(child, "Header_300") || isHeaderFrame(child, "Header_500")) {
+      if (
+        isHeaderFrame(child, "Header_300") ||
+        isHeaderFrame(child, "Header_500")
+      ) {
         setModelSize(child, modelSize);
       } else if (isHeaderGraphic1Mat(child)) {
         setModelSize(child, modelSize);
@@ -2526,20 +2553,19 @@ async function getComponentSize(model, modelComponentsData) {
         } else {
           setModelSize(child, modelSize);
         }
-      } else  if (["Base_Solid", "Base_Support_Sides"].includes(child.name)) {
+      } else if (["Base_Solid", "Base_Support_Sides"].includes(child.name)) {
         setModelSize(child, modelSize);
-      } else if(child.parent.name.startsWith("Hanger") && child.name == "Hanger_Stand"){
-        setModelSize(child.parent, modelSize);        
+      } else if (
+        child.parent.name.startsWith("Hanger") &&
+        child.name == "Hanger_Stand"
+      ) {
+        setModelSize(child.parent, modelSize);
       }
     }
   });
 }
 
-
-export async function savePdfData(
-  dataToSave,
-  modelGroup,
-) {
+export async function savePdfData(dataToSave, modelGroup) {
   const CreatingPdfFile = document.getElementById("CreatingPdfFile");
   let modelMeasurementData = {};
   try {
@@ -2552,18 +2578,19 @@ export async function savePdfData(
           modelMeasurement
         );
         let modelComponentsData = {};
-        modelComponentsData['modelMeasure'] = modelMeasurement;
+        modelComponentsData["modelMeasure"] = modelMeasurement;
         await getComponentSize(child, modelComponentsData);
-        
+
         if (!modelMeasurementData[child.parent.name]) {
           modelMeasurementData[child.parent.name] = {};
         }
-        
-        modelMeasurementData[child.parent.name][child.name] = modelComponentsData;
+
+        modelMeasurementData[child.parent.name][child.name] =
+          modelComponentsData;
       }
     });
   } catch (error) {
-    console.log(error);    
+    console.log(error);
   }
 
   const username = localStorage.getItem("username");
@@ -2597,4 +2624,3 @@ export async function savePdfData(
     .catch((error) => console.error("Fetch error:", error));
 }
 // --------------------------------export models--------------------------------------------
-

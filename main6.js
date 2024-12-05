@@ -1,7 +1,6 @@
 // Display loader progress
-const loaderElement = document.getElementById("loader");
-const progressBarFill = document.getElementById("progress-bar-fill");
-const progressText = document.getElementById("progress-text");
+import { UIManager } from "./src/managers/UIManager.js";
+const uiManager = new UIManager();
 
 let totalAssets = 5; // Number of primary assets to load
 let assetsLoaded = 0; // Counter for loaded assets
@@ -27,11 +26,13 @@ async function adjustSpeedMultiplier(loadTime) {
 async function simulateProgress() {
   if (simulatedProgress < 100) {
     simulatedProgress += speedMultiplier; // Dynamically adjust speed
-    progressBarFill.style.width = `${simulatedProgress}%`;
-    progressText.innerText = `Loading... ${Math.round(simulatedProgress)}%`;
+    uiManager.loadingElements.progressBarFill.style.width = `${simulatedProgress}%`;
+    uiManager.loadingElements.progressText.innerText = `Loading... ${Math.round(
+      simulatedProgress
+    )}%`;
     requestAnimationFrame(simulateProgress); // Continue animation until 100%
   } else {
-    loaderElement.style.display = "none";
+    uiManager.loadingElements.loaderElement.style.display = "none";
   }
 }
 
@@ -49,9 +50,6 @@ async function showTime(test) {
 await showTime(0);
 
 import * as THREE from "three";
-// import Stats from 'three/addons/libs/stats.module.js';
-
-// import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import {
@@ -119,7 +117,7 @@ import {
   initLabelRenderer,
   // setupHangerModel,
   addAnotherModels,
-  isVisibleParents,
+  // isVisibleParents,
   // setTextureParams,
   // restoreMaterials,
   // addNewMaterials,
@@ -173,71 +171,6 @@ import {
   setting,
 } from "./config.js";
 
-const container = document.getElementById("container");
-// Select the elements by class instead of id
-const frameSize = document.querySelector(".frameSize");
-const topDropdown = document.querySelector(".topDropdown");
-const baseColor = document.querySelector(".baseColor");
-const shelfTypeDropdown = document.querySelector(".shelfTypeDropdown");
-const headerOptions = document.querySelector(".headerOptions");
-const headerSizeDropdown = document.querySelector(".headerSizeDropdown");
-const headerRodToggle = document.querySelector(".headerRodToggle");
-const headerRodColorDropdown = document.querySelector(
-  ".headerRodColorDropdown"
-);
-const topFrameFileUpload = document.querySelector(".topFrameFileUpload");
-const headerFrameColorInput = document.querySelector(".headerFrameColorInput");
-const headerFrameColorDropdown = document.querySelector(
-  ".headerFrameColorDropdown"
-);
-const slottedSidesToggle = document.querySelector(".slottedSidesToggle");
-const mainFrameFileUpload = document.querySelector(".mainFrameFileUpload");
-const mainFrameColorInput = document.querySelector(".mainFrameColorInput");
-const baseSelectorDropdown = document.querySelector(".baseSelectorDropdown");
-const hangerClothesToggle = document.querySelector(".hangerClothesToggle");
-const hangerGolfClubsToggle = document.querySelector(".hangerGolfClubsToggle");
-const hangerStandColor = document.querySelector(".hangerStandColor");
-const rackShelfColor = document.querySelector(".rackShelfColor");
-const rackStandColor = document.querySelector(".rackStandColor");
-
-const addHanger = document.querySelectorAll(".addHanger");
-const addAnotherModel = document.querySelectorAll(".addAnotherModel");
-const addRack = document.querySelectorAll(".addRack");
-
-const measurementToggle = document.getElementById("measurementToggle");
-const captureButton = document.getElementById("captureButton");
-const takeScreenShot = document.getElementById("takeScreenShot");
-const saveModelDataButton = document.getElementById("saveModelDataButton");
-const showInAR = document.getElementById("showInAR");
-const savePdfButton = document.getElementById("savePdfButton");
-const CreatingPdfFile = document.getElementById("CreatingPdfFile");
-const cropperContainer = document.getElementById("cropper-container");
-const cropperImage = document.getElementById("cropper-image");
-const cropButton = document.getElementById("crop-button");
-const closeButton = document.getElementById("close-button");
-const closeButtonAR = document.getElementById("closeButtonAR");
-const createQrButton = document.getElementById("createQrButton");
-const formSubmition = document.getElementById("formSubmition");
-const formCloseBtn = document.getElementById("formCloseBtn");
-const submitForm = document.querySelector(".submitForm");
-const formModel = document.getElementById("formModel");
-
-const accordionModel = document.getElementById("accordionModel");
-const moveLeftModel = document.getElementById("moveLeftModel");
-const moveRightModel = document.getElementById("moveRightModel");
-
-const zoomInButton = document.getElementById("cropper-zoom-in");
-const zoomOutButton = document.getElementById("cropper-zoom-out");
-const moveLeftButton = document.getElementById("cropper-move-left");
-const moveRightButton = document.getElementById("cropper-move-right");
-const moveUpButton = document.getElementById("cropper-move-up");
-const moveDownButton = document.getElementById("cropper-move-down");
-const rotateLeftButton = document.getElementById("cropper-rotate-left");
-const rotateRightButton = document.getElementById("cropper-rotate-right");
-const scaleXButton = document.getElementById("cropper-scale-x");
-const scaleYButton = document.getElementById("cropper-scale-y");
-const resetButton = document.getElementById("cropper-reset");
-
 let gui, stats;
 let renderer,
   scene,
@@ -251,8 +184,8 @@ let renderer,
   selectedNode,
   labelRenderer;
 let cropper,
-  topFrameCropedImage,
-  mainFrameCropedImage,
+  // topFrameCropedImage,
+  // mainFrameCropedImage,
   texture_background, //border_texture_material,
   main_model,
   header_rod_model,
@@ -274,6 +207,10 @@ let cropper,
   support_base_middle,
   support_base_side,
   previousData;
+let sharedData = {
+  topFrameCropedImage: null,
+  mainFrameCropedImage: null,
+};
 const lights = [];
 const lightHelpers = [];
 window["shadow"] = await commonMaterial(0x444444);
@@ -281,7 +218,7 @@ window["shadow"] = await commonMaterial(0x444444);
 // Start simulating progress when the window loads
 window.addEventListener("load", async () => {
   try {
-    loaderElement.style.display = "flex"; // Show the loader
+    uiManager.loadingElements.loaderElement.style.display = "flex"; // Show the loader
 
     // Initialize the scene with the loaded resources
     await init().catch(function (err) {
@@ -289,7 +226,8 @@ window.addEventListener("load", async () => {
     });
   } catch (error) {
     console.error("Error loading assets:", error);
-    progressText.innerText = "Failed to load resources. Please try again.";
+    uiManager.loadingElements.progressText.innerText =
+      "Failed to load resources. Please try again.";
   }
 });
 
@@ -319,13 +257,14 @@ manager.onLoad = () => {
 // Error handling
 manager.onError = (url) => {
   console.error(`There was an error loading ${url}`);
-  progressText.innerText = "Failed to load some resources. Please try again.";
+  uiManager.loadingElements.progressText.innerText =
+    "Failed to load some resources. Please try again.";
 };
 
 async function init() {
   texture_background = await TextureLoaderJpg.loadAsync("background.png");
 
-  renderer = new Renderer(container, render);
+  renderer = new Renderer(uiManager.elements.container, render);
   renderer.setAnimationLoop(render);
 
   scene = new Scene();
@@ -386,9 +325,25 @@ async function init() {
   scene.add(transformControls);
 
   // Add event listeners
-  window.addEventListener("mousemove", onMouseMove, false);
-  window.addEventListener("click", onMouseClick, false);
-  window.addEventListener("resize", onWindowResize);
+  window.addEventListener(
+    "mousemove",
+    (event) => {
+      uiManager.onMouseMove(event, mouse, raycaster, camera, modelGroup);
+    },
+    false
+  );
+  window.addEventListener(
+    "click",
+    uiManager.onMouseClick(
+      transformControls,
+      selectedNode,
+      scene,
+      camera,
+      modelGroup
+    ),
+    false
+  );
+  window.addEventListener("resize", uiManager.onWindowResize(camera, renderer));
 
   await calculateBoundingBox(modelGroup);
   await otherModelSetup();
@@ -436,6 +391,24 @@ async function init() {
   document.body.appendChild(labelRenderer.domElement);
 
   await loadPreviousModels();
+  uiManager.setupEventListeners(
+    modelGroup,
+    scene,
+    camera,
+    renderer,
+    lights,
+    lightHelpers,
+    transformControls,
+    mouse,
+    raycaster,
+    sharedData,
+    cropper,
+    hanger_model,
+    hanger_golf_club_model,
+    rack_wooden_model,
+    rack_glass_model,
+    selectedNode
+  );
 }
 
 async function loadPreviousModels() {
@@ -455,8 +428,8 @@ async function loadPreviousModels() {
       await updateVariable("params", previousData.params);
       await updateVariable("setting", previousData.setting);
       let lastGroupNames = previousData.group_names;
-      mainFrameCropedImage = previousData.main_frame_croped_image;
-      topFrameCropedImage = previousData.top_frame_croped_image;
+      sharedData.mainFrameCropedImage = previousData.main_frame_croped_image;
+      sharedData.topFrameCropedImage = previousData.top_frame_croped_image;
 
       let mainModelIndex = lastGroupNames.indexOf("main_model");
       let retrievedSelectedGroupName = params.selectedGroupName;
@@ -511,8 +484,14 @@ async function loadPreviousModels() {
             !setting[params.selectedGroupName].headerRodToggle;
         }
 
-        await setTopFrameCropedImage(topFrameCropedImage, modelGroup);
-        await setMainFrameCropedImage(mainFrameCropedImage, modelGroup);
+        await setTopFrameCropedImage(
+          sharedData.topFrameCropedImage,
+          modelGroup
+        );
+        await setMainFrameCropedImage(
+          sharedData.mainFrameCropedImage,
+          modelGroup
+        );
         await showHideNodes(modelGroup, scene, camera);
         await centerMainModel(modelGroup);
 
@@ -678,7 +657,7 @@ function removeLoader(loader) {
 }
 
 // Handle mouse move for hover
-async function otherModelSetup() {
+export async function otherModelSetup() {
   if (!arrow_model) {
     arrow_model = await loadGLTFModel("arrow_model.glb");
     await setupArrowModel(modelGroup, arrow_model);
@@ -738,336 +717,84 @@ async function otherModelSetup() {
   }
 }
 
-// Handle mouse move for hover
-async function onMouseMove(event) {
-  // Calculate mouse position in normalized device coordinates (-1 to +1 for both axes)
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+if (uiManager.elements.headerFrameColorInput) {
+  uiManager.elements.headerFrameColorInput.value = await getHex(
+    params.topFrameBackgroundColor
+  );
 
-  // Update the raycaster with the camera and mouse position
-  raycaster.setFromCamera(mouse, camera);
-  const visibleObjects = [];
+  document.addEventListener("input", async function (event) {
+    if (event.target.classList.contains("headerFrameColorInput")) {
+      setting[params.selectedGroupName].topFrameBackgroundColor =
+        event.target.value;
+      console.log(sharedData);
 
-  // Traverse the main model and find visible objects
-  modelGroup.traverse((child) => {
-    if (hangerNames.includes(child.name) && child.visible) {
-      visibleObjects.push(child);
+      await setTopFrameCropedImage(
+        sharedData.topFrameCropedImage,
+        modelGroup,
+        params,
+        setting
+      );
     }
-    if (rackNames.includes(child.name) && child.visible) {
-      visibleObjects.push(child);
-    }
-    // Check for allModelNames and allOtherModelNames as well
-    // if (allModelNames.includes(child.name) && child.visible) {
-    //   visibleObjects.push(child);
-    // }
-    // if (allOtherModelNames.includes(child.name) && child.visible) {
-    //     visibleObjects.push(child);
-    // }
   });
+}
 
-  // Now check if parents are visible (using async outside of traverse)
-  const finalVisibleObjects = [];
-  for (const child of visibleObjects) {
-    if (await isVisibleParents(child.parent)) {
-      finalVisibleObjects.push(child);
+if (uiManager.elements.mainFrameColorInput) {
+  uiManager.elements.mainFrameColorInput.value = await getHex(
+    params.mainFrameBackgroundColor
+  );
+  document.addEventListener("input", async function (event) {
+    if (event.target.classList.contains("mainFrameColorInput")) {
+      setting[params.selectedGroupName].mainFrameBackgroundColor =
+        event.target.value;
+      await setMainFrameCropedImage(
+        sharedData.mainFrameCropedImage,
+        modelGroup,
+        params,
+        setting
+      );
+    }
+  });
+}
+
+document.addEventListener("click", function (event) {
+  // Check if a dropdown button was clicked
+  if (event.target.closest(".dropdown-button")) {
+    const dropdown = event.target.closest(".custom-dropdown");
+    const dropdownContent = dropdown.querySelector(".dropdown-content");
+
+    // Toggle visibility of the clicked dropdown
+    if (dropdownContent) {
+      const isDropdownVisible = dropdownContent.style.display === "block";
+      dropdownContent
+        .querySelectorAll(".custom-dropdown .dropdown-content")
+        .forEach(function (content) {
+          content.style.display = "none"; // Close all dropdowns
+        });
+      dropdownContent.style.display = isDropdownVisible ? "none" : "block"; // Toggle the clicked dropdown
     }
   }
 
-  // console.log('finalVisibleObjects', finalVisibleObjects);
-  // Find intersections with the main_model
-  hangerIntersects = raycaster.intersectObjects(finalVisibleObjects, true);
-  // console.log('hangerIntersects', hangerIntersects);
-}
+  // Check if a dropdown item was clicked
+  if (event.target.closest(".dropdown-item")) {
+    const item = event.target.closest(".dropdown-item");
+    const dropdownType = item
+      .closest(".custom-dropdown")
+      .getAttribute("data-type");
+    const value = item.getAttribute("data-value");
+    const accordion = item.closest(".accordion-item");
+    const selectedModel = accordion.getAttribute("data-model");
+    // console.log("selectedModel_pass", selectedModel);
+    // Update material based on the dropdown type and value
+    updateMaterial(value, dropdownType, selectedModel);
 
-// Handle mouse click for selection
-async function onMouseClick(event) {
-  // console.log('hangerIntersects', hangerIntersects);
-
-  // let defaultModel = modelGroup.getObjectByName(params.selectedGroupName);
-  if (hangerIntersects.length > 0) {
-    hideRemoveIcons();
-    const intersectNode = hangerIntersects[0].object;
-    if (intersectNode) {
-      // console.log('intersectNode', intersectNode)
-      selectedNode = intersectNode.parent;
-      let iconName = selectedNode.name;
-
-      let tempNode, defaultModel;
-      for (let val of allModelNames) {
-        tempNode = await findParentNodeByName(selectedNode, val, true);
-        if (tempNode) {
-          defaultModel = tempNode;
-          break;
-        }
-      }
-
-      if (iconName.startsWith("removeHanger-")) {
-        let nodeName = iconName.replace("removeHanger-", "");
-        let hangerToRemove = await findParentNodeByName(selectedNode, nodeName);
-        let hangerArrayKey = hangerToRemove.hangerArrayKey || null;
-        if (hangerToRemove) {
-          let frame = defaultModel.getObjectByName("Frame");
-          transformControls.detach();
-          frame.remove(hangerToRemove);
-        }
-        if (hangerArrayKey) {
-          params.hangerCount[hangerArrayKey] -= 1;
-        }
-        await showHideNodes(modelGroup, scene, camera);
-      } else if (iconName.startsWith("removeRack-")) {
-        let nodeName = iconName.replace("removeRack-", "");
-        let hangerToRemove = await findParentNodeByName(selectedNode, nodeName);
-        if (hangerToRemove) {
-          let frame = defaultModel.getObjectByName("Frame");
-          transformControls.detach();
-          frame.remove(hangerToRemove);
-        }
-      } else if (
-        hangerPartNames.includes(selectedNode.name) ||
-        hangerNames.includes(selectedNode.name)
-      ) {
-        let tempNode, selectedHangerNode;
-
-        for (let val of hangerNames) {
-          tempNode = await findParentNodeByName(selectedNode, val, true);
-          if (tempNode) {
-            selectedHangerNode = tempNode;
-            break;
-          }
-        }
-        if (selectedHangerNode) {
-          selectedNode = selectedHangerNode;
-          let removeHanger = selectedNode.getObjectByName(
-            "removeHanger-" + selectedNode.name
-          );
-          if (removeHanger) {
-            removeHanger.visible = true;
-          }
-          // console.log('selectedNode', selectedNode)
-
-          // Attach transform controls to the selected node
-          transformControls.attach(selectedNode);
-          transformControls.setMode("translate"); // Set the mode to 'translate' for moving
-
-          // Configure to show only X-axis control and allow movement only on X-axis
-          transformControls.showX = true; // Show only X-axis arrow
-          transformControls.showY = false; // Hide Y-axis arrow
-          transformControls.showZ = false; // Hide Z-axis arrow
-
-          // Add event listener to enforce boundary check during movement
-          transformControls.addEventListener(
-            "objectChange",
-            enforceHangerBounds
-          );
-        }
-      } else if (
-        rackPartNames.includes(selectedNode.name) ||
-        rackNames.includes(selectedNode.name)
-      ) {
-        let tempNode, selectedRackNode;
-
-        for (let val of rackNames) {
-          tempNode = await findParentNodeByName(selectedNode, val, true);
-          if (tempNode) {
-            selectedRackNode = tempNode;
-            break;
-          }
-        }
-        if (
-          !selectedRackNode &&
-          rackNames.includes(selectedNode.name) &&
-          (await isVisibleParents(selectedNode))
-        ) {
-          selectedRackNode = selectedNode;
-        }
-        if (selectedRackNode) {
-          selectedNode = selectedRackNode;
-          let removeRack = selectedNode.getObjectByName(
-            "removeRack-" + selectedNode.name
-          );
-          if (removeRack) {
-            removeRack.visible = true;
-          }
-          // Attach transform controls to the selected node
-          transformControls.attach(selectedNode);
-          transformControls.setMode("translate"); // Set the mode to 'translate' for moving
-          transformControls.translationSnap = 3.139;
-
-          // Configure to show only X-axis control and allow movement only on X-axis
-          transformControls.showX = false; // Show only X-axis arrow
-          transformControls.showY = true; // Hide Y-axis arrow
-          transformControls.showZ = false; // Hide Z-axis arrow
-
-          // Add event listener to enforce boundary check during movement
-          transformControls.addEventListener("objectChange", enforceRackBounds);
-        }
-      } else {
-        hideRemoveIcons();
-      }
-    } else {
-      hideRemoveIcons();
-    }
-  } else {
-    hideRemoveIcons();
-  }
-}
-
-// Function to hide remove icons
-function hideRemoveIcons() {
-  if (modelGroup && selectedNode) {
-    modelGroup.traverse((child) => {
-      if (child.name && child.name.includes("remove")) {
-        child.visible = false; // Hide remove icon
-      }
-    });
-    transformControls.detach();
-    selectedNode = null;
-
-    transformControls.removeEventListener("objectChange", enforceHangerBounds);
-    transformControls.removeEventListener("objectChange", enforceRackBounds);
-    // Check if clicked on allModelNames or allOtherModelNames
-  }
-}
-
-// Function to enforce boundaries on X-axis
-async function enforceHangerBounds() {
-  if (selectedNode) {
-    let tempNode, defaultModel;
-
-    for (let val of allModelNames) {
-      tempNode = await findParentNodeByName(selectedNode, val, true);
-      if (tempNode) {
-        defaultModel = tempNode;
-        break;
-      }
-    }
-
-    // let defaultModelName = params.selectedGroupName !== 'default' ? params.selectedGroupName : params.defaultModel;
-    // let defaultModel = main_model.getObjectByName(selectedHangerNode);
-    if (defaultModel) {
-      console.log("defaultModel", defaultModel);
-      defaultModel.traverse((child) => {
-        if (child.isMesh && child.geometry) {
-          child.geometry.computeBoundingBox();
-        }
-      });
-
-      let frame = defaultModel.getObjectByName("Top_Ex");
-
-      const worldPosition = new THREE.Vector3();
-      frame.getWorldPosition(worldPosition);
-
-      const frameBox = new THREE.Box3().setFromObject(frame);
-      const framecenter = frameBox.getCenter(new THREE.Vector3());
-      console.log("defaultModel", defaultModel);
-      console.log("frame", frame);
-      // console.log('frameBox', frameBox)
-      console.log("frameBox.min", frameBox.min);
-      console.log("frameBox.max", frameBox.max);
-      console.log("framecenter", framecenter);
-      console.log("World Position:", worldPosition);
-
-      let minX = frameBox.min.x + frame.position.x - worldPosition.x;
-      let maxX = frameBox.max.x + frame.position.x - worldPosition.x;
-      let selectedChildNode = selectedNode.getObjectByName("Hanger_Stand");
-
-      // const selectedChildWorldPosition = new THREE.Vector3();
-      // selectedChildNode.getWorldPosition(selectedChildWorldPosition);
-
-      const nodeBoundingBox = new THREE.Box3().setFromObject(selectedChildNode);
-      const nodeWidth = nodeBoundingBox.max.x - nodeBoundingBox.min.x;
-
-      // const margin = 20;
-      // const adjustedMinX = frameBox.min.x + selectedChildNode.position.x + (nodeWidth / 2) + params.frameTopExMargin;
-      // const adjustedMaxX = frameBox.max.x - selectedChildNode.position.x - (nodeWidth / 2) - params.frameTopExMargin;
-
-      const adjustedMinX = minX + nodeWidth / 2 + params.frameTopExMargin;
-      const adjustedMaxX = maxX - nodeWidth / 2 - params.frameTopExMargin;
-
-      const position = selectedNode.position;
-      console.log("selectedChildNode", selectedChildNode);
-      console.log("nodeWidth", nodeWidth);
-      console.log("nodeBoundingBox", nodeBoundingBox);
-      console.log("adjustedMinX", adjustedMinX);
-      console.log("adjustedMaxX", adjustedMaxX);
-
-      // If the node is trying to move past the minX or maxX boundary, set its position to the boundary
-      if (position.x < adjustedMinX) {
-        position.x = adjustedMinX;
-      } else if (position.x > adjustedMaxX) {
-        position.x = adjustedMaxX;
-      } else {
-        // If within bounds, ensure position is properly centered
-        position.x = THREE.MathUtils.clamp(
-          position.x,
-          adjustedMinX,
-          adjustedMaxX
-        );
-      }
-      console.log("Final position.x", position.x);
+    // Hide the dropdown after selection
+    const dropdown = item.closest(".custom-dropdown");
+    const dropdownContent = dropdown.querySelector(".dropdown-content");
+    if (dropdownContent) {
+      dropdownContent.style.display = "none";
     }
   }
-}
-
-// Function to enforce boundaries on X-axis
-async function enforceRackBounds() {
-  if (selectedNode) {
-    let tempNode, defaultModel;
-    for (let val of allModelNames) {
-      tempNode = await findParentNodeByName(selectedNode, val, true);
-      if (tempNode) {
-        defaultModel = tempNode;
-        break;
-      }
-    }
-    // let defaultModel = main_model.getObjectByName(params.selectedGroupName);
-    // let defaultModel = main_model.getObjectByName(params.defaultModel);
-    let baseFrame = defaultModel.getObjectByName("Base_Solid");
-    let leftSlottedFrame = defaultModel.getObjectByName("Left_Ex_Slotted");
-    const baseFrameBox = new THREE.Box3().setFromObject(baseFrame);
-    const leftSlottedFrameBox = new THREE.Box3().setFromObject(
-      leftSlottedFrame
-    );
-    // const boundingBox = params.calculateBoundingBox[params.defaultModel]['Frame'];
-
-    const min = leftSlottedFrameBox.min.clone();
-    const max = leftSlottedFrameBox.max.clone();
-    const leftSlottedFrameHeight = max.y - min.y;
-    const baseFrameHeight = baseFrameBox.max.y - baseFrameBox.min.y;
-
-    let minY = min.y;
-    let maxY = max.y + leftSlottedFrame.position.y;
-    const nodeBoundingBox = new THREE.Box3().setFromObject(selectedNode);
-    const nodeHeight = nodeBoundingBox.max.y - nodeBoundingBox.min.y;
-
-    const margin = 10;
-
-    const adjustedMinY = minY - nodeHeight / 2 - baseFrameHeight - 50;
-    const adjustedMaxY = maxY - nodeHeight / 2 + baseFrameHeight + 25;
-
-    const position = selectedNode.position;
-
-    // If the node is trying to move past the minY or maxY boundary, set its position to the boundary
-    if (position.y < adjustedMinY) {
-      position.y = adjustedMinY;
-    } else if (position.y > adjustedMaxY) {
-      position.y = adjustedMaxY;
-    }
-
-    // console.log('adjustedMinY', adjustedMinY)
-    // console.log('nodeHeight', nodeHeight)
-    // console.log('leftSlottedFrameHeight', leftSlottedFrameHeight)
-    // console.log('baseFrameHeight', baseFrameHeight)
-    // console.log('baseFrameBox', baseFrameBox)
-    // console.log('nodeBoundingBox', nodeBoundingBox)
-  }
-}
-
-async function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
+});
 
 async function render() {
   // await drawMeasurementBoxesWithLabels(modelGroup, scene, camera)
@@ -1082,7 +809,7 @@ async function render() {
 }
 
 // Function to update texture or color on selection
-async function updateMaterial(
+export async function updateMaterial(
   value,
   dropdownType,
   selectedModel = "main_model"
@@ -1165,513 +892,69 @@ async function updateMaterial(
   // console.log(main_model)
 }
 
-export async function closeCropper() {
-  cropperContainer.style.display = "none";
-  document.body.classList.remove("modal-open");
-  if (cropper) {
-    cropper.destroy();
-    cropper = null;
-  }
+if (uiManager.elements.saveModelDataButton) {
+  uiManager.elements.saveModelDataButton.addEventListener(
+    "click",
+    async function () {
+      const modelId = previousData && previousData.id ? previousData.id : 0;
 
-  const topFrameFileUploads = document.querySelectorAll(".mainFrameFileUpload");
-
-  // Loop through each element and set its value to blank
-  topFrameFileUploads.forEach((element) => {
-    // console.log('vvvv', element);
-
-    element.value = ""; // Set the value to an empty string
-  });
-
-  const mainFrameFileUploads = document.querySelectorAll(
-    ".mainFrameFileUpload"
-  );
-
-  // Loop through each element and set its value to blank
-  mainFrameFileUploads.forEach((element) => {
-    element.value = ""; // Set the value to an empty string
-  });
-}
-
-// Event listeners for controls
-if (frameSize) {
-  frameSize.value = params.defaultModel;
-  // frameSize.addEventListener("change", async function (event) {
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("frameSize")) {
-      setting[params.selectedGroupName].defaultModel = event.target.value;
-      await showHideNodes(modelGroup, scene, camera);
-      await centerMainModel(modelGroup);
-      // await lightSetup();
-      await scene.lightSetup(lights, lightHelpers);
-    }
-  });
-}
-
-if (topDropdown) {
-  topDropdown.value = params.topOption;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("topDropdown")) {
-      console.log(
-        "setting[params.selectedGroupName]",
-        setting[params.selectedGroupName]
-      );
-      console.log("params.selectedGroupName", params.selectedGroupName);
-      setting[params.selectedGroupName].topOption = event.target.value;
-      setting[params.selectedGroupName].headerRodToggle = false;
-      if (
-        setting[params.selectedGroupName].topOption == "Header_Wooden_Shelf"
-      ) {
-        setting[params.selectedGroupName].headerRodToggle = true;
-      }
-
-      headerRodToggle.checked =
-        setting[params.selectedGroupName].headerRodToggle;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-    // You can add similar event handlers for other elements here
-  });
-}
-
-if (headerOptions) {
-  headerOptions.value = params.headerOptions;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("headerOptions")) {
-      setting[params.selectedGroupName].headerOptions = event.target.value;
-      await otherModelSetup();
-      await showHideNodes();
-    }
-  });
-}
-
-if (headerSizeDropdown) {
-  headerSizeDropdown.value = params.defaultHeaderSize;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("headerSizeDropdown")) {
-      setting[params.selectedGroupName].defaultHeaderSize = event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (headerRodToggle) {
-  headerRodToggle.checked = params.headerRodToggle;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("headerRodToggle")) {
-      setting[params.selectedGroupName].headerRodToggle = event.target.checked;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (headerRodColorDropdown) {
-  headerRodColorDropdown.value = params.rodFrameColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("headerRodColorDropdown")) {
-      setting[params.selectedGroupName].rodFrameColor = event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (shelfTypeDropdown) {
-  shelfTypeDropdown.value = params.defaultShelfType;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("shelfTypeDropdown")) {
-      setting[params.selectedGroupName].defaultShelfType = event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (slottedSidesToggle) {
-  slottedSidesToggle.checked = params.slottedSidesToggle;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("slottedSidesToggle")) {
-      setting[params.selectedGroupName].slottedSidesToggle =
-        event.target.checked;
-
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (topFrameFileUpload) {
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("topFrameFileUpload")) {
-      const file = event.target.files[0];
-      if (!file) return;
-      params.fileUploadFlag = "TopFrame";
-
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        cropperImage.src = e.target.result;
-        cropperContainer.style.display = "block";
-
-        if (cropper) {
-          cropper.destroy();
+      await traverseAsync(modelGroup, async (child) => {
+        if (
+          hangerNames.includes(child.name) &&
+          child.hangerArrayKey &&
+          child.hangerCount
+        ) {
+          params.hangerAdded = params.hangerAdded || {};
+          params.hangerAdded[child.hangerArrayKey] =
+            params.hangerAdded[child.hangerArrayKey] || {};
+          params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
+            child.position;
         }
+        if (
+          rackNames.includes(child.name) &&
+          child.rackArrayKey &&
+          child.rackCount
+        ) {
+          console.log("params.rackAdded", params.rackAdded);
+          console.log("child", child);
+          console.log("child.name", child.name);
 
-        let currentGroup = modelGroup.getObjectByName(params.selectedGroupName);
-        let defaultModelName = setting[params.selectedGroupName].defaultModel;
-
-        let currentModel = currentGroup.getObjectByName(defaultModelName);
-        let defaultHeaderSize =
-          setting[params.selectedGroupName].defaultHeaderSize;
-        let currentHeader = currentModel.getObjectByName(defaultHeaderSize);
-        const size = await getCurrentModelSize(
-          currentHeader,
-          "Header_Graphic1-Mat"
-        );
-        console.log("size", size);
-
-        cropper = new Cropper(cropperImage, {
-          aspectRatio: size.x / size.y,
-          viewMode: 0.4,
-          autoCropArea: 1,
-          cropBoxResizable: true,
-          cropBoxMovable: true,
-          background: false,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
-
-if (mainFrameFileUpload) {
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("mainFrameFileUpload")) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      params.fileUploadFlag = "MainFrame";
-
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        cropperImage.src = e.target.result;
-        cropperContainer.style.display = "block";
-
-        if (cropper) {
-          cropper.destroy();
+          params.rackAdded = params.rackAdded || {};
+          params.rackAdded[child.rackArrayKey] =
+            params.rackAdded[child.rackArrayKey] || {};
+          params.rackAdded[child.rackArrayKey][child.rackCount] =
+            child.position;
         }
+      });
 
-        let currentGroup = modelGroup.getObjectByName(params.selectedGroupName);
-        let defaultModelName = setting[params.selectedGroupName].defaultModel;
-        let defaultModel = currentGroup.getObjectByName(defaultModelName);
-
-        const size = await getCurrentModelSize(defaultModel, "Cube1-Mat");
-        // console.log(size)
-
-        cropper = new Cropper(cropperImage, {
-          aspectRatio: size.x / size.y,
-          viewMode: 0.4,
-          autoCropArea: 1,
-          cropBoxResizable: true,
-          cropBoxMovable: true,
-          background: false,
-        });
+      const dataToSave = {
+        params: params || null,
+        setting: setting || null,
+        group_names: allGroupNames || null,
+        top_frame_croped_image: sharedData.topFrameCropedImage || null,
+        main_frame_croped_image: sharedData.mainFrameCropedImage || null,
       };
-      reader.readAsDataURL(file);
-    }
-  });
-}
 
-if (headerFrameColorInput) {
-  headerFrameColorInput.value = await getHex(params.topFrameBackgroundColor);
-  document.addEventListener("input", async function (event) {
-    if (event.target.classList.contains("headerFrameColorInput")) {
-      setting[params.selectedGroupName].topFrameBackgroundColor =
-        event.target.value;
-      await otherModelSetup();
-      await setTopFrameCropedImage();
-    }
-  });
-}
-
-if (headerFrameColorDropdown) {
-  headerFrameColorDropdown.value = params.topFrameBackgroundColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("headerFrameColorDropdown")) {
-      setting[params.selectedGroupName].topFrameBackgroundColor =
-        event.target.value;
-      await setTopFrameCropedImage();
-    }
-  });
-}
-
-if (mainFrameColorInput) {
-  mainFrameColorInput.value = await getHex(params.mainFrameBackgroundColor);
-  document.addEventListener("input", async function (event) {
-    if (event.target.classList.contains("mainFrameColorInput")) {
-      setting[params.selectedGroupName].mainFrameBackgroundColor =
-        event.target.value;
-      await setMainFrameCropedImage();
-    }
-  });
-}
-
-if (baseSelectorDropdown) {
-  baseSelectorDropdown.value = params.selectedBaseFrame;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("baseSelectorDropdown")) {
-      setting[params.selectedGroupName].selectedBaseFrame = event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (baseColor) {
-  baseColor.value = params.baseFrameColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("baseColor")) {
-      setting[params.selectedGroupName].baseFrameColor = event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (hangerClothesToggle) {
-  hangerClothesToggle.checked = params.hangerClothesToggle;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("hangerClothesToggle")) {
-      setting[params.selectedGroupName].hangerClothesToggle =
-        event.target.checked;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (hangerGolfClubsToggle) {
-  hangerGolfClubsToggle.checked = params.hangerGolfClubsToggle;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("hangerGolfClubsToggle")) {
-      setting[params.selectedGroupName].hangerGolfClubsToggle =
-        event.target.checked;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (hangerStandColor) {
-  hangerStandColor.value = params.defaultHangerStandColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("hangerStandColor")) {
-      setting[params.selectedGroupName].defaultHangerStandColor =
-        event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (rackShelfColor) {
-  rackShelfColor.value = params.defaultRackShelfStandColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("rackShelfColor")) {
-      setting[params.selectedGroupName].defaultRackShelfStandColor =
-        event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (rackStandColor) {
-  rackStandColor.value = params.defaultRackStandStandColor;
-  document.addEventListener("change", async function (event) {
-    if (event.target.classList.contains("rackStandColor")) {
-      setting[params.selectedGroupName].defaultRackStandStandColor =
-        event.target.value;
-      await otherModelSetup();
-      await showHideNodes(modelGroup, scene, camera);
-    }
-  });
-}
-
-if (measurementToggle) {
-  measurementToggle.checked = params.measurementToggle;
-
-  measurementToggle.addEventListener("change", async function (event) {
-    params.measurementToggle = event.target.checked;
-    await otherModelSetup();
-    await showHideNodes(modelGroup, scene, camera);
-  });
-}
-
-async function saveCropImage(cropper) {
-  const base64Image = cropper.getCroppedCanvas().toDataURL("image/png");
-  const formData = new FormData();
-  formData.append("modelCropImage", base64Image);
-  formData.append("action", "saveModelCropImage");
-  try {
-    const response = await fetch("api.php", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await response.json();
-    return data; // Ensure the resolved data is returned
-  } catch (error) {
-    console.error("Error saving image:", error);
-    throw error; // Re-throw the error to handle it at the calling point
-  }
-}
-
-if (cropButton) {
-  cropButton.addEventListener("click", async function (event) {
-    console.log("cropper", cropper);
-    if (cropper) {
-      let selectedGroupName = params.selectedGroupName;
-      let defaultModel = setting[selectedGroupName].defaultModel;
-      let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
-      if (params.fileUploadFlag == "MainFrame") {
-        mainFrameCropedImage = mainFrameCropedImage || {};
-        mainFrameCropedImage[selectedGroupName] =
-          mainFrameCropedImage[selectedGroupName] || {};
-        // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas().toDataURL("image/png");
-        // mainFrameCropedImage[selectedGroupName][defaultModel] = cropper.getCroppedCanvas();
-        let mainFrameSaveImageURl = await saveCropImage(cropper);
-        mainFrameCropedImage[selectedGroupName][defaultModel] =
-          mainFrameSaveImageURl.imageUrl;
-        await setMainFrameCropedImage(mainFrameCropedImage, modelGroup);
-        console.log(setting);
-        console.log(params.selectedGroupName);
-        console.log(setting[selectedGroupName].defaultModel);
-        console.log(mainFrameCropedImage);
-      } else if (params.fileUploadFlag == "TopFrame") {
-        topFrameCropedImage = topFrameCropedImage || {};
-        topFrameCropedImage[selectedGroupName] =
-          topFrameCropedImage[selectedGroupName] || {};
-        topFrameCropedImage[selectedGroupName][defaultModel] =
-          topFrameCropedImage[selectedGroupName][defaultModel] || {};
-        // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas().toDataURL("image/png");
-        // topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = cropper.getCroppedCanvas();
-        let topFrameSaveImageURl = await saveCropImage(cropper);
-        topFrameCropedImage[selectedGroupName][defaultModel][
-          defaultHeaderSize
-        ] = topFrameSaveImageURl.imageUrl;
-        await setTopFrameCropedImage(topFrameCropedImage, modelGroup);
-      }
-    }
-  });
-}
-
-if (closeButton) {
-  closeButton.addEventListener("click", closeCropper);
-}
-
-if (addHanger) {
-  document.addEventListener("click", async function (event) {
-    if (event.target.closest(".addHanger")) {
-      const hangerType = event.target.getAttribute("data-hanger");
-      await otherModelSetup();
-      await addHangers(
-        modelGroup,
-        hangerType,
-        hanger_model,
-        hanger_golf_club_model,
-        scene,
-        camera
-      );
-    }
-  });
-}
-
-if (addRack) {
-  document.addEventListener("click", async function (event) {
-    if (event.target.closest(".addRack")) {
-      const rackType = event.target.getAttribute("data-rack");
-      await otherModelSetup();
-      await addRacks(
-        modelGroup,
-        rackType,
-        rack_wooden_model,
-        rack_glass_model,
-        scene,
-        camera
-      );
-    }
-  });
-}
-
-if (saveModelDataButton) {
-  saveModelDataButton.addEventListener("click", async function () {
-    const modelId = previousData && previousData.id ? previousData.id : 0;
-
-    await traverseAsync(modelGroup, async (child) => {
-      if (
-        hangerNames.includes(child.name) &&
-        child.hangerArrayKey &&
-        child.hangerCount
-      ) {
-        params.hangerAdded = params.hangerAdded || {};
-        params.hangerAdded[child.hangerArrayKey] =
-          params.hangerAdded[child.hangerArrayKey] || {};
-        params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
-          child.position;
-      }
-      if (
-        rackNames.includes(child.name) &&
-        child.rackArrayKey &&
-        child.rackCount
-      ) {
-        console.log("params.rackAdded", params.rackAdded);
-        console.log("child", child);
-        console.log("child.name", child.name);
-
-        params.rackAdded = params.rackAdded || {};
-        params.rackAdded[child.rackArrayKey] =
-          params.rackAdded[child.rackArrayKey] || {};
-        params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
-      }
-    });
-
-    const dataToSave = {
-      params: params || null,
-      setting: setting || null,
-      group_names: allGroupNames || null,
-      top_frame_croped_image: topFrameCropedImage || null,
-      main_frame_croped_image: mainFrameCropedImage || null,
-    };
-
-    let projectName = (previousData && previousData.name) || null;
-    let dataSave;
-    if (modelId > 0) {
-      dataSave = true;
-    }
-    if (!projectName) {
-      // Prompt the user to enter a value
-      projectName = prompt("Please enter a project name:");
-      if (projectName !== null) {
+      let projectName = (previousData && previousData.name) || null;
+      let dataSave;
+      if (modelId > 0) {
         dataSave = true;
       }
+      if (!projectName) {
+        // Prompt the user to enter a value
+        projectName = prompt("Please enter a project name:");
+        if (projectName !== null) {
+          dataSave = true;
+        }
+      }
+
+      // console.log('params.hangerAdded', params.hangerAdded);
+
+      if (dataSave) {
+        await saveModelData(projectName, dataToSave, modelId);
+      }
     }
-
-    // console.log('params.hangerAdded', params.hangerAdded);
-
-    if (dataSave) {
-      await saveModelData(projectName, dataToSave, modelId);
-    }
-  });
-}
-
-if (addAnotherModel) {
-  addAnotherModel.forEach((button) => {
-    button.addEventListener("click", async function () {
-      await addAnotherModels(allGroupNames, modelGroup, scene, camera);
-      await centerMainModel(modelGroup);
-      await showHideNodes(modelGroup, scene, camera);
-    });
-  });
+  );
 }
 
 // Move Left
@@ -1730,63 +1013,63 @@ moveRightModel.addEventListener("click", async () => {
   }
 });
 
-if (captureButton) {
-  captureButton.addEventListener("click", async function () {
-    // Save the original size of the renderer
-    const originalWidth = renderer.domElement.width;
-    const originalHeight = renderer.domElement.height;
+// if (captureButton) {
+//   captureButton.addEventListener("click", async function () {
+//     // Save the original size of the renderer
+//     const originalWidth = renderer.domElement.width;
+//     const originalHeight = renderer.domElement.height;
 
-    // Set higher resolution (2x or 3x the original resolution)
-    const scaleFactor = 3; // You can adjust this factor
-    renderer.setSize(
-      originalWidth * scaleFactor,
-      originalHeight * scaleFactor,
-      false
-    );
-    camera.aspect =
-      (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
-    camera.updateProjectionMatrix();
+//     // Set higher resolution (2x or 3x the original resolution)
+//     const scaleFactor = 3; // You can adjust this factor
+//     renderer.setSize(
+//       originalWidth * scaleFactor,
+//       originalHeight * scaleFactor,
+//       false
+//     );
+//     camera.aspect =
+//       (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
+//     camera.updateProjectionMatrix();
 
-    // Render the scene at higher resolution
-    renderer.render(scene, camera);
+//     // Render the scene at higher resolution
+//     renderer.render(scene, camera);
 
-    // Get the canvas from the renderer
-    const canvas = renderer.domElement;
+//     // Get the canvas from the renderer
+//     const canvas = renderer.domElement;
 
-    // Get the high-resolution image data from the canvas
-    const imageData = canvas.toDataURL("image/png");
+//     // Get the high-resolution image data from the canvas
+//     const imageData = canvas.toDataURL("image/png");
 
-    // Create an image element to display the captured image
-    const image = new Image();
-    image.src = imageData;
+//     // Create an image element to display the captured image
+//     const image = new Image();
+//     image.src = imageData;
 
-    // Optionally, style the image for better display (fit to screen)
-    image.style.maxWidth = "100%";
-    image.style.height = "auto";
-    document.body.appendChild(image);
+//     // Optionally, style the image for better display (fit to screen)
+//     image.style.maxWidth = "100%";
+//     image.style.height = "auto";
+//     document.body.appendChild(image);
 
-    // Optionally, trigger a download
-    const link = document.createElement("a");
-    link.href = imageData;
-    link.download = "high-res-model-image.png";
-    link.click();
+//     // Optionally, trigger a download
+//     const link = document.createElement("a");
+//     link.href = imageData;
+//     link.download = "high-res-model-image.png";
+//     link.click();
 
-    // Remove the image from the DOM after download
-    image.onload = function () {
-      // Wait for the image to be fully loaded before removing it
-      document.body.removeChild(image);
-    };
+//     // Remove the image from the DOM after download
+//     image.onload = function () {
+//       // Wait for the image to be fully loaded before removing it
+//       document.body.removeChild(image);
+//     };
 
-    // Revert the renderer back to its original size
-    renderer.setSize(originalWidth, originalHeight, false);
-    camera.aspect = originalWidth / originalHeight;
-    camera.updateProjectionMatrix();
+//     // Revert the renderer back to its original size
+//     renderer.setSize(originalWidth, originalHeight, false);
+//     camera.aspect = originalWidth / originalHeight;
+//     camera.updateProjectionMatrix();
 
-    // Re-render the scene at the original size
-    renderer.render(scene, camera);
-  });
-}
-// ----------------------------------------------------------------------------------------------------------
+//     // Re-render the scene at the original size
+//     renderer.render(scene, camera);
+//   });
+// }
+
 async function checkFileExists(url) {
   // Poll the server every 500ms to check if the file exists
   let FileFound = false;
@@ -1815,8 +1098,8 @@ function hideLoadingModal() {
   document.getElementById("loadingModal").style.display = "none";
 }
 
-if (closeButtonAR) {
-  closeButtonAR.addEventListener("click", () => {
+if (uiManager.elements.closeButtonAR) {
+  uiManager.elements.closeButtonAR.addEventListener("click", () => {
     let arviewer = document.getElementById("ArView");
     arviewer.style.display = "none";
   });
@@ -2416,61 +1699,64 @@ async function captureModelImages(modelGroup) {
   return imagesNameArr;
 }
 
-if (takeScreenShot) {
-  takeScreenShot.addEventListener("click", async function () {
-    await captureModelImages(modelGroup);
-  });
-}
+// if (takeScreenShot) {
+//   takeScreenShot.addEventListener("click", async function () {
+//     await captureModelImages(modelGroup);
+//   });
+// }
 // ----------------------------------------------------------------------------------------------------------
 
-if (createQrButton) {
-  createQrButton.addEventListener("click", async function () {
-    showLoadingModal("Please wait... we are creating your QR Code");
-    const unixTimestamp = Math.floor(Date.now() / 1000);
-    const modelName = `main_group_${unixTimestamp}`;
-    const exportedModelFileUrl = `/export_models/${modelName}`;
-    const isQr = true;
-    const closeBtn = document.getElementById("closeBtn");
-    const showQRHere = document.getElementById("showQRHere");
-    closeBtn.addEventListener("click", async function () {
-      showQRHere.style.display = "none";
-    });
-    await exportModelForAr(modelGroup, modelName, isQr);
-    const data = {};
-    data["action"] = "create_qr_code";
-    data["url"] = exportedModelFileUrl;
-
-    const qr_data = JSON.stringify(data);
-    fetch("api.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: qr_data,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          console.log("Qr Code generate successfully!");
-          document.getElementById("qrImage").src = data.url;
-          hideLoadingModal();
-          showQRHere.style.display = "flex";
-        } else {
-          console.error("Error saving model data:", data.error);
-          hideLoadingModal();
-        }
+if (uiManager.elements.createQrButton) {
+  uiManager.elements.createQrButton.addEventListener(
+    "click",
+    async function () {
+      showLoadingModal("Please wait... we are creating your QR Code");
+      const unixTimestamp = Math.floor(Date.now() / 1000);
+      const modelName = `main_group_${unixTimestamp}`;
+      const exportedModelFileUrl = `/export_models/${modelName}`;
+      const isQr = true;
+      const closeBtn = document.getElementById("closeBtn");
+      const showQRHere = document.getElementById("showQRHere");
+      closeBtn.addEventListener("click", async function () {
+        showQRHere.style.display = "none";
       });
-  });
+      await exportModelForAr(modelGroup, modelName, isQr);
+      const data = {};
+      data["action"] = "create_qr_code";
+      data["url"] = exportedModelFileUrl;
+
+      const qr_data = JSON.stringify(data);
+      fetch("api.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: qr_data,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Qr Code generate successfully!");
+            document.getElementById("qrImage").src = data.url;
+            hideLoadingModal();
+            showQRHere.style.display = "flex";
+          } else {
+            console.error("Error saving model data:", data.error);
+            hideLoadingModal();
+          }
+        });
+    }
+  );
 }
 
 // ----------------------------------------------------------------------------------------------------------
-async function generateArModel(){
+async function generateArModel() {
   const unixTimestamp = Math.floor(Date.now() / 1000);
   const modelName = `main_group_${unixTimestamp}`;
   const exportedModelFileUrl = `./export_models/${modelName}`;
-  
+
   await exportModelForAr(modelGroup, modelName);
-  
+
   // Check if the file exists
   if (await checkFileExists(exportedModelFileUrl)) {
     hideLoadingModal();
@@ -2499,14 +1785,14 @@ async function generateArModel(){
     hideLoadingModal();
   }
 }
-if (showInAR) {
-  showInAR.addEventListener("click", async function () {
+if (uiManager.elements.showInAR) {
+  uiManager.elements.showInAR.addEventListener("click", async function () {
     showLoadingModal("Please wait... we are creating your AR model file");
     await generateArModel();
   });
 }
 // ----------------------------------------------------------------------------------------------------------
-async function creatingPDF(){
+async function creatingPDF() {
   transformControls.detach();
   await traverseAsync(modelGroup, async (child) => {
     if (
@@ -2525,10 +1811,10 @@ async function creatingPDF(){
       child.rackArrayKey &&
       child.rackCount
     ) {
-      console.log("params.rackAdded", params.rackAdded);
-      console.log("child", child);
-      console.log("child.name", child.name);
-  
+      // console.log("params.rackAdded", params.rackAdded);
+      // console.log("child", child);
+      // console.log("child.name", child.name);
+
       params.rackAdded = params.rackAdded || {};
       params.rackAdded[child.rackArrayKey] =
         params.rackAdded[child.rackArrayKey] || {};
@@ -2536,47 +1822,88 @@ async function creatingPDF(){
     }
   });
   let ModelImageName = await captureModelImages(modelGroup);
-  
+
   const dataToSave = {
     params: params || null,
     setting: setting || null,
     group_names: allGroupNames || null,
-    top_frame_croped_image: topFrameCropedImage || null,
-    main_frame_croped_image: mainFrameCropedImage || null,
+    top_frame_croped_image: sharedData.topFrameCropedImage || null,
+    main_frame_croped_image: sharedData.mainFrameCropedImage || null,
     ModelImageName: ModelImageName || null,
   };
   await delay(1000);
   await savePdfData(dataToSave, modelGroup);
 }
 
-if (savePdfButton) {
-  savePdfButton.addEventListener("click", async function () {
-    CreatingPdfFile.style.display = "flex";
-    await creatingPDF();
+if (uiManager.elements.savePdfButton) {
+  uiManager.elements.savePdfButton.addEventListener("click", async (event) => {
+    uiManager.elements.CreatingPdfFile.style.display = "flex";
+    try {
+      await creatingPDF();
+    } catch (error) {
+      console.error("Error creating PDF:", error);
+    }
   });
 }
 // ----------------------------------------------------------------------------------------------------------
-if (formSubmition) {
-  formSubmition.addEventListener("click", function () {
+if (uiManager.elements.formSubmition) {
+  uiManager.elements.formSubmition.addEventListener("click", function () {
     formModel.style.display = "flex";
   });
 }
-if (formCloseBtn) {
-  formCloseBtn.addEventListener("click", function () {
+if (uiManager.elements.formCloseBtn) {
+  uiManager.elements.formCloseBtn.addEventListener("click", function () {
     formModel.style.display = "none";
     const form = document.getElementById("FormSubmitionForMonday");
     if (form) {
       form.classList.remove("was-validated");
     }
+    hideLoadingModal();
   });
 }
-if (submitForm) {
-  submitForm.addEventListener("click", function () {
+if (uiManager.elements.submitForm) {
+  uiManager.elements.submitForm.addEventListener("click", function () {
     showLoadingModal("Please wait...");
     const form = document.getElementById("FormSubmitionForMonday");
+    let hasError = false;
+    const specialCharRegex = /[^a-zA-Z0-9\s]/;
+    // Form fields to validate
+    const fieldsToValidate = [
+      {
+        field: document.getElementById("name"),
+        errorMessage:
+          "Name cannot contain special characters like - ' \" ? / > <.",
+      },
+      {
+        field: document.getElementById("companyName"),
+        errorMessage:
+          "Company name cannot contain special characters like - ' \" ? / > <.",
+      },
+    ];
+    // Validate each field
+    fieldsToValidate.forEach(({ field, errorMessage }) => {
+      const invalidFeedback = field.nextElementSibling; // Assuming the invalid-feedback is the next sibling after input
+      const valueText = invalidFeedback.textContent;
+
+      if (specialCharRegex.test(field.value)) {
+        field.classList.add("is-invalid"); // Add is-invalid class
+        invalidFeedback.textContent = errorMessage; // Set the custom error message
+        invalidFeedback.style.display = "block"; // Make sure the error message is visible
+        hasError = true; // Set the error flag
+      } else if (field.value === "") {
+        invalidFeedback.style.display = "block"; // Hide the error message
+      } else {
+        field.classList.remove("is-invalid"); // Remove is-invalid class if valid
+        invalidFeedback.textContent = valueText; // Clear any error message
+        invalidFeedback.style.display = "none"; // Hide the error message
+      }
+    });
+
     if (form) {
       if (!form.checkValidity()) {
         form.classList.add("was-validated");
+      } else if (hasError) {
+        return;
       } else {
         const formBase = document.getElementById("formBase");
         formBase.style.display = "none";
@@ -2585,9 +1912,11 @@ if (submitForm) {
         // Show the modal
         const modal = document.getElementById("confirmationModal");
         modal.style.display = "flex"; // Or use a library method to show
-        
-        document.getElementById("confirModelCloseButtton").onclick = ()=>{
+
+        document.getElementById("confirModelCloseButtton").onclick = () => {
           modal.style.display = "none";
+          formModel.style.display = "none";
+          hideLoadingModal();
         };
 
         // Handle modal buttons
@@ -2606,6 +1935,7 @@ if (submitForm) {
 
         document.getElementById("noButton").onclick = async function () {
           modal.style.display = "none"; // Hide modal
+          formModel.style.display = "none";
           await formSubmitionForMonday();
           hideLoadingModal();
         };
@@ -2614,7 +1944,7 @@ if (submitForm) {
   });
 }
 
-async function formSubmitionForMonday(){  
+async function formSubmitionForMonday() {
   const formForMonday = document.getElementById("FormSubmitionForMonday");
   const formDataForMonday = new FormData(formForMonday);
   try {
@@ -2632,160 +1962,6 @@ async function formSubmitionForMonday(){
 }
 
 // ----------------------------------------------------------------------------------------------------------
-if (zoomInButton) {
-  zoomInButton.addEventListener("click", function () {
-    if (cropper) cropper.zoom(0.1); // Zoom in
-  });
-}
-
-if (zoomOutButton) {
-  zoomOutButton.addEventListener("click", function () {
-    if (cropper) cropper.zoom(-0.1); // Zoom out
-  });
-}
-
-if (moveLeftButton) {
-  moveLeftButton.addEventListener("click", function () {
-    if (cropper) cropper.move(-10, 0); // Move left
-  });
-}
-
-if (moveRightButton) {
-  moveRightButton.addEventListener("click", function () {
-    if (cropper) cropper.move(10, 0); // Move right
-  });
-}
-
-if (moveUpButton) {
-  moveUpButton.addEventListener("click", function () {
-    if (cropper) cropper.move(0, -10); // Move up
-  });
-}
-
-if (moveDownButton) {
-  moveDownButton.addEventListener("click", function () {
-    if (cropper) cropper.move(0, 10); // Move down
-  });
-}
-
-if (rotateLeftButton) {
-  rotateLeftButton.addEventListener("click", function () {
-    if (cropper) cropper.rotate(-15); // Rotate left by 15 degrees
-  });
-}
-
-if (rotateRightButton) {
-  rotateRightButton.addEventListener("click", function () {
-    if (cropper) cropper.rotate(15); // Rotate right by 15 degrees
-  });
-}
-
-if (scaleXButton) {
-  scaleXButton.addEventListener("click", function () {
-    if (cropper) {
-      const currentData = cropper.getData();
-      cropper.setData({
-        ...currentData,
-        scaleX: currentData.scaleX === 1 ? -1 : 1, // Toggle between 1 and -1
-      });
-    }
-  });
-}
-
-if (scaleYButton) {
-  scaleYButton.addEventListener("click", function () {
-    if (cropper) {
-      const currentData = cropper.getData();
-      cropper.setData({
-        ...currentData,
-        scaleY: currentData.scaleY === 1 ? -1 : 1, // Toggle between 1 and -1
-      });
-    }
-  });
-}
-if (resetButton) {
-  resetButton.addEventListener("click", function () {
-    if (cropper) {
-      cropper.reset(); // Reset cropper settings to default
-    }
-  });
-}
-
-// Assuming your accordion has a class or ID you can select
-
-accordionModel.addEventListener("show.bs.collapse", async function (event) {
-  const openAccordionItems = accordionModel.querySelectorAll(
-    ".accordion-collapse.show"
-  );
-  openAccordionItems.forEach((item) => {
-    const bsCollapse = new bootstrap.Collapse(item, {
-      toggle: false, // This will collapse the accordion content
-    });
-    bsCollapse.hide(); // Explicitly hide the open accordion
-  });
-  const openedAccordionItem = event.target.closest(".accordion-item");
-
-  // Find the data-model attribute of the currently open accordion item
-  const modelName = openedAccordionItem.getAttribute("data-model");
-  if (modelName) {
-    params.selectedGroupName = modelName;
-    await otherModelSetup();
-    await showHideNodes(modelGroup, scene, camera);
-  }
-});
-
-// Toggle dropdown visibility with delegation
-document.addEventListener("click", function (event) {
-  // Check if a dropdown button was clicked
-  if (event.target.closest(".dropdown-button")) {
-    const dropdown = event.target.closest(".custom-dropdown");
-    const dropdownContent = dropdown.querySelector(".dropdown-content");
-
-    // Toggle visibility of the clicked dropdown
-    if (dropdownContent) {
-      const isDropdownVisible = dropdownContent.style.display === "block";
-      dropdownContent
-        .querySelectorAll(".custom-dropdown .dropdown-content")
-        .forEach(function (content) {
-          content.style.display = "none"; // Close all dropdowns
-        });
-      dropdownContent.style.display = isDropdownVisible ? "none" : "block"; // Toggle the clicked dropdown
-    }
-  }
-
-  // Check if a dropdown item was clicked
-  if (event.target.closest(".dropdown-item")) {
-    const item = event.target.closest(".dropdown-item");
-    const dropdownType = item
-      .closest(".custom-dropdown")
-      .getAttribute("data-type");
-    const value = item.getAttribute("data-value");
-    const accordion = item.closest(".accordion-item");
-    const selectedModel = accordion.getAttribute("data-model");
-    console.log("selectedModel_pass", selectedModel);
-    // Update material based on the dropdown type and value
-    updateMaterial(value, dropdownType, selectedModel);
-
-    // Hide the dropdown after selection
-    const dropdown = item.closest(".custom-dropdown");
-    const dropdownContent = dropdown.querySelector(".dropdown-content");
-    if (dropdownContent) {
-      dropdownContent.style.display = "none";
-    }
-  }
-});
-
-// Close dropdowns if clicking outside of them
-window.addEventListener("click", function (event) {
-  if (!event.target.closest(".custom-dropdown")) {
-    document
-      .querySelectorAll(".custom-dropdown .dropdown-content")
-      .forEach(function (content) {
-        content.style.display = "none";
-      });
-  }
-});
-
 // Initialize Bootstrap tooltips
 document.addEventListener("DOMContentLoaded", function () {
   var tooltipTriggerList = [].slice.call(
