@@ -5,17 +5,29 @@ import {
   frameMainNames,
   frameTop1Names,
 } from "../../config.js";
-import {getHex} from "../../utils6.js"
-import {closeCropper} from "../../main6.js"
-export async function setMainFrameCropedImage(mainFrameCropedImage, modelGroup) {
+import { getHex } from "../../utils6.js";
+import { UIManager } from "./UIManager.js";
+
+export async function setMainFrameCropedImage(
+  mainFrameCropedImage,
+  modelGroup
+) {
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
-
+  const uiManager = new UIManager();
   if (
     mainFrameCropedImage &&
     mainFrameCropedImage[selectedGroupName] &&
     mainFrameCropedImage[selectedGroupName][defaultModel]
   ) {
+    let main_model = modelGroup.getObjectByName(selectedGroupName);
+    main_model.traverse(async function (child) {
+      if (frameMainNames.includes(child.name)) {
+        child.material = child.material.clone();
+        child.material.color.set(await getHex(params.mainFrameBackgroundColor));
+        child.material.needsUpdate = true;
+      }
+    });
     const mainFrameBackgroundColor = await getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
     );
@@ -50,45 +62,58 @@ export async function setMainFrameCropedImage(mainFrameCropedImage, modelGroup) 
             defaultModel
           );
         });
-        await closeCropper();
+        await uiManager.closeCropper();
       });
     };
-    console.log(mainFrameCropedImage);    
-    console.log(mainFrameCropedImage[selectedGroupName][defaultModel]);    
-    console.log(params.selectedGroupName);    
+    // console.log(mainFrameCropedImage);
+    // console.log(mainFrameCropedImage[selectedGroupName][defaultModel]);
+    // console.log(params.selectedGroupName);
     // Handle any errors during image loading
     img.onerror = function (err) {
       console.error("Image loading failed", err);
     };
   } else {
-    const mainFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].mainFrameBackgroundColor
-    );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
-    main_model.traverse(async function (child) {
-      if (frameMainNames.includes(child.name)) {
-        child.material = child.material.clone();
-        child.material.color.set(mainFrameBackgroundColor);
-        child.material.needsUpdate = true;
-      }
-    });
+    if (modelGroup !== undefined) {
+      const mainFrameBackgroundColor = await getHex(
+        setting[selectedGroupName].mainFrameBackgroundColor
+      );
+      let main_model = modelGroup.getObjectByName(selectedGroupName);
+      main_model.traverse(async function (child) {
+        if (frameMainNames.includes(child.name)) {
+          child.material = child.material.clone();
+          child.material.color.set(mainFrameBackgroundColor);
+          child.material.needsUpdate = true;
+        }
+      });
+    }
   }
 }
 
 export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
+  const uiManager = new UIManager();
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
   let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
-
   if (
     topFrameCropedImage &&
     topFrameCropedImage[selectedGroupName] &&
     topFrameCropedImage[selectedGroupName][defaultModel] &&
     topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]
   ) {
+    let main_model = modelGroup.getObjectByName(selectedGroupName);
+    main_model.traverse(async function (child) {
+      if (frameTop1Names.includes(child.name)) {
+        child.material = child.material.clone();
+        child.material.color.set(await getHex(params.topFrameBackgroundColor));
+        child.material.needsUpdate = true;
+      }
+    });
+    
     const topFrameBackgroundColor = await getHex(
       setting[selectedGroupName].topFrameBackgroundColor
     );
+    console.log("here", topFrameBackgroundColor);
+    
     const tempCanvas = document.createElement("canvas");
     const ctx = tempCanvas.getContext("2d");
 
@@ -106,7 +131,6 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
       // Draw the background color
       ctx.fillStyle = topFrameBackgroundColor;
       ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
       // Draw the cropped image on top
       ctx.drawImage(img, 0, 0);
 
@@ -122,7 +146,7 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
             defaultHeaderSize
           );
         });
-        await closeCropper();
+        await uiManager.closeCropper();
       });
     };
 
@@ -131,17 +155,20 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
       console.error("Image loading failed", err);
     };
   } else {
-    const topFrameBackgroundColor = await getHex(
-      setting[selectedGroupName].topFrameBackgroundColor
-    );
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
-    main_model.traverse(async function (child) {
-      if (frameTop1Names.includes(child.name)) {
-        child.material = child.material.clone();
-        child.material.color.set(topFrameBackgroundColor);
-        child.material.needsUpdate = true;
-      }
-    });
+    if (modelGroup !== undefined) {
+      const topFrameBackgroundColor = await getHex(
+        setting[selectedGroupName].topFrameBackgroundColor
+      );
+      console.log("ffff", topFrameBackgroundColor);
+      let main_model = modelGroup.getObjectByName(selectedGroupName);
+      main_model.traverse(async function (child) {
+        if (frameTop1Names.includes(child.name)) {
+          child.material = child.material.clone();
+          child.material.color.set(topFrameBackgroundColor);
+          child.material.needsUpdate = true;
+        }
+      });
+    }
   }
 }
 
@@ -151,8 +178,8 @@ async function updateMainFrameImageTexture(
   selectedGroupName,
   defaultModel
 ) {
-//   let selectedGroupName = params.selectedGroupName;
-//   let defaultModel = setting[selectedGroupName].defaultModel;
+  //   let selectedGroupName = params.selectedGroupName;
+  //   let defaultModel = setting[selectedGroupName].defaultModel;
   let main_model = modelGroup.getObjectByName(selectedGroupName);
   const currentModel = main_model.getObjectByName(defaultModel);
   const frame = currentModel.getObjectByName("Frame");
@@ -172,7 +199,7 @@ async function updateTopFrameImageTexture(
 ) {
   //   let selectedGroupName = params.selectedGroupName;
   //   let defaultModel = setting[selectedGroupName].defaultModel;
-//   let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
+  //   let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
 
   let main_model = modelGroup.getObjectByName(selectedGroupName);
   const currentModel = main_model.getObjectByName(defaultModel);

@@ -5,7 +5,7 @@ import {
   showHideNodes,
   getHex,
 } from "../../utils6.js";
-import {commonMaterial} from "./materialManager.js"
+import { commonMaterial } from "./materialManager.js";
 import {
   params,
   golfClubNames,
@@ -35,167 +35,172 @@ export async function addHangers(
   lastside = null,
   position = null
 ) {
-  let hangermodel, hanger;
+  if (modelGroup) {
+    let hangermodel, hanger;
 
-  // const loader = new GLTFLoader();
-  if (golfClubNames.includes(hangerType)) {
-    hangermodel = hanger_golf_club_model;
-  } else {
-    hangermodel = hanger_model;
-  }
-  let selectedGroupName = params.selectedGroupName;
-  let defaultModelName = setting[selectedGroupName].defaultModel;
-  let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
-  let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
-  if (hangermodel) {
-    // console.log('hangermodel', hangermodel)
-    // console.log('selectedGroupName', selectedGroupName)
-    // console.log('defaultModelName', defaultModelName)
+    // const loader = new GLTFLoader();
+    if (golfClubNames.includes(hangerType)) {
+      hangermodel = hanger_golf_club_model;
+    } else {
+      hangermodel = hanger_model;
+    }
+    let selectedGroupName = params.selectedGroupName;
+    let defaultModelName = setting[selectedGroupName].defaultModel;
+    let selectedGroupModel = modelGroup.getObjectByName(selectedGroupName);
+    let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
+    if (hangermodel) {
+      // console.log('hangermodel', hangermodel)
+      // console.log('selectedGroupName', selectedGroupName)
+      // console.log('defaultModelName', defaultModelName)
 
-    let hanger_object = hangermodel.getObjectByName(hangerType);
-    if (hanger_object) {
-      hanger = hanger_object.clone();
-      if (hanger) {
-        let frame = defaultModel.getObjectByName("Frame");
-        let side;
-        if (lastside) {
-          side = lastside;
-        } else {
-          side = camera.position.z > 0 ? "Front" : "Back";
-        }
-        let sameSide = false;
-        for (const rackHanger of frame.children) {
-          if (rackNames.includes(rackHanger.name)) {
-            if (side === rackHanger.side) {
-              sameSide = true;
-            }
-          }
-        }
-
-        const hangerPrefix =
-          selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
-        let hangerArrayKey = hangerPrefix + hangerType;
-
-        let conditionFlag = await isHangerAdd(
-          frame,
-          hangermodel,
-          hangerType,
-          params.hangerCount,
-          hangerPrefix
-        );
-
-        // if (!conditionFlag) {
-        // console.log("frame:", frame);
-        // console.log("hangermodel:", hangermodel);
-        // console.log("hangerType:", hangerType);
-        // console.log("params.hangerCount:", params.hangerCount);
-        // console.log("hangerArrayKey:", hangerArrayKey);
-        // console.log("conditionFlag:", conditionFlag);
-        //   // console.log("There is not enough .", frame, hangermodel, hangerType, params.hangerCount, hangerArrayKey, conditionFlag);
-        // }
-
-        // let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
-        let RackShelf =
-          frame.getObjectByName("RackWoodenShelf") ||
-          frame.getObjectByName("RackGlassShelf");
-        // if (!leftSideSlotted || !leftSideSlotted.visible) {
-        if (!RackShelf || !RackShelf.visible || sameSide === false) {
-          if (conditionFlag) {
-            hanger.position.y -= params.cameraPosition;
-            hanger.name = hangerType;
-
-            // Get the bounding box of the frame to find its center
-            const frameBoundingBox = new THREE.Box3().setFromObject(frame);
-            const frameCenter = frameBoundingBox.getCenter(new THREE.Vector3());
-            const frameWidth = frameBoundingBox.max.x - frameBoundingBox.min.x;
-
-            // Get the bounding box of the hanger
-            const hangerBoundingBox = new THREE.Box3().setFromObject(hanger);
-            const hangerCenter = hangerBoundingBox.getCenter(
-              new THREE.Vector3()
-            );
-            const hangerLength =
-              hangerBoundingBox.max.z - hangerBoundingBox.min.z;
-
-            hanger.localToWorld(hangerBoundingBox.min);
-            hanger.localToWorld(hangerBoundingBox.max);
-
-            let removeHangerIcon = await getRemoveIcon(
-              `removeHanger-${hangerType}`
-            );
-
-            // if (position) {
-            //   hanger.position.x = frameCenter.x + position.x
-            // }
-            // else {
-            //   hanger.position.x = frameCenter.x;
-            // }
-            hanger.position.x = frameCenter.x;
-
-            removeHangerIcon.position.set(
-              0, // Offset in world space
-              hangerCenter.y,
-              -hangerLength
-            );
-            // Adjust the hanger position based on the camera's z-axis position
-            if (side == "Front") {
-              hanger.rotation.y = Math.PI;
-              if (
-                golfClubNames.includes(hangerType) ||
-                hangerType == "Hanger_Rail_Step"
-              ) {
-                hanger.position.z =
-                  frame.position.z - hangerBoundingBox.max.z - 40; // Small offset in front of the frame
-              } else {
-                hanger.position.z =
-                  frame.position.z - hangerBoundingBox.max.z / 2; // Small offset in front of the frame
-              }
-              // hanger.position.x = frame.position.x
-            }
-
-            removeHangerIcon.visible = false;
-            hanger.add(removeHangerIcon);
-            frame.attach(hanger);
-
-            // Update removeHanger to always face the camera
-            scene.onBeforeRender = function () {
-              scene.traverse((obj) => {
-                if (obj.name && obj.name.includes("remove")) {
-                  obj.lookAt(camera.position);
-                }
-              });
-            };
-
-            if (position) {
-              hanger.position.x = position.x;
-            }
-
-            params.hangerCount = params.hangerCount || {};
-            params.hangerCount[hangerArrayKey] =
-              params.hangerCount[hangerArrayKey] || 0;
-            params.hangerCount[hangerArrayKey] += 1;
-
-            let count = params.hangerCount[hangerArrayKey];
-            hanger.hangerCount = count;
-            hanger.hangerArrayKey = hangerArrayKey;
-            hanger.side = side;
-
-            // params.hangerAdded = params.hangerAdded || {};
-            // params.hangerAdded[hangerArrayKey] = params.hangerAdded[hangerArrayKey] || {};
-            // params.hangerAdded[hangerArrayKey][count] = hanger.position;
-
-            // console.log('params.hangerCount', params.hangerCount);
-            // console.log('params.hangerAdded', params.hangerAdded);
-
-            await showHideNodes(modelGroup, scene, camera);
+      let hanger_object = hangermodel.getObjectByName(hangerType);
+      if (hanger_object) {
+        hanger = hanger_object.clone();
+        if (hanger) {
+          let frame = defaultModel.getObjectByName("Frame");
+          let side;
+          if (lastside) {
+            side = lastside;
           } else {
-            if (!lastside) {
-              alert("There is not enough space to add this hanger.");
-            }
-            console.log("There is not enough space to add this hanger.");
+            side = camera.position.z > 0 ? "Front" : "Back";
           }
-        } else {
-          // alert('The slotted side is visible; cannot add hanger.');
+          let sameSide = false;
+          for (const rackHanger of frame.children) {
+            if (rackNames.includes(rackHanger.name)) {
+              if (side === rackHanger.side) {
+                sameSide = true;
+              }
+            }
+          }
+
+          const hangerPrefix =
+            selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+          let hangerArrayKey = hangerPrefix + hangerType;
+
+          let conditionFlag = await isHangerAdd(
+            frame,
+            hangermodel,
+            hangerType,
+            params.hangerCount,
+            hangerPrefix
+          );
+
+          // if (!conditionFlag) {
+          // console.log("frame:", frame);
+          // console.log("hangermodel:", hangermodel);
+          // console.log("hangerType:", hangerType);
+          // console.log("params.hangerCount:", params.hangerCount);
+          // console.log("hangerArrayKey:", hangerArrayKey);
+          // console.log("conditionFlag:", conditionFlag);
+          //   // console.log("There is not enough .", frame, hangermodel, hangerType, params.hangerCount, hangerArrayKey, conditionFlag);
+          // }
+
+          // let leftSideSlotted = frame.getObjectByName("Left_Ex_Slotted");
+          let RackShelf =
+            frame.getObjectByName("RackWoodenShelf") ||
+            frame.getObjectByName("RackGlassShelf");
+          // if (!leftSideSlotted || !leftSideSlotted.visible) {
+          if (!RackShelf || !RackShelf.visible || sameSide === false) {
+            if (conditionFlag) {
+              hanger.position.y -= params.cameraPosition;
+              hanger.name = hangerType;
+
+              // Get the bounding box of the frame to find its center
+              const frameBoundingBox = new THREE.Box3().setFromObject(frame);
+              const frameCenter = frameBoundingBox.getCenter(
+                new THREE.Vector3()
+              );
+              const frameWidth =
+                frameBoundingBox.max.x - frameBoundingBox.min.x;
+
+              // Get the bounding box of the hanger
+              const hangerBoundingBox = new THREE.Box3().setFromObject(hanger);
+              const hangerCenter = hangerBoundingBox.getCenter(
+                new THREE.Vector3()
+              );
+              const hangerLength =
+                hangerBoundingBox.max.z - hangerBoundingBox.min.z;
+
+              hanger.localToWorld(hangerBoundingBox.min);
+              hanger.localToWorld(hangerBoundingBox.max);
+
+              let removeHangerIcon = await getRemoveIcon(
+                `removeHanger-${hangerType}`
+              );
+
+              // if (position) {
+              //   hanger.position.x = frameCenter.x + position.x
+              // }
+              // else {
+              //   hanger.position.x = frameCenter.x;
+              // }
+              hanger.position.x = frameCenter.x;
+
+              removeHangerIcon.position.set(
+                0, // Offset in world space
+                hangerCenter.y,
+                -hangerLength
+              );
+              // Adjust the hanger position based on the camera's z-axis position
+              if (side == "Front") {
+                hanger.rotation.y = Math.PI;
+                if (
+                  golfClubNames.includes(hangerType) ||
+                  hangerType == "Hanger_Rail_Step"
+                ) {
+                  hanger.position.z =
+                    frame.position.z - hangerBoundingBox.max.z - 40; // Small offset in front of the frame
+                } else {
+                  hanger.position.z =
+                    frame.position.z - hangerBoundingBox.max.z / 2; // Small offset in front of the frame
+                }
+                // hanger.position.x = frame.position.x
+              }
+
+              removeHangerIcon.visible = false;
+              hanger.add(removeHangerIcon);
+              frame.attach(hanger);
+
+              // Update removeHanger to always face the camera
+              scene.onBeforeRender = function () {
+                scene.traverse((obj) => {
+                  if (obj.name && obj.name.includes("remove")) {
+                    obj.lookAt(camera.position);
+                  }
+                });
+              };
+
+              if (position) {
+                hanger.position.x = position.x;
+              }
+
+              params.hangerCount = params.hangerCount || {};
+              params.hangerCount[hangerArrayKey] =
+                params.hangerCount[hangerArrayKey] || 0;
+              params.hangerCount[hangerArrayKey] += 1;
+
+              let count = params.hangerCount[hangerArrayKey];
+              hanger.hangerCount = count;
+              hanger.hangerArrayKey = hangerArrayKey;
+              hanger.side = side;
+
+              // params.hangerAdded = params.hangerAdded || {};
+              // params.hangerAdded[hangerArrayKey] = params.hangerAdded[hangerArrayKey] || {};
+              // params.hangerAdded[hangerArrayKey][count] = hanger.position;
+
+              // console.log('params.hangerCount', params.hangerCount);
+              // console.log('params.hangerAdded', params.hangerAdded);
+
+              await showHideNodes(modelGroup, scene, camera);
+            } else {
+              if (!lastside) {
+                alert("There is not enough space to add this hanger.");
+              }
+              console.log("There is not enough space to add this hanger.");
+            }
+          } else {
+            // alert('The slotted side is visible; cannot add hanger.');
+          }
         }
       }
     }

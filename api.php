@@ -365,9 +365,47 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     }
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
     $formData = $_REQUEST;
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQyNzEzODgzNiwiYWFpIjoxMSwidWlkIjo2NTM5NTE5NCwiaWFkIjoiMjAyNC0xMC0yM1QxMDo1MjoyNC4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjUxNjk0NjAsInJnbiI6ImFwc2UyIn0.iPmTXidx5TZKajvyDvB1qCZE5_0e5wLBZumtmf7YFAo";
-    $boardId = 1941881809;
-    $itemId = 1941881811;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wOTZaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.2_FqtE-X7ptRGVXKmtlNP77LJUjivi-Y33q6lNn8OxE";
+    $boardId = 1942435428;
+    $itemName = $_SESSION['username'];
+
+    // Escape and encode the item name to safely include it in the GraphQL query
+    $itemName = addslashes($itemName);
+
+    // GraphQL mutation to create a new item
+    $ceateItemMutation = 'mutation {
+        create_item (
+            board_id: ' . $boardId . ',
+            item_name: "' . $itemName . '"
+        ) {
+            id
+        }
+    }';
+
+    // Initialize cURL
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $ceateItemMutation]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    // Execute the request and get the response
+    $createItemResponse = curl_exec($curl);
+    curl_close($curl);
+    $responseForItem = json_decode($createItemResponse, true);
+    $itemId = $responseForItem['data']['create_item']['id'];
+
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => 'https://api.monday.com/v2',
@@ -391,7 +429,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     
     // Decode the response to get the columns
     $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
-    echo "<pre>";print_r($mondayColumns);
+    // echo "<pre>";print_r($mondayColumns);
     // Create an object to store the column values
     $columnValues = [];
 
@@ -407,7 +445,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     }
     // Convert the column values to JSON format
     $columnValuesJson = json_encode($columnValues, JSON_UNESCAPED_SLASHES);
-    print_r($columnValuesJson);
+    // print_r($columnValuesJson);
 
     // Prepare the mutation to update multiple column values
     $mutation = '
@@ -419,7 +457,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             ) { id }
         }
     ';
-    echo "<pre>";print_r($mutation);
+    // echo "<pre>";print_r($mutation);
 
 
     // Initialize curl for the mutation request

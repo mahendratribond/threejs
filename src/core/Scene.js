@@ -18,7 +18,7 @@ export class Scene extends THREE.Scene {
     texture_background.mapping = THREE.EquirectangularReflectionMapping;
     this.background = texture_background;
     this.environment = texture_background;
-    this.lightSetup(lights, lightHelpers);
+    this.lightSetup(lights, lightHelpers);    
   }
 
   clear() {
