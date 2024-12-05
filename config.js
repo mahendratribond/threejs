@@ -21,7 +21,7 @@ export let allGroupModelName = ['main_model'];
 
 // Parameters for Three.js configuration
 export let params = {
-    frameBorderColor: "0xffffff",
+    frameBorderColor: "Walnut.jpg",
     rodFrameColor: "0xffffff",
     baseFrameColor: "0xffffff",
     topFrameBackgroundColor: "0xffffff",
@@ -34,7 +34,7 @@ export let params = {
     defaultRackColor: "0xffffff",
     measurementLineColor: 0x000000,
     measurementTextColor: 0xffffff,
-    frameMaterialType: 'color',
+    frameMaterialType: 'texture',
     shelfMaterialType: 'color',
     exposure: 0.5,
     blurriness: 0.5,

@@ -548,7 +548,8 @@
     {
       "imports": {
         "three": "./three/build/three.module.js",
-        "three/addons/": "./three/examples/jsm/"
+        "three/addons/": "./three/examples/jsm/",
+        "three/add": "./three/examples/jsm/"
       }
     }
   </script>
@@ -575,7 +576,7 @@
       localStorage.removeItem('username');
     }
 
-    checkSession();
+    // checkSession();
 
     document.getElementById("logout").addEventListener("click", function(){
       destroySession();
