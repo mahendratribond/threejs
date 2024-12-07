@@ -286,7 +286,7 @@ export class UIManager {
                 currentHeader,
                 "Header_Graphic1-Mat"
               );
-              console.log("size", size);
+              // console.log("size", size);
 
               cropper = new Cropper(cropperImage, {
                 aspectRatio: size.x / size.y,

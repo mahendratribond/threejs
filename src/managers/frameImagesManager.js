@@ -112,7 +112,7 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
     const topFrameBackgroundColor = await getHex(
       setting[selectedGroupName].topFrameBackgroundColor
     );
-    console.log("here", topFrameBackgroundColor);
+    // console.log("here", topFrameBackgroundColor);
     
     const tempCanvas = document.createElement("canvas");
     const ctx = tempCanvas.getContext("2d");

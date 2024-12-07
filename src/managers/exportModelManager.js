@@ -1,19 +1,15 @@
 import * as THREE from "three";
 import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { SimplifyModifier } from "three/addons/modifiers/SimplifyModifier.js";
-import { traverseAsync } from "../../utils6.js";
 async function saveModel(blob, filename) {
   if (blob) {
     await saveArrayBuffer(blob, filename); // Save the file only if blob is not null
   }
 }
-
 async function exportGLB(clone, name) {
   const gltfExporter = new GLTFExporter();
-  // Define the export options
+
   const options = {
-    // Mesh compression options
     compressed: true, // Enable mesh compression
     bufferStreamed: true, // Stream the buffer data
     compressMaterials: true, // Compress materials
@@ -36,43 +32,37 @@ async function exportGLB(clone, name) {
   };
   const result = await gltfExporter.parseAsync(clone, options);
   const blob = new Blob([result], { type: "application/octet-stream" });
-  // const modellink = document.createElement("a");
-  // modellink.href = URL.createObjectURL(blob);
-  // modellink.download = name + ".glb";
-  // modellink.click();
-  await saveModel(blob, `${name}.glb`);
+  const modellink = document.createElement("a");
+  modellink.href = URL.createObjectURL(blob);
+  modellink.download = name + ".glb";
+  modellink.click();
+  // await saveModel(blob, `${name}.glb`);
 }
 
 async function exportUSDZ(clone, name) {
   convertToStandardMaterial(clone);
-  // reduceModelPolygons(clone, 0.5);
+  await optimizeTexturesForUSDZ(clone);
+  optimizeGeometry(clone, {
+    minVertices: 1000,
+    positionPrecision: 100, // 3 decimal places
+    normalPrecision: 100, // 2 decimal places
+  });
+
   const usdzExporter = new USDZExporter();
   const result = await usdzExporter.parse(clone, {
-    textureCompressionQuality: 0.1,
+    textureCompressionQuality: 0.5,
     maxTextureSize: 512,
     compressGeometry: true,
-    flipY: false, // Important for USDZ
+    compressMaterials: true,
+    binary: true,
+    flipY: false,
   });
   const blob = new Blob([result], { type: "application/octet-stream" });
-  await saveModel(blob, `${name}.usdz`);
-}
-
-async function removeInvisibleChildren(object) {
-  // Iterate over each child of the current object
-  for (let i = 0; i < object.children.length; i++) {
-    const child = object.children[i];
-
-    // Recursively check and remove invisible children
-    if (child.children.length > 0) {
-      removeInvisibleChildren(child);
-    }
-
-    // If child is invisible, remove it
-    if (child.visible === false) {
-      object.remove(child);
-      i--; // Adjust the index after removal
-    }
-  }
+  const modellink = document.createElement("a");
+  modellink.href = URL.createObjectURL(blob);
+  modellink.download = name + ".usdz";
+  modellink.click();
+  // await saveModel(blob, `${name}.usdz`);
 }
 
 function removeSimilarMaterials(scene) {
@@ -111,16 +101,16 @@ function getOrCreateUniqueMaterial(material, materialMap) {
 function createMaterialKey(material) {
   const colorKey = material.color ? material.color.getHexString() : "no_color";
   const mapKey = material.map ? material.map.uuid : "no_map";
-  const textureKey = material.map && material.map.image ? material.map.image.src : "no_texture";
+  const textureKey =
+    material.map && material.map.image ? material.map.image.src : "no_texture";
 
-  console.log("material.name ",material.name);
-  console.log("material.uuid ",material.uuid);
+  console.log("material.name ", material.name);
+  console.log("material.uuid ", material.uuid);
   console.log(`${colorKey}_${mapKey}_${textureKey}`);
-  
+
   // Combine properties into a unique string
   return `${colorKey}_${mapKey}_${textureKey}`;
 }
-
 
 function deduplicateMaterials(model) {
   // Map to store unique materials based on texture source
@@ -153,14 +143,13 @@ function deduplicateMaterials(model) {
       });
     }
   });
-  console.log("uniqueMaterials ",uniqueMaterials);
-  console.log("materialMap ",materialMap);
-  
+  console.log("uniqueMaterials ", uniqueMaterials);
+  console.log("materialMap ", materialMap);
 
   // Second pass: replace materials with deduplicated versions
   model.traverse((node) => {
     if (node.isMesh && node.material) {
-      if (Array.isArray(node.material)) {        
+      if (Array.isArray(node.material)) {
         // Handle multi-material objects
         node.material = node.material.map((mat) => materialMap.get(mat) || mat);
       } else {
@@ -183,117 +172,12 @@ function deduplicateMaterials(model) {
   return model;
 }
 
-function deduplicateMaterialsUniqueKey(model) {
-  // Map to store unique materials based on ID
-  const uniqueMaterials = new Map();
-  // Map to store all materials by their properties for deduplication
-  const materialsByProps = new Map();
-
-  // First pass: collect all materials and their properties
-  model.traverse((node) => {
-    if (node.isMesh && node.material) {
-      const materials = Array.isArray(node.material)
-        ? node.material
-        : [node.material];
-
-      materials.forEach((material) => {
-        // Check if we've already seen this material ID
-        if (!uniqueMaterials.has(material.id)) {
-          // Create a key based on material properties
-          const textureKey = material.map ? material.map.uuid : "no-texture";
-          const materialKey = `${textureKey}_${material.type}`;
-
-          // If we've seen these properties before, use the existing material
-          if (materialsByProps.has(materialKey)) {
-            uniqueMaterials.set(material.id, materialsByProps.get(materialKey));
-          } else {
-            // This is a new unique material
-            materialsByProps.set(materialKey, material);
-            uniqueMaterials.set(material.id, material);
-          }
-        }
-      });
-    }
-  });
-
-  // Second pass: replace materials
-  model.traverse((node) => {
-    if (node.isMesh && node.material) {
-      if (Array.isArray(node.material)) {
-        node.material = node.material.map(
-          (mat) => uniqueMaterials.get(mat.id) || mat
-        );
-      } else {
-        node.material = uniqueMaterials.get(node.material.id) || node.material;
-      }
-    }
-  });
-
-  // Log the results
-  // console.log("Original unique material IDs:", [...uniqueMaterials.keys()]);
-  // console.log("Deduplicated to unique materials:", materialsByProps.size);
-
-  // Return map of unique materials for verification
-  return {
-    model,
-    uniqueMaterials: materialsByProps,
-    materialMapping: uniqueMaterials,
-  };
-}
-
-
-
-
-function reduceModelPolygons(model, reductionRatio = 0.5) {
-  const modifier = new SimplifyModifier();
-
-  model.traverse((node) => {
-    if (node.isMesh) {
-      const originalGeometry = node.geometry;
-
-      // Calculate target number of vertices
-      const currentVertices = originalGeometry.attributes.position.count;
-      const targetVertices = Math.floor(currentVertices * reductionRatio);
-
-      try {
-        // Apply simplification
-        const simplified = modifier.modify(originalGeometry, targetVertices);
-        node.geometry = simplified;
-
-        console.log(
-          `Reduced vertices from ${currentVertices} to ${targetVertices}`
-        );
-      } catch (error) {
-        console.error("Error simplifying geometry:", error);
-      }
-    }
-  });
-}
-
-
 export async function exportModelForAr(model, name, isQr = false) {
   const clone = model.clone();
-  console.log(clone);
-  console.log("+================================================================");
+
   deduplicateMaterials(clone);
   removeSimilarMaterials(clone);
-  // deduplicateMaterialsUniqueKey(clone);
-  console.log("+================================================================");
-  // {
-  //   let meshCounter = 0; // Initialize counter
 
-  //   clone.traverse((object) => {
-  //     if (object.isMesh) {
-  //       meshCounter++; // Increment counter for each mesh
-  //       const material = object.material;
-  //       console.log(material);
-  //     }
-  //   });
-
-  //   console.log(`Total meshes processed: ${meshCounter}`);
-  // }
-  // removeSimilarMaterials(clone);
-  // Scale the clone model proportionally
   const box = new THREE.Box3().setFromObject(clone);
   const size = new THREE.Vector3();
   box.getSize(size);
@@ -306,13 +190,13 @@ export async function exportModelForAr(model, name, isQr = false) {
     navigator.userAgent || navigator.vendor || window.opera
   );
   if (isQr) {
-    await exportUSDZ(clone, name); // Export USDZ for iOS devices
-    await exportGLB(clone, name); // Export only GLB for other devices
+    await exportUSDZ(clone.clone(), name); // Export USDZ for iOS devices
+    await exportGLB(clone.clone(), name); // Export only GLB for other devices
   } else {
     if (isIOS) {
-      await exportUSDZ(clone, name); // Export USDZ for iOS devices
+      await exportUSDZ(clone.clone(), name); // Export USDZ for iOS devices
     } else {
-      await exportGLB(clone, name); // Export only GLB for other devices
+      await exportGLB(clone.clone(), name); // Export only GLB for other devices
     }
   }
 }
@@ -360,6 +244,111 @@ function convertToStandardMaterial(object) {
         child.material.needsUpdate = true;
 
         // console.log(`Material converted for mesh: ${child.name}`);
+      }
+    }
+  });
+}
+
+//////////////
+
+async function optimizeTexturesForUSDZ(model) {
+  model.traverse((node) => {
+    if (node.isMesh && node.material) {
+      if (node.material.map) {
+        // Force power-of-two textures
+        const texture = node.material.map;
+        texture.minFilter = THREE.LinearFilter;
+        texture.maxFilter = THREE.LinearFilter;
+
+        // Aggressively limit texture size
+        const maxSize = 32; // Xcode often uses efficient sizes
+        if (
+          texture.image &&
+          (texture.image.width > maxSize || texture.image.height > maxSize)
+        ) {
+          const scale =
+            maxSize / Math.max(texture.image.width, texture.image.height);
+          texture.image.width *= scale;
+          texture.image.height *= scale;
+        }
+      }
+
+      // Remove unnecessary maps
+      node.material.roughnessMap = null;
+      node.material.metalnessMap = null;
+      node.material.normalMap = null;
+      node.material.aoMap = null;
+    }
+  });
+}
+
+function optimizeTexturesForGLB(model) {
+  model.traverse((node) => {
+    if (node.isMesh && node.material) {
+      if (node.material.map) {
+        // Force power-of-two textures
+        const texture = node.material.map;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+
+        // Aggressively limit texture size
+        const maxSize = 256; // Adjust the maximum texture size as needed
+        if (
+          texture.image &&
+          (texture.image.width > maxSize || texture.image.height > maxSize)
+        ) {
+          const scale =
+            maxSize / Math.max(texture.image.width, texture.image.height);
+          texture.image.width *= scale;
+          texture.image.height *= scale;
+        }
+
+        // Remove unnecessary maps
+        node.material.roughnessMap = null;
+        node.material.metalnessMap = null;
+        node.material.normalMap = null;
+        node.material.aoMap = null;
+      }
+    }
+  });
+}
+
+function optimizeGeometry(model, options = {}) {
+  const {
+    minVertices = 1000, // Only optimize geometries with more than this many vertices
+    positionPrecision = 1000, // 3 decimal places
+    normalPrecision = 100, // 2 decimal places
+  } = options;
+
+  model.traverse((node) => {
+    if (node.isMesh) {
+      const geometry = node.geometry;
+
+      // Only optimize larger geometries
+      if (geometry.attributes.position.count > minVertices) {
+        const positions = geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i++) {
+          positions[i] =
+            Math.round(positions[i] * positionPrecision) / positionPrecision;
+        }
+
+        if (geometry.attributes.normal) {
+          const normals = geometry.attributes.normal.array;
+          for (let i = 0; i < normals.length; i++) {
+            normals[i] =
+              Math.round(normals[i] * normalPrecision) / normalPrecision;
+          }
+        }
+
+        // Remove unused attributes
+        if (geometry.attributes.uv2) geometry.deleteAttribute("uv2");
+        if (geometry.attributes.tangent) geometry.deleteAttribute("tangent");
+
+        // Update attributes
+        geometry.attributes.position.needsUpdate = true;
+        if (geometry.attributes.normal) {
+          geometry.attributes.normal.needsUpdate = true;
+        }
       }
     }
   });

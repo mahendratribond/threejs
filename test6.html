@@ -558,6 +558,19 @@
   <script src="assets/plugins/bootstrap/js/bootstrap.min.js" defer></script>
   <script src="assets/plugins/cropperjs/cropper.min.js" defer></script>
   <script>
+    window.onload = function () {
+      fetch('api.php')
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            console.log('Deleted files:', data.deletedFiles);
+          } else {
+          }
+        })
+        .catch(error => console.error('Fetch error:', error));
+    };
+  </script>
+  <script>
     function checkSession() {
       const userId = localStorage.getItem('user_id');
       const username = localStorage.getItem('username');

@@ -2499,7 +2499,7 @@ async function getModelMeasurement(
 }
 
 async function getComponentSize(model, modelComponentsData) {
-  console.log(model);
+  // console.log(model);
 
   const setModelSize = (child, size) => {
     modelComponentsData[child.name] = size;

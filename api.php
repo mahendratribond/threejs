@@ -4,10 +4,50 @@ set_time_limit(0);
  
 require_once 'connection.php';
 require_once __DIR__ . '/vendor/autoload.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 // Start session
 session_start();
+
+if (!function_exists('deleteOldMedia')) {
+    function deleteOldMedia(){
+        // Define the path to the temporary files directory
+        $arr = ["/export_models","/screenshots","/images","/uploads"];
+        for ($i = 0; $i<count($arr); $i++) { 
+            $path = __DIR__ . $arr[$i]; // Replace with the actual path
+            if (is_dir($path)) {
+                // Get the timestamp for 30 minutes ago
+                $tenDaysAgo = strtotime('-10 days');
+                
+                // Get all files in the directory
+                $files = scandir($path);
+                foreach ($files as $file) {
+                    // Skip special directories '.' and '..'
+                    if ($file === '.' || $file === '..') {
+                        continue;
+                    }
+
+                    $filePath = $path . DIRECTORY_SEPARATOR . $file;
+
+                    // Ensure it is a file and not a directory
+                    if (is_file($filePath)) {
+                        // Get the file's last modified time
+                        $fileLastModified = filemtime($filePath);
+
+                        // Delete if the file was modified more than 30 minutes ago
+                        if ($fileLastModified < $tenDaysAgo) {
+                            unlink($filePath);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    deleteOldMedia();
+}
 
 // Get JSON data from request
 $data = json_decode(file_get_contents("php://input"), true); // Decode JSON input
@@ -200,19 +240,28 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } else if (isset($data['image']) && isset($data['filename'])) {
     $imageData = $data['image'];
     $filename = basename($data['filename']); // Use basename to prevent directory traversal attacks
-    $base64Image = explode(',', $imageData)[1];
+    // $base64Image = explode(',', $imageData)[1];
 
-    // Decode the image data
-    $decodedImage = base64_decode($base64Image);
+    // // Decode the image data
+    // $decodedImage = base64_decode($base64Image);
 
     // Save the image to the server
     $savePath = "./screenshots/". $filename; // Save to "screenshots" directory
-    if (file_put_contents($savePath, $decodedImage)) {
-        echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $savePath]);
+    $result = compressImage($imageData, $savePath);
+    
+    if ($result) {
+        echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $result]);
         exit;
     } else {
         echo json_encode(["success" => false, "error" => "Failed to save screenshot"]);
     }
+
+    // if (file_put_contents($savePath, $decodedImage)) {
+    //     echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $savePath]);
+    //     exit;
+    // } else {
+    //     echo json_encode(["success" => false, "error" => "Failed to save screenshot"]);
+    // }
 } else if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'saveModelFile') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         $targetDir = './export_models/'; // Set the desired directory
@@ -291,12 +340,20 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
 
 } else if (!empty($data['action']) && $data['action'] == 'create_qr_code') {
-    // Detect the current host and scheme
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    // Get the protocol (http or https)
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
+
+    // Get the host (e.g., biginstore.net)
     $host = $_SERVER['HTTP_HOST'];
-    // Define base URLs
+
+    // Get the current script's directory
+    $directory = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+
+    // Construct the dynamic URL
     $localUrl = "http://192.168.0.173/three-model";
-    $liveUrl = "https://biginstore.net/3d_frame_maker";
+    $liveUrl = "$protocol://$host$directory";
+    // Define base URLs
+    // $liveUrl = "https://biginstore.net/3d_frame_maker";
 
     // Determine if the server is local or live
     if ($host === '192.168.0.173' || strpos($host, 'localhost') !== false) {
@@ -335,10 +392,10 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $base64Image = $_REQUEST['modelCropImage'];
 
     // Extract the image data from the Base64 string (it may include the data URL prefix, so we remove it)
-    $modelCropImage = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
+    // $modelCropImage = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
     
     // Define the folder where the images will be saved (ensure this folder is writable)
-    $targetDir = 'images/modelCropImage/';
+    $targetDir = 'images/';
     
     // Ensure the target directory exists
     if (!file_exists($targetDir)) {
@@ -348,21 +405,32 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Create a unique file name (for example, using a timestamp or UUID)
     $fileName = 'image_' . time() . '.png';
     $filePath = $targetDir . $fileName;
+    $result = compressImage($base64Image, $filePath);
     
     // Save the image to the server
-    if (file_put_contents($filePath, $modelCropImage)) {
-        // Return the URL of the saved image
-        $imageUrl = $targetDir . $fileName; // Relative URL path
+    // if (file_put_contents($filePath, $modelCropImage)) {
+    //     // Return the URL of the saved image
+    //     $imageUrl = $targetDir . $fileName; // Relative URL path
 
-        // Respond with success and the image URL
+    //     // Respond with success and the image URL
+    //     echo json_encode([
+    //         'success' => true,
+    //         'imageUrl' => $imageUrl
+    //     ]);
+    // } else {
+    //     // If there's an error saving the image
+    //     echo json_encode(['success' => false, 'message' => 'Error saving image']);
+    // }
+
+    if ($result) {
         echo json_encode([
             'success' => true,
-            'imageUrl' => $imageUrl
+            'imageUrl' => $filePath
         ]);
     } else {
-        // If there's an error saving the image
         echo json_encode(['success' => false, 'message' => 'Error saving image']);
     }
+
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
     $formData = $_REQUEST;
     $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wOTZaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.2_FqtE-X7ptRGVXKmtlNP77LJUjivi-Y33q6lNn8OxE";
@@ -481,6 +549,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Execute the request to update the column values
     $response = curl_exec($curl);
     curl_close($curl);
+    sendEmailToUser($_REQUEST);
     echo json_encode($response);
     exit;
 } else {
@@ -488,3 +557,99 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 }
 
 $conn->close();
+
+function compressImage($source, $destination, $quality = 60) {
+    // Check if the source is a Base64 string or a file path
+    if (strpos($source, 'data:image/') === 0) {
+        // Base64 string: Extract the actual image data and decode it
+        $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $source));
+        // Create an image from the decoded data
+        $image = imagecreatefromstring($imageData);
+    } else {
+        // Regular file path: Get image info
+        $info = getimagesize($source);
+        if (!$info) {
+            return "Unsupported file type or invalid image.";
+        }
+
+        // Create an image from the file
+        $mime = $info['mime'];
+        switch ($mime) {
+            case 'image/jpeg':
+                $image = imagecreatefromjpeg($source);
+                break;
+            case 'image/png':
+                $image = imagecreatefrompng($source);
+                imagealphablending($image, false); // Disable alpha blending
+                imagesavealpha($image, true); // Save alpha channel
+                break;
+            case 'image/gif':
+                $image = imagecreatefromgif($source);
+                break;
+            default:
+                return "Unsupported image format: " . $mime;
+        }
+    }
+
+    // Compress and save the image based on the MIME type
+    $info = getimagesize($source);  // For MIME type checking
+    $mime = $info['mime'];
+    list($width, $height, $type) = getimagesize($source); 
+    switch ($mime) {
+        case 'image/jpeg':
+            imagejpeg($image, $destination, $quality);
+            break;
+
+        case 'image/png':
+            $resized_image = imagecreatetruecolor($width, $height);
+            $whiteBackground = imagecolorallocate($resized_image, 255, 255, 255); 
+            // imagecolortransparent($resized_image, $whiteBackground);
+            imagefill($resized_image,0,0,$whiteBackground);
+            @imagecopyresampled($resized_image, $image, 0, 0, 0, 0, $width, $height, $width, $height); 
+            imagealphablending($image, false); // Disable alpha blending
+            imagesavealpha($image, true); // Save the alpha channel (transparency)
+            $pngQuality = 9 - floor($quality / 10);  // Convert JPEG quality (0-100) to PNG compression level (0-9)
+            imagepng($image, $destination, $pngQuality);
+            break;
+
+        case 'image/gif':
+            imagegif($image, $destination);
+            break;
+
+        default:
+            return "Unsupported image format: " . $mime;
+    }
+
+    // Free up memory
+    imagedestroy($image);
+
+    return $destination;
+}
+
+function sendEmailToUser($data){
+    $mail = new PHPMailer(true); 
+    try {
+        // Server settings
+        $mail->isSMTP();  // Set mailer to use SMTP
+        $mail->Host = 'smtp.gmail.com';  // Set the SMTP server
+        $mail->SMTPAuth = true;  // Enable SMTP authentication
+        $mail->Username = 'tempacchj@gmail.com';  // SMTP username
+        $mail->Password = 'daiwfndhrzwzjggk';  // SMTP password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;  // Enable TLS encryption
+        $mail->Port = 587;  // TCP port for TLS
+
+        // Recipients
+        $mail->setFrom('tempacchj@gmail.com', 'biginstore');
+        $mail->addAddress($data['email'], $data['name']);  // Add a recipient
+
+        // Content
+        $mail->isHTML(true);  // Set email format to HTML
+        $mail->Subject = 'biginStore';
+        $mail->Body = "This is test email from biginStore";
+
+
+        $mail->send();
+    } catch (Exception $e) {
+        echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+    }
+}
