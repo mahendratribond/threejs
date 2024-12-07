@@ -36,7 +36,7 @@ async function exportGLB(clone, name) {
   modellink.href = URL.createObjectURL(blob);
   modellink.download = name + ".glb";
   modellink.click();
-  // await saveModel(blob, `${name}.glb`);
+  await saveModel(blob, `${name}.glb`);
 }
 
 async function exportUSDZ(clone, name) {
@@ -62,7 +62,7 @@ async function exportUSDZ(clone, name) {
   modellink.href = URL.createObjectURL(blob);
   modellink.download = name + ".usdz";
   modellink.click();
-  // await saveModel(blob, `${name}.usdz`);
+  await saveModel(blob, `${name}.usdz`);
 }
 
 function removeSimilarMaterials(scene) {
