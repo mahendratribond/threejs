@@ -189,29 +189,16 @@ async function init() {
     sharedParams.camera.position.set(2000, 1000, 2000);
     sharedParams.controls = new Controls(sharedParams.camera, sharedParams.renderer.domElement);
 
-  modelGroup = new THREE.Group();
-  scene.add(modelGroup);
+  sharedParams.modelGroup = new THREE.Group();
+  sharedParams.scene.add(sharedParams.modelGroup);
 
-  // controls.addEventListener('change', () => {
-  //   // Calculate and print the camera's position relative to the model
-  //   const cameraPosition = camera.position.clone(); // Get a copy of the camera's position
-  //   const modelPosition = modelGroup.position.clone(); // Get a copy of the model's position
-  //   const relativePosition = cameraPosition.sub(modelPosition);
-
-  //   // console.log('Camera Position:', camera.position); // Print camera position
-  //   // console.log('Relative Position (from model to camera):', relativePosition); // Print relative position
-
-  //   // Render the scene (only needed if you are not using a continuous loop)
-  //   renderer.render(scene, camera);
-  // });
-
-  main_model = await loadGLTFModel(params.defaultModel + ".glb");
+  let main_model = await loadGLTFModel(params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
-  modelGroup.add(main_model);
-  await showHideNodes(modelGroup, scene, camera);
+  sharedParams.modelGroup.add(main_model);
+  await showHideNodes();
   await loadHangerModels();
-  modelGroup.name = "main_group";
+  sharedParams.modelGroup.name = "main_group";
 
     for (let val of allModelNames) {
         let model_name = val + ".glb";
