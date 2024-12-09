@@ -575,8 +575,19 @@
       const userId = localStorage.getItem('user_id');
       const username = localStorage.getItem('username');
 
+
       if (userId && username) {
         console.log("User is logged in:", { username });
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("userId", userId);
+        formData.append("action", "setSessionData");
+        window.onload = function () {
+          fetch('api.php',{
+            method: "POST",
+            body: formData,
+          })
+        };
       } else {
         window.location.href = "login.html";
       }

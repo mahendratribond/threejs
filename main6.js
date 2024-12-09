@@ -282,19 +282,6 @@ async function init() {
   modelGroup = new THREE.Group();
   scene.add(modelGroup);
 
-  // controls.addEventListener('change', () => {
-  //   // Calculate and print the camera's position relative to the model
-  //   const cameraPosition = camera.position.clone(); // Get a copy of the camera's position
-  //   const modelPosition = modelGroup.position.clone(); // Get a copy of the model's position
-  //   const relativePosition = cameraPosition.sub(modelPosition);
-
-  //   // console.log('Camera Position:', camera.position); // Print camera position
-  //   // console.log('Relative Position (from model to camera):', relativePosition); // Print relative position
-
-  //   // Render the scene (only needed if you are not using a continuous loop)
-  //   renderer.render(scene, camera);
-  // });
-
   main_model = await loadGLTFModel(params.defaultModel + ".glb");
   main_model.name = params.selectedGroupName;
   await setupMainModel(main_model);
@@ -1760,31 +1747,159 @@ async function generateArModel() {
   // Check if the file exists
   if (await checkFileExists(exportedModelFileUrl)) {
     hideLoadingModal();
+    await showARModel(exportedModelFileUrl);
     // Configure model viewer attributes
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (/iPhone|iPad|iPod/.test(userAgent)) {
-      let ViewArForIos = document.getElementById("ViewArForIos");
-      ViewArForIos.style.display = "block";
-      ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-      ViewArForIos.click();
-    } else if (/Android/.test(userAgent)) {
-      // Create or update the AR viewer
-      const modelViewer = document.getElementById("modelViewer");
-      let ArViewer = document.getElementById("ArView");
-      ArViewer.style.display = "block";
-      modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-      modelViewer.setAttribute("ar-modes", "scene-viewer");
-      modelViewer.addEventListener("load", () => {
-        modelViewer.enterAR();
-      });
-    } else {
-      alert("This feature is only supported on iOS and Android devices.");
-    }
+    // const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    // if (/iPhone|iPad|iPod/.test(userAgent)) {
+    //   let ViewArForIos = document.getElementById("ViewArForIos");
+    //   ViewArForIos.style.display = "block";
+    //   ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+    //   ViewArForIos.click();
+    // } else if (/Android/.test(userAgent)) {
+    //   // Create or update the AR viewer
+    //   const modelViewer = document.getElementById("modelViewer");
+    //   let ArViewer = document.getElementById("ArView");
+    //   ArViewer.style.display = "block";
+    //   modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+    //   modelViewer.setAttribute("ar-modes", "scene-viewer");
+    //   modelViewer.addEventListener("load", () => {
+    //     modelViewer.enterAR();
+    //   });
+    // } else {
+    //   alert("This feature is only supported on iOS and Android devices.");
+    // }
   } else {
     console.error("File was not found within the expected time.");
     hideLoadingModal();
   }
 }
+async function showARModel(exportedModelFileUrl) {
+  const userAgent = navigator.userAgent;
+
+  // Create loading screen elements
+  const loadingScreen = document.createElement("div");
+  loadingScreen.className = "ar-loading-screen";
+
+  const spinner = document.createElement("div");
+  spinner.className = "ar-loading-spinner";
+
+  const progressBar = document.createElement("div");
+  progressBar.className = "ar-progress-bar";
+
+  const progressFill = document.createElement("div");
+  progressFill.className = "ar-progress-fill";
+
+  const loadingText = document.createElement("div");
+  loadingText.className = "ar-loading-text";
+  loadingText.textContent = "Preparing AR Experience...";
+
+  progressBar.appendChild(progressFill);
+  loadingScreen.appendChild(spinner);
+  loadingScreen.appendChild(progressBar);
+  loadingScreen.appendChild(loadingText);
+  document.body.appendChild(loadingScreen);
+
+  // Function to update progress
+  function updateProgress(percent) {
+    progressFill.style.width = `${percent}%`;
+    loadingText.textContent = `Loading AR Model: ${Math.round(percent)}%`;
+  }
+
+  // Function to remove loading screen
+  function removeLoadingScreen() {
+    loadingScreen.remove();
+  }
+
+  if (/iPhone|iPad|iPod/.test(userAgent)) {
+    // For iOS devices
+    fetch(`${exportedModelFileUrl}.usdz`)
+      .then((response) => {
+        const reader = response.body.getReader();
+        const contentLength = +response.headers.get("Content-Length");
+        let receivedLength = 0;
+
+        return new ReadableStream({
+          start(controller) {
+            function push() {
+              reader.read().then(({ done, value }) => {
+                if (done) {
+                  controller.close();
+                  return;
+                }
+                receivedLength += value.length;
+                const progress = (receivedLength / contentLength) * 100;
+                updateProgress(progress);
+                controller.enqueue(value);
+                push();
+              });
+            }
+            push();
+          },
+        });
+      })
+      .then(() => {
+        let ViewArForIos = document.getElementById("ViewArForIos");
+        ViewArForIos.style.display = "block";
+        ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+        ViewArForIos.click();
+        removeLoadingScreen();
+      })
+      .catch((error) => {
+        loadingText.textContent = "Error loading AR model. Please try again.";
+        console.error("Error:", error);
+        setTimeout(removeLoadingScreen, 2000);
+      });
+  } else if (/Android/.test(userAgent)) {
+    // For Android devices
+    const modelViewer = document.getElementById("modelViewer");
+    let ArViewer = document.getElementById("ArView");
+    // Show loading screen
+    ArViewer.style.display = "block";
+
+    fetch(`${exportedModelFileUrl}.glb`)
+      .then((response) => {
+        const reader = response.body.getReader();
+        const contentLength = +response.headers.get("Content-Length");
+        let receivedLength = 0;
+
+        return new ReadableStream({
+          start(controller) {
+            function push() {
+              reader.read().then(({ done, value }) => {
+                if (done) {
+                  controller.close();
+                  return;
+                }
+                receivedLength += value.length;
+                const progress = (receivedLength / contentLength) * 100;
+                updateProgress(progress);
+                controller.enqueue(value);
+                push();
+              });
+            }
+            push();
+          },
+        });
+      })
+      .then(() => {
+        modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+        modelViewer.setAttribute("ar-modes", "scene-viewer");
+        modelViewer.addEventListener("load", () => {
+          removeLoadingScreen();
+          modelViewer.enterAR();
+        });
+      })
+      .catch((error) => {
+        loadingText.textContent = "Error loading AR model. Please try again.";
+        console.error("Error:", error);
+        setTimeout(removeLoadingScreen, 2000);
+      });
+  } else {
+    removeLoadingScreen();
+    alert("This feature is only supported on iOS and Android devices.");
+  }
+}
+
 if (uiManager.elements.showInAR) {
   uiManager.elements.showInAR.addEventListener("click", async function () {
     showLoadingModal("Please wait... we are creating your AR model file");

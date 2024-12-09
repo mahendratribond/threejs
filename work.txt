@@ -5,6 +5,8 @@ SSH Port = 22
 path: cd /var/www/html/biginstore.net/frame-demo
 
 ssh -i /Applications/Code/ppk/beginstore.pem staging-big@3.8.249.69
+ssh -i "C:\Users\balaji\Downloads/beginstore.pem" staging-big@3.8.249.69
+
 
 puttygen /Applications/Code/ppk/beginstore.ppk -O private-openssh -o /Applications/Code/ppk/beginstore.pem
 chmod 600 /Applications/Code/ppk/beginstore.pem

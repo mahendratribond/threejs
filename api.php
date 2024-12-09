@@ -552,6 +552,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     sendEmailToUser($_REQUEST);
     echo json_encode($response);
     exit;
+} else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'setSessionData'){
+    $_SESSION['user_id'] = $_REQUEST['userId'];
+    $_SESSION['username'] = $_REQUEST['username'];
 } else {
     echo json_encode("No Action Found"); // No action found    
 }

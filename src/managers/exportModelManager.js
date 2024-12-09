@@ -32,10 +32,10 @@ async function exportGLB(clone, name) {
   };
   const result = await gltfExporter.parseAsync(clone, options);
   const blob = new Blob([result], { type: "application/octet-stream" });
-  const modellink = document.createElement("a");
-  modellink.href = URL.createObjectURL(blob);
-  modellink.download = name + ".glb";
-  modellink.click();
+  // const modellink = document.createElement("a");
+  // modellink.href = URL.createObjectURL(blob);
+  // modellink.download = name + ".glb";
+  // modellink.click();
   await saveModel(blob, `${name}.glb`);
 }
 
@@ -58,10 +58,10 @@ async function exportUSDZ(clone, name) {
     flipY: false,
   });
   const blob = new Blob([result], { type: "application/octet-stream" });
-  const modellink = document.createElement("a");
-  modellink.href = URL.createObjectURL(blob);
-  modellink.download = name + ".usdz";
-  modellink.click();
+  // const modellink = document.createElement("a");
+  // modellink.href = URL.createObjectURL(blob);
+  // modellink.download = name + ".usdz";
+  // modellink.click();
   await saveModel(blob, `${name}.usdz`);
 }
 
