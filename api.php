@@ -1,7 +1,7 @@
 <?php
 ini_set('memory_limit', '-1');
 set_time_limit(0);
- 
+
 require_once 'connection.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -16,12 +16,12 @@ if (!function_exists('deleteOldMedia')) {
     function deleteOldMedia(){
         // Define the path to the temporary files directory
         $arr = ["/export_models","/screenshots","/images","/uploads"];
-        for ($i = 0; $i<count($arr); $i++) { 
+        for ($i = 0; $i<count($arr); $i++) {
             $path = __DIR__ . $arr[$i]; // Replace with the actual path
             if (is_dir($path)) {
                 // Get the timestamp for 30 minutes ago
                 $tenDaysAgo = strtotime('-10 days');
-                
+
                 // Get all files in the directory
                 $files = scandir($path);
                 foreach ($files as $file) {
@@ -72,7 +72,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         }
         $data['params']['rackCount'] = $updatedRackCount;
     }
-    
+
     $params = json_encode($data['params'] ?? null);
     $setting = json_encode($data['setting'] ?? null);
     $group_names = json_encode($data['group_names'] ?? null);
@@ -163,7 +163,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // First page HTML content
     ob_start();
-    include './pdfContentFile/pdfFrontpage.html'; // Adjust the path if needed
+    include './pdfContentFile/pdfFirstPage.html'; // Adjust the path if needed
     $firstPageHtml = ob_get_clean();
 
     // Write the first page content
@@ -225,7 +225,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // last page HTML content
     ob_start();
-    include './pdfContentFile/pdflastpage.html'; // Adjust the path if needed
+    include './pdfContentFile/pdfLastPage.html'; // Adjust the path if needed
     $LastPageHtml = ob_get_clean();
 
     // Write the first page content
@@ -248,7 +248,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Save the image to the server
     $savePath = "./screenshots/". $filename; // Save to "screenshots" directory
     $result = compressImage($imageData, $savePath);
-    
+
     if ($result) {
         echo json_encode(["success" => true, "message" => "Screenshot saved successfully", "path" => $result]);
         exit;
@@ -267,7 +267,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         $targetDir = './export_models/'; // Set the desired directory
         $targetFile = $targetDir . basename($_FILES['file']['name']);
         $uploadedSize = $_FILES['file']['size'];
-        
+
         // Check if the directory exists or create it
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
@@ -314,7 +314,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'LoginUser') {
     $email = $_REQUEST['email'];
-    $password = $_REQUEST['password'];    
+    $password = $_REQUEST['password'];
 
     try {
         // Check if the email exists in the database
@@ -324,7 +324,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         $stmt->execute();
         $result = $stmt->get_result();
         $user = $result->fetch_assoc();
-        
+
         if ($user && password_verify($password, $user['password'])) {
             // Password is correct, set session variables
             $_SESSION['user_id'] = $user['id'];
@@ -393,20 +393,20 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Extract the image data from the Base64 string (it may include the data URL prefix, so we remove it)
     // $modelCropImage = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image));
-    
+
     // Define the folder where the images will be saved (ensure this folder is writable)
     $targetDir = 'images/';
-    
+
     // Ensure the target directory exists
     if (!file_exists($targetDir)) {
         mkdir($targetDir, 0777, true);
     }
-    
+
     // Create a unique file name (for example, using a timestamp or UUID)
     $fileName = 'image_' . time() . '.png';
     $filePath = $targetDir . $fileName;
     $result = compressImage($base64Image, $filePath);
-    
+
     // Save the image to the server
     // if (file_put_contents($filePath, $modelCropImage)) {
     //     // Return the URL of the saved image
@@ -490,11 +490,11 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             'Content-Type: application/json',
         ),
     ));
-    
+
     // Execute the request and get the response
     $response = curl_exec($curl);
     curl_close($curl);
-    
+
     // Decode the response to get the columns
     $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
     // echo "<pre>";print_r($mondayColumns);
@@ -545,7 +545,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             'Content-Type: application/json',
         ),
     ));
-    
+
     // Execute the request to update the column values
     $response = curl_exec($curl);
     curl_close($curl);
@@ -553,7 +553,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     echo json_encode($response);
     exit;
 } else {
-    echo json_encode("No Action Found"); // No action found    
+    echo json_encode("No Action Found"); // No action found
 }
 
 $conn->close();
@@ -594,7 +594,7 @@ function compressImage($source, $destination, $quality = 60) {
     // Compress and save the image based on the MIME type
     $info = getimagesize($source);  // For MIME type checking
     $mime = $info['mime'];
-    list($width, $height, $type) = getimagesize($source); 
+    list($width, $height, $type) = getimagesize($source);
     switch ($mime) {
         case 'image/jpeg':
             imagejpeg($image, $destination, $quality);
@@ -602,10 +602,10 @@ function compressImage($source, $destination, $quality = 60) {
 
         case 'image/png':
             $resized_image = imagecreatetruecolor($width, $height);
-            $whiteBackground = imagecolorallocate($resized_image, 255, 255, 255); 
+            $whiteBackground = imagecolorallocate($resized_image, 255, 255, 255);
             // imagecolortransparent($resized_image, $whiteBackground);
             imagefill($resized_image,0,0,$whiteBackground);
-            @imagecopyresampled($resized_image, $image, 0, 0, 0, 0, $width, $height, $width, $height); 
+            @imagecopyresampled($resized_image, $image, 0, 0, 0, 0, $width, $height, $width, $height);
             imagealphablending($image, false); // Disable alpha blending
             imagesavealpha($image, true); // Save the alpha channel (transparency)
             $pngQuality = 9 - floor($quality / 10);  // Convert JPEG quality (0-100) to PNG compression level (0-9)
@@ -627,7 +627,7 @@ function compressImage($source, $destination, $quality = 60) {
 }
 
 function sendEmailToUser($data){
-    $mail = new PHPMailer(true); 
+    $mail = new PHPMailer(true);
     try {
         // Server settings
         $mail->isSMTP();  // Set mailer to use SMTP
