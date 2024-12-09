@@ -1,4 +1,54 @@
-// Names for different frame parts 'Model_600', 'Model_900', 'Model_661', 'Model_1061', 
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { CSS2DObject, CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
+import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+export { THREE, OrbitControls, TransformControls, FontLoader, CSS2DObject, CSS2DRenderer, USDZExporter, GLTFExporter, RGBELoader, GLTFLoader };
+
+export let sharedParams = {
+  topFrameCropedImage: null,
+  mainFrameCropedImage: null,
+  renderer: null,
+  scene: null,
+  camera: null,
+  controls: null,
+  transformControls: null,
+  raycaster: null,
+  mouse: null,
+  direction: null,
+  selectedNode: null,
+  labelRenderer: null,
+  cropper: null,
+  texture_background: null,
+  border_texture_material: null,
+  main_model: null,
+
+  header_rod_model: null,
+  header_wooden_shelf_model: null,
+  header_500_height_model: null,
+  header_glass_shelf_fixing_model: null,
+  header_glass_shelf_model: null,
+  slotted_sides_model: null,
+  hanger_model: null,
+  hanger_rail_step: null,
+  hanger_rail_single: null,
+  hanger_rail_d_500: null,
+  hanger_rail_d_1000: null,
+  hanger_golf_club_model: null,
+  rack_wooden_model: null,
+  rack_glass_model: null,
+  arrow_model: null,
+  modelGroup: null,
+  support_base_middle: null,
+  support_base_side: null,
+//   previousData: null,
+};
+
 export let allGroupNames = ['main_model'];
 export let allModelNames = ['Model_661', 'Model_1061', 'Model_1200', 'Model_1500', 'Model_2000', 'Model_3000'];
 export let allOtherModelNames = ['Other_Model_661', 'Other_Model_1061', 'Other_Model_1200', 'Other_Model_1500', 'Other_Model_2000', 'Other_Model_3000'];
@@ -21,65 +71,65 @@ export let allGroupModelName = ['main_model'];
 
 // Parameters for Three.js configuration
 export let params = {
-  frameBorderColor: "0xffffff",
-  rodFrameColor: "0xffffff",
-  baseFrameColor: "0xffffff",
-  topFrameBackgroundColor: "0xffffff",
-  mainFrameBackgroundColor: "0xffffff",
-  defaultShelfColor: "0xffffff",
-  defaultHangerStandColor: "0xffffff",
-  defaultRackShelfStandColor: "0xffffff",
-  defaultRackStandStandColor: "0xffffff",
-  defaultClothingColor: "0x888888", // 0x888888
-  defaultRackColor: "0xffffff",
-  measurementLineColor: 0x000000,
-  measurementTextColor: 0xffffff,
-  frameMaterialType: "color",
-  shelfMaterialType: "color",
-  exposure: 0.5,
-  blurriness: 0.5,
-  toneMapping: "AgX",
-  selectedBaseFrame: baseFrameNames[1],
-  defaultModel: allModelNames[0],
-  fileUploadFlag: "",
-  headerOptions: "SEG",
-  cameraPosition: 800,
-  defaultHeaderSize: headerNames[0],
-  topOption: "Header", // we can set Header, Shelf, None
-  headerRodToggle: false,
-  defaultShelfType: "Header_Glass_Shelf", // Header_Wooden_Shelf, Header_Glass_Shelf
-  rodSize: { x: 0, y: 0, z: 0 },
-  glassShelfFixingSize: { x: 0, y: 0, z: 0 },
-  calculateBoundingBox: {},
-  headerUpDown: false,
-  measurementToggle: false,
-  measurementLineDistance: 100,
-  measurementLineLength: 5,
-  measurementLineHeight: 40,
-  slottedSidesToggle: false,
-  fontSize: 32,
-  hangerClothesToggle: true,
-  hangerGolfClubsToggle: true,
-  frameTopExMargin: 20,
-  moveLeftRight: 10,
-  font: null,
-  lastInnerMaterial: {},
-  selectedGroupName: allGroupNames[0],
-  addedVisibleModelName: allModelNames[0],
-  hangerCount: {},
-  hangerAdded: {},
-  rackCount: {},
-  rackAdded: {},
+    frameBorderColor: "0xffffff",
+    rodFrameColor: "0xffffff",
+    baseFrameColor: "0xffffff",
+    topFrameBackgroundColor: "0xffffff",
+    mainFrameBackgroundColor: "0xffffff",
+    defaultShelfColor: "0xffffff",
+    defaultHangerStandColor: "0xffffff",
+    defaultRackShelfStandColor: "0xffffff",
+    defaultRackStandStandColor: "0xffffff",
+    defaultClothingColor: "0x888888", // 0x888888
+    defaultRackColor: "0xffffff",
+    measurementLineColor: 0x000000,
+    measurementTextColor: 0xffffff,
+    frameMaterialType: "color",
+    shelfMaterialType: "color",
+    exposure: 0.5,
+    blurriness: 0.5,
+    toneMapping: "AgX",
+    selectedBaseFrame: baseFrameNames[1],
+    defaultModel: allModelNames[0],
+    fileUploadFlag: "",
+    headerOptions: "SEG",
+    cameraPosition: 800,
+    defaultHeaderSize: headerNames[0],
+    topOption: "Header", // we can set Header, Shelf, None
+    headerRodToggle: false,
+    defaultShelfType: "Header_Glass_Shelf", // Header_Wooden_Shelf, Header_Glass_Shelf
+    rodSize: { x: 0, y: 0, z: 0 },
+    glassShelfFixingSize: { x: 0, y: 0, z: 0 },
+    calculateBoundingBox: {},
+    headerUpDown: false,
+    measurementToggle: false,
+    measurementLineDistance: 100,
+    measurementLineLength: 5,
+    measurementLineHeight: 40,
+    slottedSidesToggle: false,
+    fontSize: 32,
+    hangerClothesToggle: true,
+    hangerGolfClubsToggle: true,
+    frameTopExMargin: 20,
+    moveLeftRight: 10,
+    font: null,
+    lastInnerMaterial: {},
+    selectedGroupName: allGroupNames[0],
+    addedVisibleModelName: allModelNames[0],
+    hangerCount: {},
+    hangerAdded: {},
+    rackCount: {},
+    rackAdded: {},
 };
 
 export let setting = {}
 
 setting[params.selectedGroupName] = { ...params };
 // This removes the key from params
-delete setting[params.selectedGroupName]['rodSize'];  
-delete setting[params.selectedGroupName]['glassShelfFixingSize'];  
-delete setting[params.selectedGroupName]['calculateBoundingBox'];  
-delete setting[params.selectedGroupName]['lastInnerMaterial'];  
+delete setting[params.selectedGroupName]['rodSize'];
+delete setting[params.selectedGroupName]['glassShelfFixingSize'];
+delete setting[params.selectedGroupName]['calculateBoundingBox'];
+delete setting[params.selectedGroupName]['lastInnerMaterial'];
 
 
 

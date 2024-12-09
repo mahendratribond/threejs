@@ -1,24 +1,23 @@
-import * as THREE from "three";
-import { params } from "../../config.js";
+import { THREE,params,sharedParams } from "../../config.js";
 import {getModelSize} from "../managers/MeasurementManager.js";
 // core/Scene.js
 export class Scene extends THREE.Scene {
   constructor() {
     super();
   }
-  async setupScene(window, texture_background, lights, lightHelpers) {
-    window["border_texture_material"] = new THREE.MeshPhongMaterial({
+  async setupScene(window, lights, lightHelpers) {
+    sharedParams.border_texture_material = new THREE.MeshPhongMaterial({
       // specular: 3355443,
       specular: new THREE.Color(0x111111),
-      map: this.texture_background,
+      map: sharedParams.texture_background,
       // shininess: 0.5,
       shininess: 30,
     });
     this.backgroundBlurriness = params.blurriness;
-    texture_background.mapping = THREE.EquirectangularReflectionMapping;
-    this.background = texture_background;
-    this.environment = texture_background;
-    this.lightSetup(lights, lightHelpers);    
+    sharedParams.texture_background.mapping = THREE.EquirectangularReflectionMapping;
+    this.background = sharedParams.texture_background;
+    this.environment = sharedParams.texture_background;
+    this.lightSetup(lights, lightHelpers);
   }
 
   clear() {

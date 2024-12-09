@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import { params, allModelNames } from "../../config.js";
+import { THREE,params, allModelNames,sharedParams } from "../../config.js";
 export async function commonMaterial(color) {
   const material = new THREE.MeshPhysicalMaterial({
     color: color, // Black color

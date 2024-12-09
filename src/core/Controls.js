@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { THREE,OrbitControls ,TransformControls,sharedParams } from "../../config.js";
 
 export class Controls extends OrbitControls {
   constructor(camera, domElement) {

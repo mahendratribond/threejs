@@ -1,16 +1,15 @@
-import * as THREE from "three";
 import {
+  THREE,
   params,
   setting,
   frameMainNames,
-  frameTop1Names,
+  frameTop1Names,sharedParams,
 } from "../../config.js";
 import { getHex } from "../../utils6.js";
 import { UIManager } from "./UIManager.js";
 
 export async function setMainFrameCropedImage(
   mainFrameCropedImage,
-  modelGroup
 ) {
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
@@ -20,7 +19,7 @@ export async function setMainFrameCropedImage(
     mainFrameCropedImage[selectedGroupName] &&
     mainFrameCropedImage[selectedGroupName][defaultModel]
   ) {
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
+    let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameMainNames.includes(child.name)) {
         child.material = child.material.clone();
@@ -57,7 +56,6 @@ export async function setMainFrameCropedImage(
         const texture = new THREE.TextureLoader().load(url, async function () {
           await updateMainFrameImageTexture(
             texture,
-            modelGroup,
             selectedGroupName,
             defaultModel
           );
@@ -73,11 +71,11 @@ export async function setMainFrameCropedImage(
       console.error("Image loading failed", err);
     };
   } else {
-    if (modelGroup !== undefined) {
+    if (sharedParams.modelGroup !== undefined) {
       const mainFrameBackgroundColor = await getHex(
         setting[selectedGroupName].mainFrameBackgroundColor
       );
-      let main_model = modelGroup.getObjectByName(selectedGroupName);
+      let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
       main_model.traverse(async function (child) {
         if (frameMainNames.includes(child.name)) {
           child.material = child.material.clone();
@@ -89,7 +87,7 @@ export async function setMainFrameCropedImage(
   }
 }
 
-export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
+export async function setTopFrameCropedImage(topFrameCropedImage) {
   const uiManager = new UIManager();
   let selectedGroupName = params.selectedGroupName;
   let defaultModel = setting[selectedGroupName].defaultModel;
@@ -100,7 +98,7 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
     topFrameCropedImage[selectedGroupName][defaultModel] &&
     topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize]
   ) {
-    let main_model = modelGroup.getObjectByName(selectedGroupName);
+    let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
     main_model.traverse(async function (child) {
       if (frameTop1Names.includes(child.name)) {
         child.material = child.material.clone();
@@ -108,12 +106,12 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
         child.material.needsUpdate = true;
       }
     });
-    
+
     const topFrameBackgroundColor = await getHex(
       setting[selectedGroupName].topFrameBackgroundColor
     );
     // console.log("here", topFrameBackgroundColor);
-    
+
     const tempCanvas = document.createElement("canvas");
     const ctx = tempCanvas.getContext("2d");
 
@@ -140,7 +138,6 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
         const texture = new THREE.TextureLoader().load(url, async function () {
           await updateTopFrameImageTexture(
             texture,
-            modelGroup,
             selectedGroupName,
             defaultModel,
             defaultHeaderSize
@@ -155,12 +152,12 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
       console.error("Image loading failed", err);
     };
   } else {
-    if (modelGroup !== undefined) {
+    if (sharedParams.modelGroup !== undefined) {
       const topFrameBackgroundColor = await getHex(
         setting[selectedGroupName].topFrameBackgroundColor
       );
       console.log("ffff", topFrameBackgroundColor);
-      let main_model = modelGroup.getObjectByName(selectedGroupName);
+      let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
       main_model.traverse(async function (child) {
         if (frameTop1Names.includes(child.name)) {
           child.material = child.material.clone();
@@ -174,13 +171,12 @@ export async function setTopFrameCropedImage(topFrameCropedImage, modelGroup) {
 
 async function updateMainFrameImageTexture(
   texture,
-  modelGroup,
   selectedGroupName,
   defaultModel
 ) {
   //   let selectedGroupName = params.selectedGroupName;
   //   let defaultModel = setting[selectedGroupName].defaultModel;
-  let main_model = modelGroup.getObjectByName(selectedGroupName);
+  let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
   const currentModel = main_model.getObjectByName(defaultModel);
   const frame = currentModel.getObjectByName("Frame");
   if (frame) {
@@ -192,7 +188,6 @@ async function updateMainFrameImageTexture(
 
 async function updateTopFrameImageTexture(
   texture,
-  modelGroup,
   selectedGroupName,
   defaultModel,
   defaultHeaderSize
@@ -201,7 +196,7 @@ async function updateTopFrameImageTexture(
   //   let defaultModel = setting[selectedGroupName].defaultModel;
   //   let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
 
-  let main_model = modelGroup.getObjectByName(selectedGroupName);
+  let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
   const currentModel = main_model.getObjectByName(defaultModel);
   // currentModel.traverse(function (modelNode) {
   const header = currentModel.getObjectByName(defaultHeaderSize);

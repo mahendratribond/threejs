@@ -1,6 +1,5 @@
-import * as THREE from "three";
-import { USDZExporter } from "three/addons/exporters/USDZExporter.js";
-import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { THREE,USDZExporter, GLTFExporter ,sharedParams} from "../../config.js";
+
 async function saveModel(blob, filename) {
   if (blob) {
     await saveArrayBuffer(blob, filename); // Save the file only if blob is not null
@@ -65,10 +64,10 @@ async function exportUSDZ(clone, name) {
   await saveModel(blob, `${name}.usdz`);
 }
 
-function removeSimilarMaterials(scene) {
+function removeSimilarMaterials(model) {
   const materialMap = new Map();
 
-  scene.traverse((object) => {
+  model.traverse((object) => {
     if (object.isMesh) {
       const material = object.material;
 

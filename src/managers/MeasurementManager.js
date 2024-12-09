@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import { params, allModelNames } from "../../config.js";
+import { THREE,params, allModelNames } from "../../config.js";
 export async function getCurrentModelSize(model, node) {
   const cubeNode = model.getObjectByName(node);
   return getNodeSize(cubeNode);

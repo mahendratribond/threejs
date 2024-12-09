@@ -1,24 +1,10 @@
-import * as THREE from "three";
+import { THREE, RGBELoader, GLTFLoader,sharedParams  } from "../../config.js";
 import { setPositionCenter } from "../../utils6.js";
-
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-
-
-
-
-
-
-
 
 export const manager = new THREE.LoadingManager();
 export const TextureLoaderJpg = new THREE.TextureLoader(manager).setPath(
   "./assets/images/background/"
 );
-
-
-
-
 
 // Create a function to load GLTF models using a Promise
 const glftLoader = new GLTFLoader(manager).setPath("./assets/models/glb/");
