@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coming Soon</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .content {
+      text-align: center;
+    }
+
+    .content h1 {
+      font-size: 3rem;
+      color: black;
+      margin: 0;
+    }
+
+    .button-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+    }
+
+    .button-container button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .button-container button:hover {
+      background-color: #0056b3;
+    }
+
+    .button-container button span {
+      margin-left: 5px;
+    }
+
+    /* Responsiveness */
+    @media (max-width: 600px) {
+      .content h1 {
+        font-size: 2rem;
+      }
+
+      .button-container button {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <h1>Coming Soon...</h1>
+  </div>
+  <div class="button-container">
+    <button id="takeToMainPage">
+      Take me to 3D-Builder
+      <span>➔</span>
+    </button>
+  </div>
+  <script>
+    document.getElementById("takeToMainPage").addEventListener("click", ()=>{
+      const mainPage = document.createElement("a");
+      mainPage.href = "test6.html";
+      mainPage.click();
+    })
+  </script>
+</body>
+</html>

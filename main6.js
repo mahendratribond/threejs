@@ -107,7 +107,8 @@ import {
 } from "./utils6.js";
 
 import {
-    THREE, TransformControls,
+    THREE,
+    TransformControls,
     updateVariable,
     frameTop1Names,
     frameMainNames,
@@ -115,13 +116,14 @@ import {
     allGroupNames,
     hangerNames,
     rackNames,
+    modelQueue,
     params,
     setting,
     sharedParams,
 } from "./config.js";
 
-
 let previousData;
+let loadedModels = new Map();
 const lights = [];
 const lightHelpers = [];
 
@@ -172,7 +174,9 @@ manager.onError = (url) => {
 };
 
 async function init() {
-    sharedParams.texture_background = await TextureLoaderJpg.loadAsync("background.png");
+    sharedParams.texture_background = await TextureLoaderJpg.loadAsync(
+        "background.png"
+    );
 
     sharedParams.renderer = new Renderer(uiManager.elements.container, render);
     sharedParams.renderer.setAnimationLoop(render);
@@ -184,21 +188,30 @@ async function init() {
     sharedParams.mouse = new THREE.Vector2();
     sharedParams.direction = new THREE.Vector3(); // Initialize direction vector
 
-    sharedParams.camera = new Camera(45, window.innerWidth / window.innerHeight, 1, 500000);
+    sharedParams.camera = new Camera(
+        45,
+        window.innerWidth / window.innerHeight,
+        1,
+        500000
+    );
     // Set initial sharedParams.camera position
     sharedParams.camera.position.set(2000, 1000, 2000);
-    sharedParams.controls = new Controls(sharedParams.camera, sharedParams.renderer.domElement);
+    sharedParams.controls = new Controls(
+        sharedParams.camera,
+        sharedParams.renderer.domElement
+    );
 
-  sharedParams.modelGroup = new THREE.Group();
-  sharedParams.scene.add(sharedParams.modelGroup);
-
-  let main_model = await loadGLTFModel(params.defaultModel + ".glb");
-  main_model.name = params.selectedGroupName;
-  await setupMainModel(main_model);
-  sharedParams.modelGroup.add(main_model);
-  await showHideNodes();
-  await loadHangerModels();
-  sharedParams.modelGroup.name = "main_group";
+    sharedParams.modelGroup = new THREE.Group();
+    sharedParams.scene.add(sharedParams.modelGroup);
+    let main_model = await loadGLTFModel(params.defaultModel + ".glb")
+    main_model.name = params.selectedGroupName;
+    sharedParams.modelGroup.add(main_model);
+    // await loadAllModels();
+    // return 
+    await setupMainModel(main_model);
+    await showHideNodes();
+    loadHangerModels();
+    sharedParams.modelGroup.name = "main_group";
 
     for (let val of allModelNames) {
         let model_name = val + ".glb";
@@ -208,32 +221,34 @@ async function init() {
             await setupMainModel(model_load);
             let model = model_load.getObjectByName(val);
             model.visible = false;
-            main_model.add(model);
+            main_model.add(model);  
         }
     }
 
     await showHideNodes();
 
     // Transform controls
-    sharedParams.transformControls = new TransformControls(sharedParams.camera, sharedParams.renderer.domElement);
-    sharedParams.transformControls.addEventListener("dragging-changed", (event) => {
-        sharedParams.controls.enabled = !event.value;
-    });
+    sharedParams.transformControls = new TransformControls(
+        sharedParams.camera,
+        sharedParams.renderer.domElement
+    );
+    sharedParams.transformControls.addEventListener(
+        "dragging-changed",
+        (event) => {
+            sharedParams.controls.enabled = !event.value;
+        }
+    );
     sharedParams.scene.add(sharedParams.transformControls);
 
     // Add event listeners
     window.addEventListener(
         "mousemove",
         (event) => {
-            uiManager.onMouseMove(event,);
+            uiManager.onMouseMove(event);
         },
         false
     );
-    window.addEventListener(
-        "click",
-        uiManager.onMouseClick(),
-        false
-    );
+    window.addEventListener("click", uiManager.onMouseClick(), false);
     window.addEventListener("resize", uiManager.onWindowResize());
 
     await calculateBoundingBox(sharedParams.modelGroup);
@@ -249,7 +264,8 @@ async function init() {
                     frameMainNames.includes(child.name)
                 ) {
                     if (child.isMesh && child.material) {
-                        params.lastInnerMaterial = params.lastInnerMaterial || {};
+                        params.lastInnerMaterial =
+                            params.lastInnerMaterial || {};
                         params.lastInnerMaterial[modelNode.name] =
                             params.lastInnerMaterial[modelNode.name] || {};
                         params.lastInnerMaterial[modelNode.name][child.name] =
@@ -259,24 +275,6 @@ async function init() {
             });
         }
     });
-
-    if (!sharedParams.hanger_golf_club_model) {
-        sharedParams.hanger_golf_club_model = await loadGLTFModel("hanger_golf_club_model.glb");
-        await setupHangerGolfClubModel(sharedParams.hanger_golf_club_model);
-        let Golfloader = document.querySelector(".Hanger_Golf_Club_Driver_loader");
-        removeLoader(Golfloader);
-        let Golfloader2 = document.querySelector(".Hanger_Golf_Club_Iron_loader");
-        removeLoader(Golfloader2);
-    }
-
-    if (!sharedParams.rack_glass_model) {
-        sharedParams.rack_glass_model = await loadGLTFModel("rack_glass_model.glb");
-        await setupGlassRackModel(sharedParams.rack_glass_model);
-    }
-    if (!sharedParams.rack_wooden_model) {
-        sharedParams.rack_wooden_model = await loadGLTFModel("rack_wooden_model.glb");
-        await setupWoodenRackModel(sharedParams.rack_wooden_model);
-    }
 
     sharedParams.labelRenderer = await initLabelRenderer();
     document.body.appendChild(sharedParams.labelRenderer.domElement);
@@ -302,8 +300,10 @@ async function loadPreviousModels() {
             await updateVariable("params", previousData.params);
             await updateVariable("setting", previousData.setting);
             let lastGroupNames = previousData.group_names;
-            sharedParams.mainFrameCropedImage = previousData.main_frame_croped_image;
-            sharedParams.topFrameCropedImage = previousData.top_frame_croped_image;
+            sharedParams.mainFrameCropedImage =
+                previousData.main_frame_croped_image;
+            sharedParams.topFrameCropedImage =
+                previousData.top_frame_croped_image;
 
             let mainModelIndex = lastGroupNames.indexOf("main_model");
             let retrievedSelectedGroupName = params.selectedGroupName;
@@ -330,11 +330,7 @@ async function loadPreviousModels() {
                 const side = i < mainModelIndex ? false : true;
 
                 if (groupName.startsWith("Other_")) {
-                    await addAnotherModels(
-                        allGroupNames,
-                        groupName,
-                        side
-                    );
+                    await addAnotherModels(allGroupNames, groupName, side);
                 }
                 // Add a short delay between each group loading
                 await delay(100); // Adjust the delay time (in milliseconds) as needed
@@ -347,16 +343,19 @@ async function loadPreviousModels() {
                 params.selectedGroupName = groupName;
 
                 if (
-                    setting[params.selectedGroupName].headerRodToggle === true &&
                     setting[params.selectedGroupName].headerRodToggle ===
-                    setting[params.selectedGroupName].headerUpDown
+                        true &&
+                    setting[params.selectedGroupName].headerRodToggle ===
+                        setting[params.selectedGroupName].headerUpDown
                 ) {
                     setting[params.selectedGroupName].headerUpDown =
                         !setting[params.selectedGroupName].headerRodToggle;
                 }
 
                 await setTopFrameCropedImage(sharedParams.topFrameCropedImage);
-                await setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
+                await setMainFrameCropedImage(
+                    sharedParams.mainFrameCropedImage
+                );
                 await showHideNodes();
                 await centerMainModel();
 
@@ -369,7 +368,9 @@ async function loadPreviousModels() {
 
             // Sequentially process hangerAdded entries with delay
             if (hangerAdded) {
-                for (const [hangerArrayKey, value] of Object.entries(hangerAdded)) {
+                for (const [hangerArrayKey, value] of Object.entries(
+                    hangerAdded
+                )) {
                     const hangerArray = hangerArrayKey.split("-");
                     const groupName = hangerArray[0] || "";
                     const modelName = hangerArray[1] || "";
@@ -425,12 +426,15 @@ async function loadPreviousModels() {
                 loaders.forEach((loader) => removeLoader(loader));
             }
 
-            const accordionContainer = document.querySelector("#accordionModel");
+            const accordionContainer =
+                document.querySelector("#accordionModel");
             const openAccordionItems = accordionContainer.querySelectorAll(
                 ".accordion-collapse.show"
             );
             openAccordionItems.forEach((item) => {
-                const bsCollapse = new bootstrap.Collapse(item, { toggle: false });
+                const bsCollapse = new bootstrap.Collapse(item, {
+                    toggle: false,
+                });
                 bsCollapse.hide();
             });
 
@@ -446,41 +450,144 @@ async function loadPreviousModels() {
     }
     await loaderShowHide(false);
 }
+async function loadAllModels() {
+    try {
+        // Create an array of promises for all model loads
+        const loadPromises = modelQueue.map( (modelPath) =>
+            loadGLTFModel(modelPath)
+                .then((gltf) => {
+                    console.log(`Loaded: ${modelPath}`, gltf);
+                    loadedModels.set(modelPath, gltf);
+                    return gltf;
+                })
+                .catch((error) => {
+                    console.error(`Failed to load ${modelPath}:`, error);
+                    return null;
+                })
+        );
+
+
+
+
+
+        // Optional: Add a loading indicator
+        // this.showLoadingProgress(loadPromises.length);
+        console.log(loadPromises.length);
+
+        // Load all models in parallel
+        const results = await Promise.allSettled(loadPromises);
+
+        // Process results
+        results.forEach((result, index) => {
+            console.log(result);
+            console.log(index);
+            
+            const modelPath = modelQueue[index];
+            if (result.status === "fulfilled" && result.value) {
+                // Model loaded successfully
+                const model = result.value;
+                setupMainModel(model);
+                if (allModelNames.includes(model.getObjectByName(model.children))) {
+                    let modelData = allModelNames.includes(
+                        model.getObjectByName(model.children)
+                    );
+                    modelData.visible = false;
+                    main_model.add(modelData);
+                }
+                console.log("model in loop", model);
+                // Center the model
+                // const boundingBox = new THREE.Box3().setFromObject(model);
+                // const center = boundingBox.getCenter(new THREE.Vector3());
+                // model.position.x = -center.x;
+                // model.position.y = -center.y;
+                // model.position.z = -center.z;
+            }
+        });
+
+        console.log("All models loaded");
+        // this.hideLoadingProgress();
+    } catch (error) {
+        console.error("Error loading models:", error);
+    }
+}
 
 async function loadHangerModels() {
     if (!sharedParams.hanger_rail_step) {
-        sharedParams.hanger_rail_step = await loadGLTFModel("Hanger_Rail_Step.glb");
+        sharedParams.hanger_rail_step = await loadGLTFModel(
+            "Hanger_Rail_Step.glb"
+        );
         await setupHangerModel(sharedParams.hanger_rail_step);
         sharedParams.hanger_model = sharedParams.hanger_rail_step;
         let loader = document.querySelector(".Hanger_Rail_Step_loader");
         await removeLoader(loader);
     }
     if (!sharedParams.hanger_rail_single) {
-        sharedParams.hanger_rail_single = await loadGLTFModel("Hanger_Rail_Single.glb");
+        sharedParams.hanger_rail_single = await loadGLTFModel(
+            "Hanger_Rail_Single.glb"
+        );
         await setupHangerModel(sharedParams.hanger_rail_single);
         sharedParams.hanger_rail_single =
-            sharedParams.hanger_rail_single.getObjectByName("Hanger_Rail_Single");
+            sharedParams.hanger_rail_single.getObjectByName(
+                "Hanger_Rail_Single"
+            );
         sharedParams.hanger_model.add(sharedParams.hanger_rail_single);
         let loader = document.querySelector(".Hanger_Rail_Single_loader");
         await removeLoader(loader);
     }
 
     if (!sharedParams.hanger_rail_d_500) {
-        sharedParams.hanger_rail_d_500 = await loadGLTFModel("Hanger_Rail_D_500mm.glb");
+        sharedParams.hanger_rail_d_500 = await loadGLTFModel(
+            "Hanger_Rail_D_500mm.glb"
+        );
         await setupHangerModel(sharedParams.hanger_rail_d_500);
-        sharedParams.hanger_rail_d_500 = sharedParams.hanger_rail_d_500.getObjectByName("Hanger_Rail_D_500mm");
+        sharedParams.hanger_rail_d_500 =
+            sharedParams.hanger_rail_d_500.getObjectByName(
+                "Hanger_Rail_D_500mm"
+            );
         sharedParams.hanger_model.add(sharedParams.hanger_rail_d_500);
         let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
         await removeLoader(loader);
     }
 
     if (!sharedParams.hanger_rail_d_1000) {
-        sharedParams.hanger_rail_d_1000 = await loadGLTFModel("Hanger_Rail_D_1000mm.glb");
+        sharedParams.hanger_rail_d_1000 = await loadGLTFModel(
+            "Hanger_Rail_D_1000mm.glb"
+        );
         await setupHangerModel(sharedParams.hanger_rail_d_1000);
-        sharedParams.hanger_rail_d_1000 = sharedParams.hanger_rail_d_1000.getObjectByName("Hanger_Rail_D_1000mm");
+        sharedParams.hanger_rail_d_1000 =
+            sharedParams.hanger_rail_d_1000.getObjectByName(
+                "Hanger_Rail_D_1000mm"
+            );
         sharedParams.hanger_model.add(sharedParams.hanger_rail_d_1000);
         let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
         await removeLoader(loader);
+    }
+    if (!sharedParams.hanger_golf_club_model) {
+        sharedParams.hanger_golf_club_model = await loadGLTFModel(
+            "hanger_golf_club_model.glb"
+        );
+        await setupHangerGolfClubModel(sharedParams.hanger_golf_club_model);
+        let Golfloader = document.querySelector(
+            ".Hanger_Golf_Club_Driver_loader"
+        );
+        removeLoader(Golfloader);
+        let Golfloader2 = document.querySelector(
+            ".Hanger_Golf_Club_Iron_loader"
+        );
+        removeLoader(Golfloader2);
+    }
+
+    if (!sharedParams.rack_glass_model) {
+        sharedParams.rack_glass_model = await loadGLTFModel(
+            "rack_glass_model.glb"
+        );
+        await setupGlassRackModel(sharedParams.rack_glass_model);
+    }
+    if (!sharedParams.rack_wooden_model) {
+        sharedParams.rack_wooden_model = await loadGLTFModel(
+            "rack_wooden_model.glb"
+        );
+        await setupWoodenRackModel(sharedParams.rack_wooden_model);
     }
 }
 
@@ -506,44 +613,65 @@ export async function otherModelSetup() {
         await setupArrowModel();
     }
     if (!sharedParams.header_rod_model) {
-        sharedParams.header_rod_model = await loadGLTFModel("header_rod_model.glb");
+        sharedParams.header_rod_model = await loadGLTFModel(
+            "header_rod_model.glb"
+        );
         params.rodSize = await getNodeSize(sharedParams.header_rod_model);
     }
     if (!sharedParams.header_glass_shelf_fixing_model) {
-        sharedParams.header_glass_shelf_fixing_model = await loadGLTFModel("header_glass_shelf_fixing_model.glb");
-        params.glassShelfFixingSize = await getNodeSize(sharedParams.header_glass_shelf_fixing_model);
+        sharedParams.header_glass_shelf_fixing_model = await loadGLTFModel(
+            "header_glass_shelf_fixing_model.glb"
+        );
+        params.glassShelfFixingSize = await getNodeSize(
+            sharedParams.header_glass_shelf_fixing_model
+        );
         await setupGlassShelfFixingModel();
     }
     if (!sharedParams.header_500_height_model) {
-        sharedParams.header_500_height_model = await loadGLTFModel("header_500_height_model.glb");
+        sharedParams.header_500_height_model = await loadGLTFModel(
+            "header_500_height_model.glb"
+        );
         await setupHeader500HeightModel();
     }
     if (!sharedParams.header_wooden_shelf_model) {
-        sharedParams.header_wooden_shelf_model = await loadGLTFModel("header_wooden_shelf_model.glb");
+        sharedParams.header_wooden_shelf_model = await loadGLTFModel(
+            "header_wooden_shelf_model.glb"
+        );
         await setupHeaderWoodenShelfModel();
     }
     if (!sharedParams.header_glass_shelf_model) {
-        sharedParams.header_glass_shelf_model = await loadGLTFModel("header_glass_shelf_model.glb");
+        sharedParams.header_glass_shelf_model = await loadGLTFModel(
+            "header_glass_shelf_model.glb"
+        );
         await setupHeaderGlassShelfModel();
     }
     if (!sharedParams.slotted_sides_model) {
-        sharedParams.slotted_sides_model = await loadGLTFModel("slotted_sides_model.glb");
+        sharedParams.slotted_sides_model = await loadGLTFModel(
+            "slotted_sides_model.glb"
+        );
         await setupSlottedSidesModel();
     }
 
     if (!sharedParams.support_base_middle || !sharedParams.support_base_side) {
-        sharedParams.support_base_middle = await loadGLTFModel("support_base_middle.glb");
-        sharedParams.support_base_side = await loadGLTFModel("support_base_sides.glb");
+        sharedParams.support_base_middle = await loadGLTFModel(
+            "support_base_middle.glb"
+        );
+        sharedParams.support_base_side = await loadGLTFModel(
+            "support_base_sides.glb"
+        );
         await setupSupportBaseModel();
     }
 }
 
 if (uiManager.elements.headerFrameColorInput) {
-    uiManager.elements.headerFrameColorInput.value = await getHex(params.topFrameBackgroundColor);
+    uiManager.elements.headerFrameColorInput.value = await getHex(
+        params.topFrameBackgroundColor
+    );
 
     document.addEventListener("input", async function (event) {
         if (event.target.classList.contains("headerFrameColorInput")) {
-            setting[params.selectedGroupName].topFrameBackgroundColor = event.target.value;
+            setting[params.selectedGroupName].topFrameBackgroundColor =
+                event.target.value;
 
             await setTopFrameCropedImage(
                 sharedParams.topFrameCropedImage,
@@ -562,9 +690,7 @@ if (uiManager.elements.mainFrameColorInput) {
         if (event.target.classList.contains("mainFrameColorInput")) {
             setting[params.selectedGroupName].mainFrameBackgroundColor =
                 event.target.value;
-            await setMainFrameCropedImage(
-                sharedParams.mainFrameCropedImage,
-            );
+            await setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
         }
     });
 }
@@ -583,7 +709,9 @@ document.addEventListener("click", function (event) {
                 .forEach(function (content) {
                     content.style.display = "none"; // Close all dropdowns
                 });
-            dropdownContent.style.display = isDropdownVisible ? "none" : "block"; // Toggle the clicked dropdown
+            dropdownContent.style.display = isDropdownVisible
+                ? "none"
+                : "block"; // Toggle the clicked dropdown
         }
     }
 
@@ -617,7 +745,10 @@ async function render() {
     sharedParams.controls.update();
     sharedParams.renderer.render(sharedParams.scene, sharedParams.camera);
     if (sharedParams.labelRenderer) {
-        sharedParams.labelRenderer.render(sharedParams.scene, sharedParams.camera); // CSS2D rendering
+        sharedParams.labelRenderer.render(
+            sharedParams.scene,
+            sharedParams.camera
+        ); // CSS2D rendering
     }
 }
 
@@ -657,7 +788,8 @@ export async function updateMaterial(
                 let accordion = customDropdownButton.closest(`.accordion-item`);
                 selectedModel = accordion.getAttribute(`data-model`);
                 type = element.getAttribute("data-type");
-                imageUrl = type === "texture" ? element.querySelector("img").src : "";
+                imageUrl =
+                    type === "texture" ? element.querySelector("img").src : "";
                 displayText = element.querySelector("span").innerText;
                 element.classList.add("selected");
             }
@@ -709,123 +841,80 @@ if (uiManager.elements.saveModelDataButton) {
     uiManager.elements.saveModelDataButton.addEventListener(
         "click",
         async function () {
-            const modelId = previousData && previousData.id ? previousData.id : 0;
+            if (
+                !localStorage.getItem("user_id") &&
+                !localStorage.getItem("username")
+            ) {
+                document.querySelector(".loginFormDiv").style.display = "flex";
+                return;
+            } else {
+                const modelId =
+                    previousData && previousData.id ? previousData.id : 0;
 
-            await traverseAsync(sharedParams.modelGroup, async (child) => {
-                if (
-                    hangerNames.includes(child.name) &&
-                    child.hangerArrayKey &&
-                    child.hangerCount
-                ) {
-                    params.hangerAdded = params.hangerAdded || {};
-                    params.hangerAdded[child.hangerArrayKey] =
-                        params.hangerAdded[child.hangerArrayKey] || {};
-                    params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
-                        child.position;
-                }
-                if (
-                    rackNames.includes(child.name) &&
-                    child.rackArrayKey &&
-                    child.rackCount
-                ) {
-                    console.log("params.rackAdded", params.rackAdded);
-                    console.log("child", child);
-                    console.log("child.name", child.name);
+                await traverseAsync(sharedParams.modelGroup, async (child) => {
+                    if (
+                        hangerNames.includes(child.name) &&
+                        child.hangerArrayKey &&
+                        child.hangerCount
+                    ) {
+                        params.hangerAdded = params.hangerAdded || {};
+                        params.hangerAdded[child.hangerArrayKey] =
+                            params.hangerAdded[child.hangerArrayKey] || {};
+                        params.hangerAdded[child.hangerArrayKey][
+                            child.hangerCount
+                        ] = child.position;
+                    }
+                    if (
+                        rackNames.includes(child.name) &&
+                        child.rackArrayKey &&
+                        child.rackCount
+                    ) {
+                        console.log("params.rackAdded", params.rackAdded);
+                        console.log("child", child);
+                        console.log("child.name", child.name);
 
-                    params.rackAdded = params.rackAdded || {};
-                    params.rackAdded[child.rackArrayKey] =
-                        params.rackAdded[child.rackArrayKey] || {};
-                    params.rackAdded[child.rackArrayKey][child.rackCount] =
-                        child.position;
-                }
-            });
+                        params.rackAdded = params.rackAdded || {};
+                        params.rackAdded[child.rackArrayKey] =
+                            params.rackAdded[child.rackArrayKey] || {};
+                        params.rackAdded[child.rackArrayKey][child.rackCount] =
+                            child.position;
+                    }
+                });
 
-            const dataToSave = {
-                params: params || null,
-                setting: setting || null,
-                group_names: allGroupNames || null,
-                top_frame_croped_image: sharedParams.topFrameCropedImage || null,
-                main_frame_croped_image: sharedParams.mainFrameCropedImage || null,
-            };
+                const dataToSave = {
+                    params: params || null,
+                    setting: setting || null,
+                    group_names: allGroupNames || null,
+                    top_frame_croped_image:
+                        sharedParams.topFrameCropedImage || null,
+                    main_frame_croped_image:
+                        sharedParams.mainFrameCropedImage || null,
+                };
 
-            let projectName = (previousData && previousData.name) || null;
-            let dataSave;
-            if (modelId > 0) {
-                dataSave = true;
-            }
-            if (!projectName) {
-                // Prompt the user to enter a value
-                projectName = prompt("Please enter a project name:");
-                if (projectName !== null) {
+                let projectName = (previousData && previousData.name) || null;
+                let dataSave;
+                if (modelId > 0) {
                     dataSave = true;
                 }
-            }
+                if (!projectName) {
+                    // Prompt the user to enter a value
+                    projectName = prompt("Please enter a project name:");
+                    if (projectName !== null) {
+                        dataSave = true;
+                    }
+                }
 
-            // console.log('params.hangerAdded', params.hangerAdded);
+                // console.log('params.hangerAdded', params.hangerAdded);
 
-            if (dataSave) {
-                await saveModelData(projectName, dataToSave, modelId);
+                if (dataSave) {
+                    await saveModelData(projectName, dataToSave, modelId);
+                }
             }
         }
     );
 }
 
-// Move Left
-moveLeftModel.addEventListener("click", async () => {
-    const selectedGroupName = params.selectedGroupName;
-    const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
-
-    if (selectedModelGroup) {
-        // Check for collision before moving left
-        const canMoveLeft = await checkForCollision(
-            selectedModelGroup,
-            -params.moveLeftRight
-        );
-
-        if (canMoveLeft) {
-            selectedModelGroup.position.x -= params.moveLeftRight; // Move selected model group left
-            if (!selectedModelGroup.spacing) {
-                selectedModelGroup.spacing = 0;
-            }
-            selectedModelGroup.spacing -= params.moveLeftRight;
-            await drawMeasurementBoxesWithLabels();
-        } else {
-            console.log("Collision detected! Cannot move further left.");
-        }
-    } else {
-        console.log(`Group ${selectedGroupName} not found.`);
-    }
-});
-
-// Move Right
-moveRightModel.addEventListener("click", async () => {
-    const selectedGroupName = params.selectedGroupName;
-    const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
-
-    if (selectedModelGroup) {
-        // Check for collision before moving right
-        const canMoveRight = await checkForCollision(
-            selectedModelGroup,
-            params.moveLeftRight
-        );
-
-        if (canMoveRight) {
-            selectedModelGroup.position.x += params.moveLeftRight; // Move selected model group right
-            if (!selectedModelGroup.spacing) {
-                selectedModelGroup.spacing = 0;
-            }
-            selectedModelGroup.spacing += params.moveLeftRight;
-            await drawMeasurementBoxesWithLabels();
-        } else {
-            console.log("Collision detected! Cannot move further right.");
-        }
-    } else {
-        console.log(`Group ${selectedGroupName} not found.`);
-    }
-});
-
 async function checkFileExists(url) {
-    // Poll the server every 500ms to check if the file exists
     let FileFound = false;
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     if (/iPhone|iPad|iPod/.test(userAgent)) {
@@ -938,7 +1027,6 @@ async function renderAndDownload(
     name,
     imagesNameArr
 ) {
-
     // Store original renderer size and camera properties
     const originalWidth = tempRenderer.domElement.width;
     const originalHeight = tempRenderer.domElement.height;
@@ -998,7 +1086,6 @@ async function renderAndDownload(
 }
 
 async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
-
     const croppedImage = await removeBlankSpacesFromImage(dataUrl);
     try {
         const response = await fetch("api.php", {
@@ -1034,7 +1121,12 @@ function removeBlankSpacesFromImage(imageSrc) {
             ctx.drawImage(img, 0, 0);
 
             // Get the image data
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
             const { data, width, height } = imageData;
 
             let top = 0,
@@ -1121,98 +1213,84 @@ function removeBlankSpacesFromImage(imageSrc) {
     });
 }
 
-async function captureMainFixtureImage(
+async function captureFixtureImage(
     tempCamera,
     tempRenderer,
-    CloneModel,
-    MainmodelName,
-    imagesNameArr,
-    modelChild
-) {
-    const Frame = CloneModel.getObjectByName("Frame");
-    for (const child of Frame.children) {
-        if (child.name.startsWith("Hanger_")) {
-            let HangerModel;
-            await traverseAsync(child, async (subChild) => {
-                if (
-                    subChild.parent.name !== "Frame" &&
-                    subChild.name !== "Hanger_Stand" &&
-                    subChild.parent !== null
-                ) {
-                    subChild.parent.remove(subChild);
-                } else if (subChild.name !== "Hanger_Stand") {
-                    subChild.visible = false;
-                } else {
-                    HangerModel = subChild;
-                }
-            });
-            const hangerNames = imagesNameArr
-                .map((url) => url.split("/").pop()) // Get the file name
-                .filter(
-                    (name) => name.includes("Hanger") && name.includes(MainmodelName)
-                ) // Check for "Hanger" and "MainmodelName"
-                .map((name) => name.split("-")[2]); // Extract the part starting with "Hanger"
-            if (!hangerNames.includes(child.name) && HangerModel) {
-                modelChild.visible = false; // hide the model
-                HangerModel.rotation.y = Math.PI;
-                HangerModel.name = "hangerForPreview_";
-                sharedParams.scene.add(HangerModel);
-                const box = new THREE.Box3().setFromObject(HangerModel);
-                const size = box.getSize(new THREE.Vector3());
-                const center = box.getCenter(new THREE.Vector3());
-                if (child.name === "Hanger_Rail_Step") {
-                    tempRenderer.setSize((size.x + size.z) * 5, size.z * 5);
-                } else if (child.name === "Hanger_Rail_Single") {
-                    tempRenderer.setSize((size.x + size.z) * 4, size.z * 4);
-                } else if (child.name === "Hanger_Rail_D_500mm") {
-                    tempRenderer.setSize(size.x * 2, (size.x + size.y) * 2);
-                } else if (child.name === "Hanger_Rail_D_1000mm") {
-                    tempRenderer.setSize(size.x * 1.5, (size.x + size.y) * 2);
-                } else {
-                    tempRenderer.setSize((size.x + size.z) * 3, size.z * 3);
-                }
-                const maxDim = Math.max(size.x, size.y, size.x);
-                const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-                tempCamera.position.set(
-                    center.x + cameraDistance, // Offset in X for diagonal perspective
-                    center.y + 200, // Offset in Y for better centering
-                    center.z + (cameraDistance + 500) // Offset in Z for distance
-                );
-                tempCamera.lookAt(center);
-                await renderAndDownload(
-                    child.name,
-                    tempCamera,
-                    tempRenderer,
-                    MainmodelName,
-                    imagesNameArr
-                );
-                sharedParams.scene.remove(HangerModel);
-                modelChild.visible = true;
-            }
-        }
-    }
-    return;
-}
-
-async function captureFixtureImage(
-    camera,
-    tempRenderer,
     model,
-    name,
+    MainmodelName,
     imagesNameArr
 ) {
     for (const modelChild of model.children) {
         if (!modelChild.visible) continue;
         const CloneModel = modelChild.clone();
         await cloneWithCustomHangerProperties(modelChild, CloneModel);
-        await captureMainFixtureImage(
-            camera,
-            tempRenderer,
-            CloneModel,
-            name,
-            imagesNameArr,
-            modelChild
-        );
+        const Frame = CloneModel.getObjectByName("Frame");
+        for (const child of Frame.children) {
+            if (child.name.startsWith("Hanger_")) {
+                let HangerModel;
+                await traverseAsync(child, async (subChild) => {
+                    if (
+                        subChild.parent.name !== "Frame" &&
+                        subChild.name !== "Hanger_Stand" &&
+                        subChild.parent !== null
+                    ) {
+                        subChild.parent.remove(subChild);
+                    } else if (subChild.name !== "Hanger_Stand") {
+                        subChild.visible = false;
+                    } else {
+                        HangerModel = subChild;
+                    }
+                });
+                const hangerNames = imagesNameArr
+                    .map((url) => url.split("/").pop()) // Get the file name
+                    .filter(
+                        (name) =>
+                            name.includes("Hanger") &&
+                            name.includes(MainmodelName)
+                    ) // Check for "Hanger" and "MainmodelName"
+                    .map((name) => name.split("-")[2]); // Extract the part starting with "Hanger"
+                if (!hangerNames.includes(child.name) && HangerModel) {
+                    modelChild.visible = false; // hide the model
+                    HangerModel.rotation.y = Math.PI;
+                    HangerModel.name = "hangerForPreview_";
+                    sharedParams.scene.add(HangerModel);
+                    const box = new THREE.Box3().setFromObject(HangerModel);
+                    const size = box.getSize(new THREE.Vector3());
+                    const center = box.getCenter(new THREE.Vector3());
+                    if (child.name === "Hanger_Rail_Step") {
+                        tempRenderer.setSize((size.x + size.z) * 5, size.z * 5);
+                    } else if (child.name === "Hanger_Rail_Single") {
+                        tempRenderer.setSize((size.x + size.z) * 4, size.z * 4);
+                    } else if (child.name === "Hanger_Rail_D_500mm") {
+                        tempRenderer.setSize(size.x * 2, (size.x + size.y) * 2);
+                    } else if (child.name === "Hanger_Rail_D_1000mm") {
+                        tempRenderer.setSize(
+                            size.x * 1.5,
+                            (size.x + size.y) * 2
+                        );
+                    } else {
+                        tempRenderer.setSize((size.x + size.z) * 3, size.z * 3);
+                    }
+                    const maxDim = Math.max(size.x, size.y, size.x);
+                    const cameraDistance = maxDim + 350; // Adjust multiplier as needed
+                    tempCamera.position.set(
+                        center.x + cameraDistance, // Offset in X for diagonal perspective
+                        center.y + 200, // Offset in Y for better centering
+                        center.z + (cameraDistance + 500) // Offset in Z for distance
+                    );
+                    tempCamera.lookAt(center);
+                    await renderAndDownload(
+                        child.name,
+                        tempCamera,
+                        tempRenderer,
+                        MainmodelName,
+                        imagesNameArr
+                    );
+                    sharedParams.scene.remove(HangerModel);
+                    modelChild.visible = true;
+                }
+            }
+        }
     }
 }
 
@@ -1337,7 +1415,11 @@ async function captureModelImages() {
         );
         // Position the camera along the positive X-axis for a side view
         const sideViewDistance = size.x + 1000;
-        sideCamera.position.set(center.x + sideViewDistance, center.y, center.z);
+        sideCamera.position.set(
+            center.x + sideViewDistance,
+            center.y,
+            center.z
+        );
         sideCamera.lookAt(center);
 
         // Wait for side view render to complete
@@ -1443,7 +1525,8 @@ async function captureModelImages() {
 
     // Restore scene background
     sharedParams.scene.backgroundBlurriness = params.blurriness;
-    sharedParams.texture_background.mapping = THREE.EquirectangularReflectionMapping;
+    sharedParams.texture_background.mapping =
+        THREE.EquirectangularReflectionMapping;
     sharedParams.scene.background = sharedParams.texture_background;
     sharedParams.scene.environment = sharedParams.texture_background;
 
@@ -1508,160 +1591,164 @@ async function generateArModel() {
 
     await exportModelForAr(sharedParams.modelGroup, modelName);
 
-  // Check if the file exists
-  if (await checkFileExists(exportedModelFileUrl)) {
-    hideLoadingModal();
-    await showARModel(exportedModelFileUrl);
-    // Configure model viewer attributes
-    // const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    // if (/iPhone|iPad|iPod/.test(userAgent)) {
-    //   let ViewArForIos = document.getElementById("ViewArForIos");
-    //   ViewArForIos.style.display = "block";
-    //   ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-    //   ViewArForIos.click();
-    // } else if (/Android/.test(userAgent)) {
-    //   // Create or update the AR viewer
-    //   const modelViewer = document.getElementById("modelViewer");
-    //   let ArViewer = document.getElementById("ArView");
-    //   ArViewer.style.display = "block";
-    //   modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-    //   modelViewer.setAttribute("ar-modes", "scene-viewer");
-    //   modelViewer.addEventListener("load", () => {
-    //     modelViewer.enterAR();
-    //   });
-    // } else {
-    //   alert("This feature is only supported on iOS and Android devices.");
-    // }
-  } else {
-    console.error("File was not found within the expected time.");
-    hideLoadingModal();
-  }
+    // Check if the file exists
+    if (await checkFileExists(exportedModelFileUrl)) {
+        hideLoadingModal();
+        await showARModel(exportedModelFileUrl);
+        // Configure model viewer attributes
+        // const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        // if (/iPhone|iPad|iPod/.test(userAgent)) {
+        //   let ViewArForIos = document.getElementById("ViewArForIos");
+        //   ViewArForIos.style.display = "block";
+        //   ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+        //   ViewArForIos.click();
+        // } else if (/Android/.test(userAgent)) {
+        //   // Create or update the AR viewer
+        //   const modelViewer = document.getElementById("modelViewer");
+        //   let ArViewer = document.getElementById("ArView");
+        //   ArViewer.style.display = "block";
+        //   modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+        //   modelViewer.setAttribute("ar-modes", "scene-viewer");
+        //   modelViewer.addEventListener("load", () => {
+        //     modelViewer.enterAR();
+        //   });
+        // } else {
+        //   alert("This feature is only supported on iOS and Android devices.");
+        // }
+    } else {
+        console.error("File was not found within the expected time.");
+        hideLoadingModal();
+    }
 }
 async function showARModel(exportedModelFileUrl) {
-  const userAgent = navigator.userAgent;
+    const userAgent = navigator.userAgent;
 
-  // Create loading screen elements
-  const loadingScreen = document.createElement("div");
-  loadingScreen.className = "ar-loading-screen";
+    // Create loading screen elements
+    const loadingScreen = document.createElement("div");
+    loadingScreen.className = "ar-loading-screen";
 
-  const spinner = document.createElement("div");
-  spinner.className = "ar-loading-spinner";
+    const spinner = document.createElement("div");
+    spinner.className = "ar-loading-spinner";
 
-  const progressBar = document.createElement("div");
-  progressBar.className = "ar-progress-bar";
+    const progressBar = document.createElement("div");
+    progressBar.className = "ar-progress-bar";
 
-  const progressFill = document.createElement("div");
-  progressFill.className = "ar-progress-fill";
+    const progressFill = document.createElement("div");
+    progressFill.className = "ar-progress-fill";
 
-  const loadingText = document.createElement("div");
-  loadingText.className = "ar-loading-text";
-  loadingText.textContent = "Preparing AR Experience...";
+    const loadingText = document.createElement("div");
+    loadingText.className = "ar-loading-text";
+    loadingText.textContent = "Preparing AR Experience...";
 
-  progressBar.appendChild(progressFill);
-  loadingScreen.appendChild(spinner);
-  loadingScreen.appendChild(progressBar);
-  loadingScreen.appendChild(loadingText);
-  document.body.appendChild(loadingScreen);
+    progressBar.appendChild(progressFill);
+    loadingScreen.appendChild(spinner);
+    loadingScreen.appendChild(progressBar);
+    loadingScreen.appendChild(loadingText);
+    document.body.appendChild(loadingScreen);
 
-  // Function to update progress
-  function updateProgress(percent) {
-    progressFill.style.width = `${percent}%`;
-    loadingText.textContent = `Loading AR Model: ${Math.round(percent)}%`;
-  }
+    // Function to update progress
+    function updateProgress(percent) {
+        progressFill.style.width = `${percent}%`;
+        loadingText.textContent = `Loading AR Model: ${Math.round(percent)}%`;
+    }
 
-  // Function to remove loading screen
-  function removeLoadingScreen() {
-    loadingScreen.remove();
-  }
+    // Function to remove loading screen
+    function removeLoadingScreen() {
+        loadingScreen.remove();
+    }
 
-  if (/iPhone|iPad|iPod/.test(userAgent)) {
-    // For iOS devices
-    fetch(`${exportedModelFileUrl}.usdz`)
-      .then((response) => {
-        const reader = response.body.getReader();
-        const contentLength = +response.headers.get("Content-Length");
-        let receivedLength = 0;
+    if (/iPhone|iPad|iPod/.test(userAgent)) {
+        // For iOS devices
+        fetch(`${exportedModelFileUrl}.usdz`)
+            .then((response) => {
+                const reader = response.body.getReader();
+                const contentLength = +response.headers.get("Content-Length");
+                let receivedLength = 0;
 
-        return new ReadableStream({
-          start(controller) {
-            function push() {
-              reader.read().then(({ done, value }) => {
-                if (done) {
-                  controller.close();
-                  return;
-                }
-                receivedLength += value.length;
-                const progress = (receivedLength / contentLength) * 100;
-                updateProgress(progress);
-                controller.enqueue(value);
-                push();
-              });
-            }
-            push();
-          },
-        });
-      })
-      .then(() => {
-        let ViewArForIos = document.getElementById("ViewArForIos");
-        ViewArForIos.style.display = "block";
-        ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-        ViewArForIos.click();
+                return new ReadableStream({
+                    start(controller) {
+                        function push() {
+                            reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    controller.close();
+                                    return;
+                                }
+                                receivedLength += value.length;
+                                const progress =
+                                    (receivedLength / contentLength) * 100;
+                                updateProgress(progress);
+                                controller.enqueue(value);
+                                push();
+                            });
+                        }
+                        push();
+                    },
+                });
+            })
+            .then(() => {
+                let ViewArForIos = document.getElementById("ViewArForIos");
+                ViewArForIos.style.display = "block";
+                ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
+                ViewArForIos.click();
+                removeLoadingScreen();
+            })
+            .catch((error) => {
+                loadingText.textContent =
+                    "Error loading AR model. Please try again.";
+                console.error("Error:", error);
+                setTimeout(removeLoadingScreen, 2000);
+            });
+    } else if (/Android/.test(userAgent)) {
+        // For Android devices
+        const modelViewer = document.getElementById("modelViewer");
+        let ArViewer = document.getElementById("ArView");
+        // Show loading screen
+        ArViewer.style.display = "block";
+
+        fetch(`${exportedModelFileUrl}.glb`)
+            .then((response) => {
+                const reader = response.body.getReader();
+                const contentLength = +response.headers.get("Content-Length");
+                let receivedLength = 0;
+
+                return new ReadableStream({
+                    start(controller) {
+                        function push() {
+                            reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    controller.close();
+                                    return;
+                                }
+                                receivedLength += value.length;
+                                const progress =
+                                    (receivedLength / contentLength) * 100;
+                                updateProgress(progress);
+                                controller.enqueue(value);
+                                push();
+                            });
+                        }
+                        push();
+                    },
+                });
+            })
+            .then(() => {
+                modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
+                modelViewer.setAttribute("ar-modes", "scene-viewer");
+                modelViewer.addEventListener("load", () => {
+                    removeLoadingScreen();
+                    modelViewer.enterAR();
+                });
+            })
+            .catch((error) => {
+                loadingText.textContent =
+                    "Error loading AR model. Please try again.";
+                console.error("Error:", error);
+                setTimeout(removeLoadingScreen, 2000);
+            });
+    } else {
         removeLoadingScreen();
-      })
-      .catch((error) => {
-        loadingText.textContent = "Error loading AR model. Please try again.";
-        console.error("Error:", error);
-        setTimeout(removeLoadingScreen, 2000);
-      });
-  } else if (/Android/.test(userAgent)) {
-    // For Android devices
-    const modelViewer = document.getElementById("modelViewer");
-    let ArViewer = document.getElementById("ArView");
-    // Show loading screen
-    ArViewer.style.display = "block";
-
-    fetch(`${exportedModelFileUrl}.glb`)
-      .then((response) => {
-        const reader = response.body.getReader();
-        const contentLength = +response.headers.get("Content-Length");
-        let receivedLength = 0;
-
-        return new ReadableStream({
-          start(controller) {
-            function push() {
-              reader.read().then(({ done, value }) => {
-                if (done) {
-                  controller.close();
-                  return;
-                }
-                receivedLength += value.length;
-                const progress = (receivedLength / contentLength) * 100;
-                updateProgress(progress);
-                controller.enqueue(value);
-                push();
-              });
-            }
-            push();
-          },
-        });
-      })
-      .then(() => {
-        modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-        modelViewer.setAttribute("ar-modes", "scene-viewer");
-        modelViewer.addEventListener("load", () => {
-          removeLoadingScreen();
-          modelViewer.enterAR();
-        });
-      })
-      .catch((error) => {
-        loadingText.textContent = "Error loading AR model. Please try again.";
-        console.error("Error:", error);
-        setTimeout(removeLoadingScreen, 2000);
-      });
-  } else {
-    removeLoadingScreen();
-    alert("This feature is only supported on iOS and Android devices.");
-  }
+        alert("This feature is only supported on iOS and Android devices.");
+    }
 }
 
 if (uiManager.elements.showInAR) {
@@ -1697,7 +1784,8 @@ async function creatingPDF() {
             params.rackAdded = params.rackAdded || {};
             params.rackAdded[child.rackArrayKey] =
                 params.rackAdded[child.rackArrayKey] || {};
-            params.rackAdded[child.rackArrayKey][child.rackCount] = child.position;
+            params.rackAdded[child.rackArrayKey][child.rackCount] =
+                child.position;
         }
     });
     let ModelImageName = await captureModelImages();
@@ -1715,19 +1803,40 @@ async function creatingPDF() {
 }
 
 if (uiManager.elements.savePdfButton) {
-    uiManager.elements.savePdfButton.addEventListener("click", async (event) => {
-        uiManager.elements.CreatingPdfFile.style.display = "flex";
-        try {
-            await creatingPDF();
-        } catch (error) {
-            console.error("Error creating PDF:", error);
+    uiManager.elements.savePdfButton.addEventListener(
+        "click",
+        async (event) => {
+            if (
+                !localStorage.getItem("user_id") &&
+                !localStorage.getItem("username")
+            ) {
+                document.querySelector(".loginFormDiv").style.display = "flex";
+                return;
+            } else {
+                document.getElementById("loadingModal").style.display = "flex";
+                document.getElementById("loadingText").innerHTML =
+                    "Please wait... we are creating your Pdf file";
+                try {
+                    await creatingPDF();
+                } catch (error) {
+                    console.error("Error creating PDF:", error);
+                }
+            }
         }
-    });
+    );
 }
 // ----------------------------------------------------------------------------------------------------------
 if (uiManager.elements.formSubmition) {
     uiManager.elements.formSubmition.addEventListener("click", function () {
-        formModel.style.display = "flex";
+        if (
+            !localStorage.getItem("user_id") &&
+            !localStorage.getItem("username")
+        ) {
+            document.querySelector(".loginFormDiv").style.display = "flex";
+            return;
+        } else {
+            formModel.style.display = "flex";
+        }
     });
 }
 if (uiManager.elements.formCloseBtn) {
@@ -1742,7 +1851,7 @@ if (uiManager.elements.formCloseBtn) {
 }
 if (uiManager.elements.submitForm) {
     uiManager.elements.submitForm.addEventListener("click", function () {
-        showLoadingModal("Please wait...");
+        showLoadingModal("Please wait... the form submitting");
         const form = document.getElementById("FormSubmitionForMonday");
         let hasError = false;
         const specialCharRegex = /[^a-zA-Z0-9\s]/;
@@ -1792,32 +1901,35 @@ if (uiManager.elements.submitForm) {
                 const modal = document.getElementById("confirmationModal");
                 modal.style.display = "flex"; // Or use a library method to show
 
-                document.getElementById("confirModelCloseButtton").onclick = () => {
-                    modal.style.display = "none";
-                    formModel.style.display = "none";
-                    hideLoadingModal();
-                };
+                document.getElementById("confirModelCloseButtton").onclick =
+                    () => {
+                        modal.style.display = "none";
+                        formModel.style.display = "none";
+                        hideLoadingModal();
+                    };
 
                 // Handle modal buttons
-                document.getElementById("yesButton").onclick = async function () {
-                    modal.style.display = "none"; // Hide modal
-                    formModel.style.display = "none";
-                    try {
-                        await creatingPDF();
-                        await delay(500);
-                        await generateArModel();
-                        await formSubmitionForMonday();
-                    } catch (e) {
-                        console.log("error while submitting Data, ", e);
-                    }
-                };
+                document.getElementById("yesButton").onclick =
+                    async function () {
+                        modal.style.display = "none"; // Hide modal
+                        formModel.style.display = "none";
+                        try {
+                            await creatingPDF();
+                            await delay(500);
+                            await generateArModel();
+                            await formSubmitionForMonday();
+                        } catch (e) {
+                            console.log("error while submitting Data, ", e);
+                        }
+                    };
 
-                document.getElementById("noButton").onclick = async function () {
-                    modal.style.display = "none"; // Hide modal
-                    formModel.style.display = "none";
-                    await formSubmitionForMonday();
-                    hideLoadingModal();
-                };
+                document.getElementById("noButton").onclick =
+                    async function () {
+                        modal.style.display = "none"; // Hide modal
+                        formModel.style.display = "none";
+                        await formSubmitionForMonday();
+                        hideLoadingModal();
+                    };
             }
         }
     });
@@ -1850,3 +1962,206 @@ document.addEventListener("DOMContentLoaded", function () {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
+
+if (uiManager.elements.registerForm) {
+    uiManager.elements.registerForm.addEventListener("click", async () => {
+        document.querySelector(".loginFormDiv").style.display = "none";
+        document.querySelector(".registerFormDiv").style.display = "flex";
+    });
+}
+if (uiManager.elements.LoginForm) {
+    uiManager.elements.LoginForm.addEventListener("click", async () => {
+        document.querySelector(".registerFormDiv").style.display = "none";
+        document.querySelector(".loginFormDiv").style.display = "flex";
+    });
+}
+
+if (uiManager.elements.loginRegisterClose) {
+    uiManager.elements.loginRegisterClose.addEventListener(
+        "click",
+        async () => {
+            document.getElementById("loginEmail").value = null;
+            document.getElementById("loginPassword").value = null;
+            document.getElementById("loginEmailError").innerHTML = null;
+            document.getElementById("loginPasswordError").innerHTML = null;
+            document.getElementById("responseErr").style.display = "none";
+            document.getElementById("registerUsername").value = null;
+            document.getElementById("registerEmail").value = null;
+            document.getElementById("registerPassword").value = null;
+            document.getElementById("registerUsernameError").innerHTML = null;
+            document.getElementById("registerEmailError").innerHTML = null;
+            document.getElementById("registerPasswordError").innerHTML = null;
+            document.querySelector(".loginFormDiv").style.display = "none";
+            document.querySelector(".registerFormDiv").style.display = "none";
+        }
+    );
+}
+
+document.getElementById("loginButton").addEventListener("click", function () {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+    const emailError = document.getElementById("loginEmailError");
+    const passwordError = document.getElementById("loginPasswordError");
+    const responseError = document.getElementById("responseErr");
+
+    // Reset error messages
+    emailError.textContent = "";
+    passwordError.textContent = "";
+    responseError.style.display = "none";
+    responseError.textContent = "";
+
+    let hasError = false;
+
+    // Email validation
+    if (!email) {
+        emailError.textContent = "Email is required.";
+        hasError = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        emailError.textContent = "Enter a valid email address.";
+        hasError = true;
+    }
+
+    // Password validation
+    if (!password) {
+        passwordError.textContent = "Password is required.";
+        hasError = true;
+    } else if (password.length < 6) {
+        passwordError.textContent =
+            "Password must be at least 6 characters long.";
+        hasError = true;
+    }
+
+    // Stop the function if there are validation errors
+    if (hasError) return;
+
+    // Prepare form data
+    const form = document.getElementById("Login");
+    const formData = new FormData(form);
+
+    // Send an AJAX request
+    fetch("api.php", {
+        method: "POST",
+        body: formData,
+    })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json(); // Parse JSON response
+        })
+        .then((data) => {
+            if (data.success) {
+                // Handle successful login
+                createSession(data.session.user_id, data.session.username);
+                document.querySelector(".loginFormDiv").style.display = "none";
+                document.getElementById("myModelsDiv").style.display = "block";
+                document.querySelector(".LogoutUser").style.display = "block";
+            } else {
+                // Handle server-side validation errors
+                responseError.style.display = "block";
+                responseError.textContent = data.message || "Login failed.";
+            }
+        })
+        .catch((error) => {
+            console.error("Request failed:", error);
+            responseError.style.display = "block";
+            responseError.textContent =
+                "An unexpected error occurred. Please try again later.";
+        });
+});
+
+function createSession(userId, username) {
+    localStorage.setItem("user_id", userId);
+    localStorage.setItem("username", username);
+}
+document
+    .getElementById("registerButton")
+    .addEventListener("click", function () {
+        const username = document
+            .getElementById("registerUsername")
+            .value.trim();
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document
+            .getElementById("registerPassword")
+            .value.trim();
+
+        const usernameError = document.getElementById("registerUsernameError");
+        const emailError = document.getElementById("registerEmailError");
+        const passwordError = document.getElementById("registerPasswordError");
+
+        // Reset error messages
+        usernameError.textContent = "";
+        emailError.textContent = "";
+        passwordError.textContent = "";
+
+        let hasError = false;
+
+        // Username validation
+        if (!username) {
+            usernameError.textContent = "Username is required.";
+            hasError = true;
+        } else if (username.length < 3 || username.length > 15) {
+            usernameError.textContent =
+                "Username must be between 3 and 15 characters.";
+            hasError = true;
+        }
+
+        // Email validation
+        if (!email) {
+            emailError.textContent = "Email is required.";
+            hasError = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            emailError.textContent = "Enter a valid email address.";
+            hasError = true;
+        }
+
+        // Password validation
+        if (!password) {
+            passwordError.textContent = "Password is required.";
+            hasError = true;
+        } else if (password.length < 6) {
+            passwordError.textContent =
+                "Password must be at least 6 characters.";
+            hasError = true;
+        }
+
+        // Stop the function if there are validation errors
+        if (hasError) return;
+
+        // Prepare form data
+        const form = document.getElementById("Register");
+        const formData = new FormData(form);
+
+        // Send an AJAX request
+        fetch("api.php", {
+            method: "POST",
+            body: formData,
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                if (data.success) {
+                    // Handle successful registration
+                    alert("Registration successful. Redirecting to login...");
+                    document.querySelector(".registerFormDiv").style.display =
+                        "none";
+                    document.querySelector(".loginFormDiv").style.display =
+                        "flex";
+                } else {
+                    // Handle server-side errors
+                    if (data.message) {
+                        alert(data.message);
+                    } else {
+                        alert("An error occurred. Please try again.");
+                    }
+                }
+            })
+            .catch((error) => {
+                console.error("Request failed:", error);
+                alert("An unexpected error occurred. Please try again later.");
+            });
+    });

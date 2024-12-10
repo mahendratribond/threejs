@@ -9,7 +9,6 @@
 </head>
 
 <body>
-  <div id="responseMessage" style="display: none;"><p id="response"></p></div>
   <div id="loginForm" class="form-container">
     <form id="Login">
       <h2>Login</h2>
@@ -61,10 +60,8 @@
         .then(data => {
           if (data.success) {
             // Perform actions on successful registration
-            response.textContent = "Login successfully";
-            responseMessage.style.display = "block";
             createSession(data.session.user_id, data.session.username);
-            window.location.href = "test6.html";
+            // window.location.href = "test6.html";
           } else {
             // Handle errors
             console.error("Error:", data);

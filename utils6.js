@@ -210,20 +210,6 @@ export async function updateModelName(model, oldName, newName) {
     return model;
 }
 
-export async function updateMainModelName(model) {
-    if (model) {
-        model.traverse(async function (modelNode) {
-            // if (modelNode.name == 'Model_661') {
-            //     modelNode.name = 'Model_661';
-            // }
-            // if (modelNode.name == 'Model_1061') {
-            //     modelNode.name = 'Model_1061';
-            // }
-        });
-    }
-    return model;
-}
-
 export async function cloneWithCustomProperties(source, target) {
     for (let model of allModelNames) {
         let sourceModel = source.getObjectByName(model);
@@ -497,9 +483,6 @@ export async function setupSupportBaseModel() {
 export async function setupHeader500HeightModel() {
     let header;
     if (sharedParams.header_500_height_model) {
-        sharedParams.header_500_height_model = await updateMainModelName(
-            sharedParams.header_500_height_model
-        );
 
         await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
             if (allModelNames.includes(modelNode.name)) {
@@ -599,10 +582,6 @@ export async function setupHeader500HeightModel() {
 }
 
 export async function setupHeaderWoodenShelfModel() {
-    sharedParams.header_wooden_shelf_model = await updateMainModelName(
-        sharedParams.header_wooden_shelf_model
-    );
-
     await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
         if (allModelNames.includes(modelNode.name)) {
             if (sharedParams.header_wooden_shelf_model) {
@@ -631,8 +610,6 @@ export async function setupHeaderWoodenShelfModel() {
 
 export async function setupHeaderGlassShelfModel() {
     if (sharedParams.header_glass_shelf_model) {
-        sharedParams.header_glass_shelf_model = await updateMainModelName(sharedParams.header_glass_shelf_model);
-
         sharedParams.header_glass_shelf_model.traverse(async function (child) {
             if (child.material) {
                 child.material = await generateGlassMaterial();
@@ -675,7 +652,6 @@ export async function setupHeaderGlassShelfModel() {
 export async function setupSlottedSidesModel() {
     let slotted_left_side, slotted_right_side, frame;
     if (sharedParams.slotted_sides_model) {
-        sharedParams.slotted_sides_model = await updateMainModelName(sharedParams.slotted_sides_model);
         sharedParams.slotted_sides_model = await updateModelName(
             sharedParams.slotted_sides_model,
             "Left_Ex_Slotted_",
@@ -757,7 +733,6 @@ export async function setupSlottedSidesModel() {
 
 export async function setupWoodenRackModel(model) {
     if (model) {
-        model = await updateMainModelName(model);
         model = await updateModelName(
             model,
             "Rack_Wooden_Shelf_",
@@ -797,7 +772,6 @@ export async function setupWoodenRackModel(model) {
 
 export async function setupGlassRackModel(model) {
     if (model) {
-        model = await updateMainModelName(model);
         model = await updateModelName(
             model,
             "Rack_Glass_Shelf_",
@@ -1572,9 +1546,7 @@ export async function computeVisibleNodeBoundingBox(
     return bbox;
 }
 
-export async function drawMeasurementBoxesWithLabels(
-
-) {
+export async function drawMeasurementBoxesWithLabels() {
     if (sharedParams.modelGroup) {
         const bbox = await computeVisibleNodeBoundingBox(
             sharedParams.modelGroup,
@@ -2493,7 +2465,7 @@ async function getComponentSize(model, modelComponentsData) {
 }
 
 export async function savePdfData(dataToSave) {
-    const CreatingPdfFile = document.getElementById("CreatingPdfFile");
+    const loadingModal = document.getElementById("loadingModal");
     let modelMeasurementData = {};
     try {
         await traverseAsync(sharedParams.modelGroup, async (child) => {
@@ -2539,7 +2511,7 @@ export async function savePdfData(dataToSave) {
         .then((data) => {
             if (data.success) {
                 console.log("Pdf saved successfully!");
-                CreatingPdfFile.style.display = "none";
+                loadingModal.style.display = "none";
                 const pdfDownoad = document.createElement("a");
                 pdfDownoad.href = data.url;
                 pdfDownoad.download = fileName;

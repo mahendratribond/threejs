@@ -17,7 +17,9 @@ import {
     showHideNodes,
     centerMainModel,
     addAnotherModels,
+    checkForCollision,
     findParentNodeByName,
+    drawMeasurementBoxesWithLabels,
 } from "../../utils6.js";
 
 import { otherModelSetup, updateMaterial } from "../../main6.js";
@@ -53,18 +55,26 @@ export class UIManager {
             headerOptions: document.querySelector(".headerOptions"),
             headerSizeDropdown: document.querySelector(".headerSizeDropdown"),
             headerRodToggle: document.querySelector(".headerRodToggle"),
-            headerRodColorDropdown: document.querySelector(".headerRodColorDropdown"),
+            headerRodColorDropdown: document.querySelector(
+                ".headerRodColorDropdown"
+            ),
             topFrameFileUpload: document.querySelector(".topFrameFileUpload"),
-            headerFrameColorInput: document.querySelector(".headerFrameColorInput"),
+            headerFrameColorInput: document.querySelector(
+                ".headerFrameColorInput"
+            ),
             headerFrameColorDropdown: document.querySelector(
                 ".headerFrameColorDropdown"
             ),
             slottedSidesToggle: document.querySelector(".slottedSidesToggle"),
             mainFrameFileUpload: document.querySelector(".mainFrameFileUpload"),
             mainFrameColorInput: document.querySelector(".mainFrameColorInput"),
-            baseSelectorDropdown: document.querySelector(".baseSelectorDropdown"),
+            baseSelectorDropdown: document.querySelector(
+                ".baseSelectorDropdown"
+            ),
             hangerClothesToggle: document.querySelector(".hangerClothesToggle"),
-            hangerGolfClubsToggle: document.querySelector(".hangerGolfClubsToggle"),
+            hangerGolfClubsToggle: document.querySelector(
+                ".hangerGolfClubsToggle"
+            ),
             hangerStandColor: document.querySelector(".hangerStandColor"),
             rackShelfColor: document.querySelector(".rackShelfColor"),
             rackStandColor: document.querySelector(".rackStandColor"),
@@ -77,7 +87,6 @@ export class UIManager {
             saveModelDataButton: document.getElementById("saveModelDataButton"),
             showInAR: document.getElementById("showInAR"),
             savePdfButton: document.getElementById("savePdfButton"),
-            CreatingPdfFile: document.getElementById("CreatingPdfFile"),
             cropperContainer: document.getElementById("cropper-container"),
             cropperImage: document.getElementById("cropper-image"),
             cropButton: document.getElementById("crop-button"),
@@ -94,6 +103,9 @@ export class UIManager {
             zoomInButton: document.getElementById("cropper-zoom-in"),
             zoomOutButton: document.getElementById("cropper-zoom-out"),
             resetButton: document.getElementById("cropper-reset"),
+            registerForm: document.querySelector(".openRegisterForm"),
+            LoginForm: document.querySelector(".openLoginForm"),
+            loginRegisterClose: document.getElementById("loginRegisterClose"),
         };
 
         this.loadingElements = {
@@ -133,7 +145,8 @@ export class UIManager {
             // frameSize.addEventListener("change", async function (event) {
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("frameSize")) {
-                    setting[params.selectedGroupName].defaultModel = event.target.value;
+                    setting[params.selectedGroupName].defaultModel =
+                        event.target.value;
                     await showHideNodes();
                     await centerMainModel();
                     // await lightSetup();
@@ -152,16 +165,24 @@ export class UIManager {
                     //   "setting[params.selectedGroupName]",
                     //   setting[params.selectedGroupName]
                     // );
-                    console.log("params.selectedGroupName", params.selectedGroupName);
-                    setting[params.selectedGroupName].topOption = event.target.value;
+                    console.log(
+                        "params.selectedGroupName",
+                        params.selectedGroupName
+                    );
+                    setting[params.selectedGroupName].topOption =
+                        event.target.value;
                     setting[params.selectedGroupName].headerRodToggle = false;
                     if (
-                        setting[params.selectedGroupName].topOption == "Header_Wooden_Shelf"
+                        setting[params.selectedGroupName].topOption ==
+                        "Header_Wooden_Shelf"
                     ) {
-                        setting[params.selectedGroupName].headerRodToggle = true;
+                        setting[
+                            params.selectedGroupName
+                        ].headerRodToggle = true;
                     }
 
-                    const headerRodToggle = document.querySelector(".headerRodToggle");
+                    const headerRodToggle =
+                        document.querySelector(".headerRodToggle");
                     headerRodToggle.checked =
                         setting[params.selectedGroupName].headerRodToggle;
                     await otherModelSetup();
@@ -175,7 +196,8 @@ export class UIManager {
             this.elements.headerOptions.value = params.headerOptions;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("headerOptions")) {
-                    setting[params.selectedGroupName].headerOptions = event.target.value;
+                    setting[params.selectedGroupName].headerOptions =
+                        event.target.value;
                     await otherModelSetup();
                     await showHideNodes();
                 }
@@ -210,7 +232,8 @@ export class UIManager {
             this.elements.headerRodColorDropdown.value = params.rodFrameColor;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("headerRodColorDropdown")) {
-                    setting[params.selectedGroupName].rodFrameColor = event.target.value;
+                    setting[params.selectedGroupName].rodFrameColor =
+                        event.target.value;
                     await otherModelSetup();
                     await showHideNodes();
                 }
@@ -230,7 +253,8 @@ export class UIManager {
         }
 
         if (this.elements.slottedSidesToggle) {
-            this.elements.slottedSidesToggle.checked = params.slottedSidesToggle;
+            this.elements.slottedSidesToggle.checked =
+                params.slottedSidesToggle;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("slottedSidesToggle")) {
                     setting[params.selectedGroupName].slottedSidesToggle =
@@ -251,7 +275,8 @@ export class UIManager {
 
                         const reader = new FileReader();
                         reader.onload = async function (e) {
-                            const cropperImage = document.getElementById("cropper-image");
+                            const cropperImage =
+                                document.getElementById("cropper-image");
                             const cropperContainer =
                                 document.getElementById("cropper-container");
                             cropperImage.src = e.target.result;
@@ -261,15 +286,18 @@ export class UIManager {
                                 sharedParams.cropper.destroy();
                             }
 
-                            let currentGroup = sharedParams.modelGroup.getObjectByName(
-                                params.selectedGroupName
-                            );
+                            let currentGroup =
+                                sharedParams.modelGroup.getObjectByName(
+                                    params.selectedGroupName
+                                );
                             let defaultModelName =
                                 setting[params.selectedGroupName].defaultModel;
 
-                            let currentModel = currentGroup.getObjectByName(defaultModelName);
+                            let currentModel =
+                                currentGroup.getObjectByName(defaultModelName);
                             let defaultHeaderSize =
-                                setting[params.selectedGroupName].defaultHeaderSize;
+                                setting[params.selectedGroupName]
+                                    .defaultHeaderSize;
                             let currentHeader =
                                 currentModel.getObjectByName(defaultHeaderSize);
                             const size = await getCurrentModelSize(
@@ -304,7 +332,8 @@ export class UIManager {
 
                         const reader = new FileReader();
                         reader.onload = async function (e) {
-                            const cropperImage = document.getElementById("cropper-image");
+                            const cropperImage =
+                                document.getElementById("cropper-image");
                             const cropperContainer =
                                 document.getElementById("cropper-container");
                             cropperImage.src = e.target.result;
@@ -314,14 +343,19 @@ export class UIManager {
                                 sharedParams.cropper.destroy();
                             }
 
-                            let currentGroup = sharedParams.modelGroup.getObjectByName(
-                                params.selectedGroupName
-                            );
+                            let currentGroup =
+                                sharedParams.modelGroup.getObjectByName(
+                                    params.selectedGroupName
+                                );
                             let defaultModelName =
                                 setting[params.selectedGroupName].defaultModel;
-                            let defaultModel = currentGroup.getObjectByName(defaultModelName);
+                            let defaultModel =
+                                currentGroup.getObjectByName(defaultModelName);
 
-                            const size = await getCurrentModelSize(defaultModel, "Cube1-Mat");
+                            const size = await getCurrentModelSize(
+                                defaultModel,
+                                "Cube1-Mat"
+                            );
                             // console.log(size)
 
                             sharedParams.cropper = new Cropper(cropperImage, {
@@ -346,47 +380,69 @@ export class UIManager {
         }
 
         if (this.elements.cropButton) {
-            this.elements.cropButton.addEventListener("click", async (event) => {
-                if (sharedParams.cropper) {
-                    let selectedGroupName = params.selectedGroupName;
-                    let defaultModel = setting[selectedGroupName].defaultModel;
-                    let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
-                    if (params.fileUploadFlag == "MainFrame") {
-                        sharedParams.mainFrameCropedImage =
-                            sharedParams.mainFrameCropedImage || {};
-                        sharedParams.mainFrameCropedImage[selectedGroupName] =
-                            sharedParams.mainFrameCropedImage[selectedGroupName] || {};
-                        let mainFrameSaveImageURl = await this.saveCropImage();
-                        sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] =
-                            mainFrameSaveImageURl.imageUrl;
-                        await setMainFrameCropedImage(
-                            sharedParams.mainFrameCropedImage,
-                        );
-                    } else if (params.fileUploadFlag == "TopFrame") {
-                        sharedParams.topFrameCropedImage =
-                            sharedParams.topFrameCropedImage || {};
-                        sharedParams.topFrameCropedImage[selectedGroupName] =
-                            sharedParams.topFrameCropedImage[selectedGroupName] || {};
-                        sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] =
-                            sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] ||
-                            {};
-                        let topFrameSaveImageURl = await this.saveCropImage();
-                        sharedParams.topFrameCropedImage[selectedGroupName][defaultModel][
-                            defaultHeaderSize
-                        ] = topFrameSaveImageURl.imageUrl;
-                        await setTopFrameCropedImage(
-                            sharedParams.topFrameCropedImage,
-                        );
+            this.elements.cropButton.addEventListener(
+                "click",
+                async (event) => {
+                    if (sharedParams.cropper) {
+                        let selectedGroupName = params.selectedGroupName;
+                        let defaultModel =
+                            setting[selectedGroupName].defaultModel;
+                        let defaultHeaderSize =
+                            setting[selectedGroupName].defaultHeaderSize;
+                        if (params.fileUploadFlag == "MainFrame") {
+                            sharedParams.mainFrameCropedImage =
+                                sharedParams.mainFrameCropedImage || {};
+                            sharedParams.mainFrameCropedImage[
+                                selectedGroupName
+                            ] =
+                                sharedParams.mainFrameCropedImage[
+                                    selectedGroupName
+                                ] || {};
+                            let mainFrameSaveImageURl =
+                                await this.saveCropImage();
+                            sharedParams.mainFrameCropedImage[
+                                selectedGroupName
+                            ][defaultModel] = mainFrameSaveImageURl.imageUrl;
+                            await setMainFrameCropedImage(
+                                sharedParams.mainFrameCropedImage
+                            );
+                        } else if (params.fileUploadFlag == "TopFrame") {
+                            sharedParams.topFrameCropedImage =
+                                sharedParams.topFrameCropedImage || {};
+                            sharedParams.topFrameCropedImage[
+                                selectedGroupName
+                            ] =
+                                sharedParams.topFrameCropedImage[
+                                    selectedGroupName
+                                ] || {};
+                            sharedParams.topFrameCropedImage[selectedGroupName][
+                                defaultModel
+                            ] =
+                                sharedParams.topFrameCropedImage[
+                                    selectedGroupName
+                                ][defaultModel] || {};
+                            let topFrameSaveImageURl =
+                                await this.saveCropImage();
+                            sharedParams.topFrameCropedImage[selectedGroupName][
+                                defaultModel
+                            ][defaultHeaderSize] =
+                                topFrameSaveImageURl.imageUrl;
+                            await setTopFrameCropedImage(
+                                sharedParams.topFrameCropedImage
+                            );
+                        }
                     }
                 }
-            });
+            );
         }
 
         if (this.elements.headerFrameColorDropdown) {
             this.elements.headerFrameColorDropdown.value =
                 params.topFrameBackgroundColor;
             document.addEventListener("change", async function (event) {
-                if (event.target.classList.contains("headerFrameColorDropdown")) {
+                if (
+                    event.target.classList.contains("headerFrameColorDropdown")
+                ) {
                     setting[params.selectedGroupName].topFrameBackgroundColor =
                         event.target.value;
                     await setTopFrameCropedImage();
@@ -410,7 +466,8 @@ export class UIManager {
             this.elements.baseColor.value = params.baseFrameColor;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("baseColor")) {
-                    setting[params.selectedGroupName].baseFrameColor = event.target.value;
+                    setting[params.selectedGroupName].baseFrameColor =
+                        event.target.value;
                     await otherModelSetup();
                     await showHideNodes();
                 }
@@ -438,7 +495,8 @@ export class UIManager {
         }
 
         if (this.elements.hangerClothesToggle) {
-            this.elements.hangerClothesToggle.checked = params.hangerClothesToggle;
+            this.elements.hangerClothesToggle.checked =
+                params.hangerClothesToggle;
             document.addEventListener("change", async (event) => {
                 if (event.target.classList.contains("hangerClothesToggle")) {
                     setting[params.selectedGroupName].hangerClothesToggle =
@@ -463,7 +521,8 @@ export class UIManager {
         }
 
         if (this.elements.hangerStandColor) {
-            this.elements.hangerStandColor.value = params.defaultHangerStandColor;
+            this.elements.hangerStandColor.value =
+                params.defaultHangerStandColor;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("hangerStandColor")) {
                     setting[params.selectedGroupName].defaultHangerStandColor =
@@ -475,11 +534,13 @@ export class UIManager {
         }
 
         if (this.elements.rackShelfColor) {
-            this.elements.rackShelfColor.value = params.defaultRackShelfStandColor;
+            this.elements.rackShelfColor.value =
+                params.defaultRackShelfStandColor;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("rackShelfColor")) {
-                    setting[params.selectedGroupName].defaultRackShelfStandColor =
-                        event.target.value;
+                    setting[
+                        params.selectedGroupName
+                    ].defaultRackShelfStandColor = event.target.value;
                     await otherModelSetup();
                     await showHideNodes();
                 }
@@ -487,11 +548,13 @@ export class UIManager {
         }
 
         if (this.elements.rackStandColor) {
-            this.elements.rackStandColor.value = params.defaultRackStandStandColor;
+            this.elements.rackStandColor.value =
+                params.defaultRackStandStandColor;
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("rackStandColor")) {
-                    setting[params.selectedGroupName].defaultRackStandStandColor =
-                        event.target.value;
+                    setting[
+                        params.selectedGroupName
+                    ].defaultRackStandStandColor = event.target.value;
                     await otherModelSetup();
                     await showHideNodes();
                 }
@@ -554,10 +617,12 @@ export class UIManager {
                         });
                         bsCollapse.hide(); // Explicitly hide the open accordion
                     });
-                    const openedAccordionItem = event.target.closest(".accordion-item");
+                    const openedAccordionItem =
+                        event.target.closest(".accordion-item");
 
                     // Find the data-model attribute of the currently open accordion item
-                    const modelName = openedAccordionItem.getAttribute("data-model");
+                    const modelName =
+                        openedAccordionItem.getAttribute("data-model");
                     if (modelName) {
                         params.selectedGroupName = modelName;
                         await otherModelSetup();
@@ -567,17 +632,76 @@ export class UIManager {
             );
         }
 
+        // Move Left
+        this.elements.moveLeftModel.addEventListener("click", async () => {
+            const selectedGroupName = params.selectedGroupName;
+            const selectedModelGroup =
+                sharedParams.modelGroup.getObjectByName(selectedGroupName);
+
+            if (selectedModelGroup) {
+                // Check for collision before moving left
+                const canMoveLeft = await checkForCollision(
+                    selectedModelGroup,
+                    -params.moveLeftRight
+                );
+
+                if (canMoveLeft) {
+                    selectedModelGroup.position.x -= params.moveLeftRight; // Move selected model group left
+                    if (!selectedModelGroup.spacing) {
+                        selectedModelGroup.spacing = 0;
+                    }
+                    selectedModelGroup.spacing -= params.moveLeftRight;
+                    await drawMeasurementBoxesWithLabels();
+                } else {
+                    console.log(
+                        "Collision detected! Cannot move further left."
+                    );
+                }
+            } else {
+                console.log(`Group ${selectedGroupName} not found.`);
+            }
+        });
+
+        // Move Right
+        this.elements.moveRightModel.addEventListener("click", async () => {
+            const selectedGroupName = params.selectedGroupName;
+            const selectedModelGroup =
+                sharedParams.modelGroup.getObjectByName(selectedGroupName);
+
+            if (selectedModelGroup) {
+                // Check for collision before moving right
+                const canMoveRight = await checkForCollision(
+                    selectedModelGroup,
+                    params.moveLeftRight
+                );
+
+                if (canMoveRight) {
+                    selectedModelGroup.position.x += params.moveLeftRight; // Move selected model group right
+                    if (!selectedModelGroup.spacing) {
+                        selectedModelGroup.spacing = 0;
+                    }
+                    selectedModelGroup.spacing += params.moveLeftRight;
+                    await drawMeasurementBoxesWithLabels();
+                } else {
+                    console.log(
+                        "Collision detected! Cannot move further right."
+                    );
+                }
+            } else {
+                console.log(`Group ${selectedGroupName} not found.`);
+            }
+        });
+
         document.addEventListener(
             "mousemove",
             (event) => this.onMouseMove(event),
             false
         );
-        window.addEventListener("resize", (event) =>
-            this.onWindowResize()
-        );
+        window.addEventListener("resize", (event) => this.onWindowResize());
         document.removeEventListener("click", this.handleClickWrapper);
         document.addEventListener(
-            "click", (this.handleClickWrapper = (event) => this.handleClick(event))
+            "click",
+            (this.handleClickWrapper = (event) => this.handleClick(event))
         );
     }
 

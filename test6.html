@@ -339,13 +339,6 @@
                       <option value="0xffffff">White</option>
                     </select>
                   </div>
-                  <!-- <div class="control-group"></div>
-              <label for="addHanger">Fixtures</label>
-              <div class="horizontal-buttons d-flex gap-2">
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Iron">Golf Club Iron</button>
-                <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Golf_Club_Driver">Golf Club Driver</button>
-              </div>
-            </div> -->
                   <div class="control-group">
                     <!-- <label for="addRack">Shelf</label> -->
                     <div class="horizontal-buttons d-flex gap-2">
@@ -377,27 +370,74 @@
             </label>
           </div>
           <div class="control-group">
-            <!-- <label for="addAnotherModel">Add Another Model</label> -->
-            <button class="btn btn-primary btn-sm addAnotherModel" data-type="Add_Another_Model">Add Another
-              Model</button>
-          </div>
-          <div class="control-group">
-            <!-- <input type="checkbox" class="btn-check" id="selectedModel" autocomplete="off">
-            <label class="btn btn-outline-primary" for="selectedModel"><i class="fas fa-cube"></i></label> -->
-
+            <button class="btn btn-primary btn-sm addAnotherModel" data-type="Add_Another_Model">Add Another Model</button>
           </div>
           <div class="control-group moveLeftRightModel" style="display: none;">
             <button id="moveLeftModel" class="btn btn-outline-primary"><i class="fas fa-arrow-left"></i></button>
             <button id="moveRightModel" class="btn btn-outline-primary"><i class="fas fa-arrow-right"></i></button>
           </div>
-
           <!-- <div class="control-group mt-3">
             <button id="captureButton" class="btn btn-outline-primary btn-sm">Capture Image</button>
           </div> -->
           <!-- <div class="control-group mt-3">
             <button id="takeScreenShot" class="btn btn-outline-primary btn-sm">take screenShot</button>
           </div> -->
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 loginFormDiv"> 
+            <div id="loginForm" class="form-container">
+              <div id="loginRegisterClose">X</div>
+              <form id="Login">
+                <h2>Login</h2>
+                <p id="responseErr" style="color: red; display: none;"></p>
+                <input type="email" name="email" id="loginEmail" placeholder="Email" required autocomplete="email">
+                <span id="loginEmailError" class="error-message" style="color: red;"></span>
+              
+                <input type="password" name="password" id="loginPassword" placeholder="Password" required
+                  autocomplete="current-password">
+                <span id="loginPasswordError" class="error-message" style="color: red;"></span>
+              
+                <input type="hidden" name="action" value="LoginUser">
+              
+                <input type="button" value="Login" id="loginButton">
+              </form>
+
+              <div class="switch-form">
+                <span>Don't have an account? <button class="openRegisterForm">Register</button></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group mt-3 registerFormDiv"> 
+            <div id="registerForm" class="form-container">
+              <form id="Register">
+                <h2>Register</h2>
+              
+                <!-- Username Field -->
+                <input type="text" id="registerUsername" name="userName" placeholder="Username" required autocomplete="username">
+                <span id="registerUsernameError" class="error-message" style="color: red;"></span>
+              
+                <!-- Email Field -->
+                <input type="email" id="registerEmail" name="email" placeholder="Email" required autocomplete="email">
+                <span id="registerEmailError" class="error-message" style="color: red;"></span>
+              
+                <!-- Password Field -->
+                <input type="password" id="registerPassword" name="password" placeholder="Password" required
+                  autocomplete="new-password">
+                <span id="registerPasswordError" class="error-message" style="color: red;"></span>
+              
+                <!-- Hidden Field -->
+                <input type="hidden" name="action" value="RegisterUser">
+              
+                <!-- Register Button -->
+                <input type="button" value="Register" id="registerButton">
+              </form>
+
+              <div class="switch-form">
+                <span>Already have an account? <button class="openLoginForm">Login</button></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group mt-3" id="myModelsDiv" style="display: none;">
             <a href="my-model.php" class="btn btn-link btn-sm">My Models</a>
           </div>
           <div class="control-group mt-3">
@@ -410,14 +450,14 @@
             <button id="formSubmition" class="btn btn-outline-primary btn-sm">Submit</button>
           </div>
           <div class="control-group mt-3">
-            <button id="createQrButton" class="btn btn-outline-primary btn-sm">Create QR</button>
+            <button id="createQrButton" class="btn btn-outline-primary btn-sm">Show In My Phone</button>
           </div>
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 ArInPhone" style="display:none">
             <button id="showInAR" class="border-0 rounded-pill bg-white">
               <img src=".\assets\images\modelLogo.png" alt="View in AR" style="width: 30px;">
             </button>
           </div>
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 LogoutUser" style="display:none">
             <button id="logout" class="btn btn-outline-primary btn-sm">Log Out</button>
           </div>
           <div id="ArView" class="ar-view" style="display:none; width: 100%; height: 100vh; z-index: 99; position: fixed; top: 0; left: 0; background-color: #ced9eb;">
@@ -427,20 +467,14 @@
           <a id="ViewArForIos" rel="ar" style="display: none;">
             <img href="eg.jpg>" alt="here" />
           </a>
-          <div id="loadingModal" class="extraModel">
-            <div>
-              <p id="loadingText"></p>
-              <div class="modelWaitingloader"></div> <!-- Optionally, add a CSS spinner here -->
-            </div>
-          </div>
-          <div id="CreatingPdfFile" class="extraModel" style="background: rgba(0, 0, 0, 0.5)">
-            <div>
-              <p>Please wait... we are creating your Pdf file</p>
-              <div class="modelWaitingloader"></div> <!-- Optionally, add a CSS spinner here -->
+          <div id="loadingModal" class="extraModel" style="background: rgba(0, 0, 0, 0.5)">
+            <div style=" display: flex; flex-direction: column; align-items: center;">
+              <div class="modelWaitingloader"><img src="./assets/images/newLoader.gif" alt="" style="width: 14%; padding-bottom: 10px;">
+                <p id="loadingText"></p>
+              </div>
             </div>
           </div>
           <div id="formModel" class="extraModel" style="background: rgba(0, 0, 0, 0.5)">
-            <!-- Modal Structure -->
             <div class="modal" id="confirmationModal" tabindex="-1" role="dialog">
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -492,9 +526,9 @@
             <input type="button" id="closeBtn" value="X">
             <img id="qrImage">
           </div>
+
         </div>
       </div>
-      <!-- <button id="toggleControlsButton" class="btn btn-primary btn-sm">Toggle Controls</button> -->
     </div>
     <div class="right-controls hidden">
       <button class="toggle-controls-button btn btn-primary btn-sm" data-target=".right-controls-content">
@@ -562,13 +596,17 @@
         .catch(error => console.error('Fetch error:', error));
     };
   </script>
-  <script>
+  <script>    
+    const userAgent = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(userAgent) || /Android/.test(userAgent)) {
+      document.querySelector(".ArInPhone").style.display = "block";
+    }
     function checkSession() {
       const userId = localStorage.getItem('user_id');
       const username = localStorage.getItem('username');
-
-
       if (userId && username) {
+        document.getElementById("myModelsDiv").style.display = "block";
+        document.querySelector(".LogoutUser").style.display = "block";
         console.log("User is logged in:", { username });
         const formData = new FormData();
         formData.append("username", username);
@@ -580,23 +618,20 @@
             body: formData,
           })
         };
-      } else {
-        window.location.href = "login.html";
       }
     }
+    checkSession();
 
     function destroySession() {
       // Remove session data from localStorage
       localStorage.removeItem('user_id');
       localStorage.removeItem('username');
     }
-
-    checkSession();
-
     document.getElementById("logout").addEventListener("click", function(){
       destroySession();
       window.location.reload();
     })
+    
     // Lazy load images using IntersectionObserver
     document.addEventListener("DOMContentLoaded", function () {
       const images = document.querySelectorAll('img[data-src]');
