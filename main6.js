@@ -206,8 +206,6 @@ async function init() {
     let main_model = await loadGLTFModel(params.defaultModel + ".glb")
     main_model.name = params.selectedGroupName;
     sharedParams.modelGroup.add(main_model);
-    // await loadAllModels();
-    // return 
     await setupMainModel(main_model);
     await showHideNodes();
     loadHangerModels();
@@ -449,66 +447,6 @@ async function loadPreviousModels() {
         }
     }
     await loaderShowHide(false);
-}
-async function loadAllModels() {
-    try {
-        // Create an array of promises for all model loads
-        const loadPromises = modelQueue.map( (modelPath) =>
-            loadGLTFModel(modelPath)
-                .then((gltf) => {
-                    console.log(`Loaded: ${modelPath}`, gltf);
-                    loadedModels.set(modelPath, gltf);
-                    return gltf;
-                })
-                .catch((error) => {
-                    console.error(`Failed to load ${modelPath}:`, error);
-                    return null;
-                })
-        );
-
-
-
-
-
-        // Optional: Add a loading indicator
-        // this.showLoadingProgress(loadPromises.length);
-        console.log(loadPromises.length);
-
-        // Load all models in parallel
-        const results = await Promise.allSettled(loadPromises);
-
-        // Process results
-        results.forEach((result, index) => {
-            console.log(result);
-            console.log(index);
-            
-            const modelPath = modelQueue[index];
-            if (result.status === "fulfilled" && result.value) {
-                // Model loaded successfully
-                const model = result.value;
-                setupMainModel(model);
-                if (allModelNames.includes(model.getObjectByName(model.children))) {
-                    let modelData = allModelNames.includes(
-                        model.getObjectByName(model.children)
-                    );
-                    modelData.visible = false;
-                    main_model.add(modelData);
-                }
-                console.log("model in loop", model);
-                // Center the model
-                // const boundingBox = new THREE.Box3().setFromObject(model);
-                // const center = boundingBox.getCenter(new THREE.Vector3());
-                // model.position.x = -center.x;
-                // model.position.y = -center.y;
-                // model.position.z = -center.z;
-            }
-        });
-
-        console.log("All models loaded");
-        // this.hideLoadingProgress();
-    } catch (error) {
-        console.error("Error loading models:", error);
-    }
 }
 
 async function loadHangerModels() {

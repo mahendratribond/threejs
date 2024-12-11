@@ -821,11 +821,526 @@ export async function traverseAsync(modelNode, callback) {
     return Promise.all(promises);
 }
 
+// export async function showHideNodes() {
+//     // console.log(sharedParams.modelGroup);
+//     // let currentModelNode = params.selectedGroupName;
+//     let current_setting = setting[params.selectedGroupName];
+//     let border_texture_material_Clone = sharedParams.border_texture_material.clone();
+//     border_texture_material_Clone.name = "border texture material Clone";
+
+//     let frame_material = border_texture_material_Clone;
+//     if (current_setting.frameMaterialType === "texture") {
+//         let frame_texture_border = new THREE.TextureLoader().load(
+//             "./assets/images/borders/" + current_setting.frameBorderColor
+//         );
+//         frame_texture_border = await setTextureParams(frame_texture_border);
+//         frame_texture_border.name = "border_texture_border";
+//         frame_material.uuid = "12345678i";
+//         frame_material.map = frame_texture_border;
+//     }
+//     if (sharedParams.modelGroup) {
+//         await traverseAsync(sharedParams.modelGroup, async (child) => {
+//             if (child.name === "Cone") {
+//                 child.visible = false;
+//             }
+//         });
+//         let main_model = sharedParams.modelGroup.getObjectByName(params.selectedGroupName);
+//         await traverseAsync(main_model, async (child) => {
+//             let currentModelNode = await getMainParentNode(
+//                 child,
+//                 allModelNames,
+//                 false
+//             );
+//             // console.log('currentModelNode', currentModelNode)
+//             // console.log('child', child)
+//             // console.log('child.name', child.name)
+
+//             let isSlottedSides = currentModelNode.isSlottedSides || false;
+//             let isShelf = currentModelNode.isShelf || false;
+//             let isGlassShelf = currentModelNode.isGlassShelf || false;
+
+//             child.updateMatrixWorld();
+//             if (child.name === "Cone") {
+//                 child.visible =
+//                     (await isActiveGroup(currentModelNode)) &&
+//                     Object.keys(setting).length > 1;
+//             }
+//             if (child.name && allModelNames.includes(child.name)) {
+//                 if (child.name === current_setting.defaultModel) {
+//                     child.visible = true; // Show the selected model
+//                 } else {
+//                     child.visible = false; // Hide other models
+//                 }
+//             }
+//             if (child.name === "Left_Ex" || child.name === "Right_Ex") {
+//                 if (isSlottedSides && current_setting.slottedSidesToggle) {
+//                     child.visible = false;
+//                 } else {
+//                     child.visible = true;
+//                 }
+//             }
+//             if (hangerNames.includes(child.name)) {
+//                 if (isSlottedSides && current_setting.slottedSidesToggle) {
+//                     child.visible = true;
+//                 } else {
+//                     child.visible = true;
+//                 }
+//             }
+//             if (
+//                 child.name === "Left_Ex_Slotted" ||
+//                 child.name === "Right_Ex_Slotted"
+//             ) {
+//                 if (isSlottedSides && current_setting.slottedSidesToggle) {
+//                     child.visible = true;
+//                 } else {
+//                     child.visible = false;
+//                 }
+//             }
+//             if (rackNames.includes(child.name)) {
+//                 let rackArr = child.rackArrayKey;
+//                 let rackModelName = rackArr.split("-")[1];
+//                 let rackside = rackArr.split("-")[2];
+//                 let isSameSide = false;
+//                 let currentModel = main_model.getObjectByName(rackModelName);
+//                 let frame = currentModel.getObjectByName("Frame");
+//                 for (const hangerFrame of frame.children) {
+//                     if (hangerNames.includes(hangerFrame.name) && hangerFrame.visible) {
+//                         let hangerArrKey = hangerFrame.hangerArrayKey;
+//                         let hangerModel = hangerArrKey.split("-")[1];
+//                         let hangerSide = hangerArrKey.split("-")[2];
+//                         if (rackModelName === hangerModel && rackside === hangerSide) {
+//                             isSameSide = true;
+//                         }
+//                     }
+//                 }
+//                 if (
+//                     isSlottedSides &&
+//                     current_setting.slottedSidesToggle &&
+//                     isSameSide == false
+//                 ) {
+//                     child.visible = true;
+//                 } else {
+//                     child.visible = false;
+//                 }
+//             }
+//             if (child.name === "Header_Wooden_Shelf") {
+//                 child.visible =
+//                     current_setting.topOption == "Shelf" &&
+//                     isShelf &&
+//                     current_setting.defaultShelfType == "Header_Wooden_Shelf";
+//             }
+//             if (child.name === "Header_Glass_Shelf") {
+//                 child.visible =
+//                     current_setting.topOption == "Shelf" &&
+//                     isGlassShelf &&
+//                     current_setting.defaultShelfType == "Header_Glass_Shelf";
+//             }
+//             if (child.name === "Rod") {
+//                 child.visible =
+//                     (current_setting.topOption == "Shelf" &&
+//                         ((isShelf &&
+//                             current_setting.defaultShelfType == "Header_Wooden_Shelf") ||
+//                             (isGlassShelf &&
+//                                 current_setting.defaultShelfType == "Header_Glass_Shelf"))) ||
+//                     (current_setting.headerRodToggle &&
+//                         current_setting.topOption == "Header");
+//             }
+//             if (child.name === "Glass_Shelf_Fixing") {
+//                 child.visible =
+//                     current_setting.topOption == "Shelf" &&
+//                     isGlassShelf &&
+//                     current_setting.defaultShelfType == "Header_Glass_Shelf";
+//             }
+
+//             if (allFrameBorderNames.includes(child.name)) {
+//                 if (current_setting.frameMaterialType === "texture") {
+//                     // let frame_texture_border = new THREE.TextureLoader().load(
+//                     //   "./assets/images/borders/" + current_setting.frameBorderColor
+//                     // );
+//                     // frame_texture_border = await setTextureParams(frame_texture_border);
+//                     // let frame_material = border_texture_material_Clone;
+//                     // frame_material.map = frame_texture_border;
+//                     // // child.material = child.material.clone()
+//                     child.material = frame_material;
+//                     child.material.needsUpdate = true;
+//                 } else if (current_setting.frameMaterialType === "color") {
+//                     // Apply color
+//                     const material = await commonMaterial(
+//                         parseInt(current_setting.frameBorderColor, 16)
+//                     );
+//                     // child.material = child.material.clone()
+//                     if (child.material) {
+//                         child.material.name = "frame_color";
+//                     }
+//                     child.material = material;
+//                     child.material.needsUpdate = true;
+//                 }
+//             }
+
+//             if (child.name == "Header_Wooden_Shelf") {
+//                 // console.log('Header_Wooden_Shelf', dropdownType, child.name)
+//                 if (current_setting.shelfMaterialType === "texture") {
+//                     // Load texture
+//                     let texture_border = new THREE.TextureLoader().load(
+//                         "./assets/images/borders/" + current_setting.defaultShelfColor
+//                     );
+//                     texture_border = await setTextureParams(texture_border);
+//                     let material = border_texture_material_Clone;
+//                     material.map = texture_border;
+//                     child.material = material;
+//                     child.material.needsUpdate = true;
+//                 } else if (current_setting.shelfMaterialType === "color") {
+//                     // Apply color
+//                     const material = await commonMaterial(
+//                         parseInt(current_setting.defaultShelfColor, 16)
+//                     );
+//                     child.material = material;
+//                     child.material.needsUpdate = true;
+//                 }
+//             }
+
+//             if (["Clothing"].includes(child.name)) {
+//                 child.visible = current_setting.hangerClothesToggle;
+//             }
+//             if (["Hanger_Clubs"].includes(child.name)) {
+//                 child.visible = current_setting.hangerGolfClubsToggle;
+//             }
+
+//             if (headerNames.includes(child.name)) {
+//                 child.visible =
+//                     current_setting.topOption == "Header" &&
+//                     current_setting.defaultHeaderSize == child.name;
+//             }
+
+//             if (baseFrameNames.includes(child.name)) {
+//                 child.visible = child.name === current_setting.selectedBaseFrame;
+//             }
+
+//             if (
+//                 child.material &&
+//                 child.material.color &&
+//                 child.name &&
+//                 (child.name.startsWith("Base_Option") ||
+//                     child.name === "Base_Support_Sides")
+//             ) {
+//                 if (child.name === "Base_Support_Sides") {
+//                     await traverseAsync(child, async (subChild) => {
+//                         subChild.material = subChild.material.clone();
+//                         subChild.material.color.set(
+//                             await getHex(current_setting.baseFrameColor)
+//                         );
+//                         subChild.material.needsUpdate = true;
+//                     });
+//                 }
+//                 child.material = child.material.clone();
+//                 child.material.name = "base here";
+//                 child.material.color.set(await getHex(current_setting.baseFrameColor));
+//                 child.material.needsUpdate = true;
+//             }
+//             if (
+//                 child.material &&
+//                 rodFrameTextureNames.includes(child.name) &&
+//                 child.material.color
+//             ) {
+//                 child.material = child.material.clone();
+//                 child.material.color.set(await getHex(current_setting.rodFrameColor));
+//                 child.material.needsUpdate = true;
+//             }
+//             if (
+//                 child.material &&
+//                 [
+//                     "Hanger_Stand",
+//                     "Hanger_Stand-Arm_Metal",
+//                     "Hanger_Stand-Fixture_Material",
+//                 ].includes(child.name) &&
+//                 child.material.color
+//             ) {
+//                 child.material = child.material.clone();
+//                 child.material.color.set(
+//                     await getHex(current_setting.defaultHangerStandColor)
+//                 );
+//                 child.material.needsUpdate = true;
+//             }
+//             if (
+//                 child.material &&
+//                 ["Rack_Wooden_Shelf"].includes(child.name) &&
+//                 child.material.color
+//             ) {
+//                 child.material = child.material.clone();
+//                 child.material.color.set(
+//                     await getHex(current_setting.defaultRackShelfStandColor)
+//                 );
+//                 child.material.needsUpdate = true;
+//             }
+//             if (["Rack_Stand_LH", "Rack_Stand_RH"].includes(child.name)) {
+//                 if (child.material) {
+//                     child.material = child.material.clone();
+//                     child.material.color.set(
+//                         await getHex(current_setting.defaultRackStandStandColor)
+//                     );
+//                     child.material.needsUpdate = true;
+//                 } else {
+//                     child.traverse(async function (mesh) {
+//                         if (mesh.material) {
+//                             mesh.material = mesh.material.clone();
+//                             mesh.material.color.set(
+//                                 await getHex(current_setting.defaultRackStandStandColor)
+//                             );
+//                             mesh.material.needsUpdate = true;
+//                         }
+//                     });
+//                 }
+//             }
+//         });
+
+//         if (params.topOption == "Header") {
+//             await traverseAsync(main_model, async (modelNode) => {
+//                 if (allModelNames.includes(modelNode.name)) {
+//                     await Promise.all(
+//                         headerNames.map(async (headerName) => {
+//                             const header = modelNode.getObjectByName(headerName);
+//                             if (header) {
+//                                 if (
+//                                     current_setting.headerRodToggle &&
+//                                     !current_setting.headerUpDown
+//                                 ) {
+//                                     header.position.y += params.rodSize.y;
+//                                 } else if (
+//                                     !current_setting.headerRodToggle &&
+//                                     current_setting.headerUpDown
+//                                 ) {
+//                                     header.position.y -= params.rodSize.y;
+//                                 }
+//                             }
+//                         })
+//                     );
+//                 }
+//             });
+
+//             setting[params.selectedGroupName].headerUpDown =
+//                 setting[params.selectedGroupName].headerRodToggle;
+//         }
+//     }
+
+//     // console.log("sharedParams.modelGroup", sharedParams.modelGroup);
+
+//     const parentElement = document.querySelector(
+//         `div.accordion-item[data-model="${params.selectedGroupName}"]`
+//     );
+//     if (parentElement) {
+//         let frameSize = parentElement.querySelector(".frameSize");
+//         if (frameSize) {
+//             frameSize.value = current_setting.defaultModel;
+//         }
+//         let topDropdown = parentElement.querySelector(".topDropdown");
+//         if (topDropdown) {
+//             topDropdown.value = current_setting.topOption;
+//         }
+//         let headerOptions = parentElement.querySelector(".headerOptions");
+//         if (headerOptions) {
+//             headerOptions.value = current_setting.headerOptions;
+//         }
+//         let headerSizeDropdown = parentElement.querySelector(".headerSizeDropdown");
+//         if (headerSizeDropdown) {
+//             headerSizeDropdown.value = current_setting.defaultHeaderSize;
+//         }
+//         let headerRodToggle = parentElement.querySelector(".headerRodToggle");
+//         if (headerRodToggle) {
+//             headerRodToggle.checked = current_setting.headerRodToggle;
+//         }
+//         let headerRodColorDropdown = parentElement.querySelector(
+//             ".headerRodColorDropdown"
+//         );
+//         if (headerRodColorDropdown) {
+//             headerRodColorDropdown.value = current_setting.rodFrameColor;
+//         }
+//         let shelfTypeDropdown = parentElement.querySelector(".shelfTypeDropdown");
+//         if (shelfTypeDropdown) {
+//             shelfTypeDropdown.value = current_setting.defaultShelfType;
+//         }
+//         let slottedSidesToggle = parentElement.querySelector(".slottedSidesToggle");
+//         if (slottedSidesToggle) {
+//             slottedSidesToggle.checked = current_setting.slottedSidesToggle;
+//         }
+//         let headerFrameColorInput = parentElement.querySelector(
+//             ".headerFrameColorInput"
+//         );
+//         if (headerFrameColorInput) {
+//             headerFrameColorInput.value = await getHex(
+//                 current_setting.topFrameBackgroundColor
+//             );
+//         }
+//         let headerFrameColorDropdown = parentElement.querySelector(
+//             ".headerFrameColorDropdown"
+//         );
+//         if (headerFrameColorDropdown) {
+//             headerFrameColorDropdown.value = current_setting.topFrameBackgroundColor;
+//         }
+//         let mainFrameColorInput = parentElement.querySelector(
+//             ".mainFrameColorInput"
+//         );
+//         if (mainFrameColorInput) {
+//             mainFrameColorInput.value = await getHex(
+//                 current_setting.mainFrameBackgroundColor
+//             );
+//         }
+//         let baseSelectorDropdown = parentElement.querySelector(
+//             ".baseSelectorDropdown"
+//         );
+//         if (baseSelectorDropdown) {
+//             baseSelectorDropdown.value = current_setting.selectedBaseFrame;
+//         }
+//         let baseColor = parentElement.querySelector(".baseColor");
+//         if (baseColor) {
+//             baseColor.value = current_setting.baseFrameColor;
+//         }
+//         let hangerClothesToggle = parentElement.querySelector(
+//             ".hangerClothesToggle"
+//         );
+//         if (hangerClothesToggle) {
+//             hangerClothesToggle.value = current_setting.hangerClothesToggle;
+//         }
+
+//         let hangerGolfClubsToggle = parentElement.querySelector(
+//             ".hangerGolfClubsToggle"
+//         );
+//         if (hangerGolfClubsToggle) {
+//             hangerGolfClubsToggle.value = current_setting.hangerGolfClubsToggle;
+//         }
+//         let hangerStandColor = parentElement.querySelector(".hangerStandColor");
+//         if (hangerStandColor) {
+//             hangerStandColor.value = current_setting.defaultHangerStandColor;
+//         }
+//         let rackShelfColor = parentElement.querySelector(".rackShelfColor");
+//         if (rackShelfColor) {
+//             rackShelfColor.value = current_setting.defaultRackShelfStandColor;
+//         }
+//         let rackStandColor = parentElement.querySelector(".rackStandColor");
+//         if (rackStandColor) {
+//             rackStandColor.value = current_setting.defaultRackStandStandColor;
+//         }
+
+//         if (current_setting.topOption == "Shelf") {
+//             parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
+//                 element.style.display = "none";
+//             });
+//             parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
+//                 element.style.display = "block";
+//             });
+//         } else if (current_setting.topOption == "Header") {
+//             parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
+//                 element.style.display = "block";
+//             });
+//             parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
+//                 element.style.display = "none";
+//             });
+//         } else {
+//             parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
+//                 element.style.display = "none";
+//             });
+//             parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
+//                 element.style.display = "none";
+//             });
+//         }
+
+//         if (
+//             (current_setting.topOption == "Header" &&
+//                 current_setting.headerRodToggle) ||
+//             (current_setting.topOption == "Shelf" &&
+//                 (current_setting.defaultShelfType == "Header_Wooden_Shelf" ||
+//                     current_setting.defaultShelfType == "Header_Glass_Shelf"))
+//         ) {
+//             parentElement
+//                 .querySelectorAll(".headerRodColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "block";
+//                 });
+//         } else {
+//             parentElement
+//                 .querySelectorAll(".headerRodColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//         }
+
+//         if (
+//             current_setting.topOption == "Shelf" &&
+//             current_setting.defaultShelfType == "Header_Wooden_Shelf"
+//         ) {
+//             parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
+//                 element.style.display = "block";
+//             });
+//         } else {
+//             parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
+//                 element.style.display = "none";
+//             });
+//         }
+
+//         if (
+//             current_setting.topOption == "Header" &&
+//             current_setting.headerOptions == "SEG"
+//         ) {
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorInputBox")
+//                 .forEach((element) => {
+//                     element.style.display = "block";
+//                 });
+//         } else if (
+//             current_setting.topOption == "Header" &&
+//             current_setting.headerOptions == "ALG"
+//         ) {
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "block";
+//                 });
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorInputBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//         } else if (
+//             current_setting.topOption == "Header" &&
+//             current_setting.headerOptions == "ALG3D"
+//         ) {
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorInputBox")
+//                 .forEach((element) => {
+//                     element.style.display = "block";
+//                 });
+//         } else {
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorDropdownBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//             parentElement
+//                 .querySelectorAll(".headerFrameColorInputBox")
+//                 .forEach((element) => {
+//                     element.style.display = "none";
+//                 });
+//         }
+//     }
+
+//     await drawMeasurementBoxesWithLabels();
+// }
+
 export async function showHideNodes() {
     // console.log(sharedParams.modelGroup);
     // let currentModelNode = params.selectedGroupName;
     let current_setting = setting[params.selectedGroupName];
-    let border_texture_material_Clone = sharedParams.border_texture_material.clone();
+    let border_texture_material_Clone =
+        sharedParams.border_texture_material.clone();
     border_texture_material_Clone.name = "border texture material Clone";
 
     let frame_material = border_texture_material_Clone;
@@ -833,10 +1348,8 @@ export async function showHideNodes() {
         let frame_texture_border = new THREE.TextureLoader().load(
             "./assets/images/borders/" + current_setting.frameBorderColor
         );
-        frame_texture_border = await setTextureParams(frame_texture_border);
-        frame_texture_border.name = "border_texture_border";
-        frame_material.uuid = "12345678i";
-        frame_material.map = frame_texture_border;
+        // frame_texture_border = await setTextureParams(frame_texture_border);
+        // frame_material.map = frame_texture_border;
     }
     if (sharedParams.modelGroup) {
         await traverseAsync(sharedParams.modelGroup, async (child) => {
@@ -844,7 +1357,9 @@ export async function showHideNodes() {
                 child.visible = false;
             }
         });
-        let main_model = sharedParams.modelGroup.getObjectByName(params.selectedGroupName);
+        let main_model = sharedParams.modelGroup.getObjectByName(
+            params.selectedGroupName
+        );
         await traverseAsync(main_model, async (child) => {
             let currentModelNode = await getMainParentNode(
                 child,
@@ -904,11 +1419,17 @@ export async function showHideNodes() {
                 let currentModel = main_model.getObjectByName(rackModelName);
                 let frame = currentModel.getObjectByName("Frame");
                 for (const hangerFrame of frame.children) {
-                    if (hangerNames.includes(hangerFrame.name) && hangerFrame.visible) {
+                    if (
+                        hangerNames.includes(hangerFrame.name) &&
+                        hangerFrame.visible
+                    ) {
                         let hangerArrKey = hangerFrame.hangerArrayKey;
                         let hangerModel = hangerArrKey.split("-")[1];
                         let hangerSide = hangerArrKey.split("-")[2];
-                        if (rackModelName === hangerModel && rackside === hangerSide) {
+                        if (
+                            rackModelName === hangerModel &&
+                            rackside === hangerSide
+                        ) {
                             isSameSide = true;
                         }
                     }
@@ -939,9 +1460,11 @@ export async function showHideNodes() {
                 child.visible =
                     (current_setting.topOption == "Shelf" &&
                         ((isShelf &&
-                            current_setting.defaultShelfType == "Header_Wooden_Shelf") ||
+                            current_setting.defaultShelfType ==
+                                "Header_Wooden_Shelf") ||
                             (isGlassShelf &&
-                                current_setting.defaultShelfType == "Header_Glass_Shelf"))) ||
+                                current_setting.defaultShelfType ==
+                                    "Header_Glass_Shelf"))) ||
                     (current_setting.headerRodToggle &&
                         current_setting.topOption == "Header");
             }
@@ -982,7 +1505,8 @@ export async function showHideNodes() {
                 if (current_setting.shelfMaterialType === "texture") {
                     // Load texture
                     let texture_border = new THREE.TextureLoader().load(
-                        "./assets/images/borders/" + current_setting.defaultShelfColor
+                        "./assets/images/borders/" +
+                            current_setting.defaultShelfColor
                     );
                     texture_border = await setTextureParams(texture_border);
                     let material = border_texture_material_Clone;
@@ -1013,7 +1537,8 @@ export async function showHideNodes() {
             }
 
             if (baseFrameNames.includes(child.name)) {
-                child.visible = child.name === current_setting.selectedBaseFrame;
+                child.visible =
+                    child.name === current_setting.selectedBaseFrame;
             }
 
             if (
@@ -1034,7 +1559,9 @@ export async function showHideNodes() {
                 }
                 child.material = child.material.clone();
                 child.material.name = "base here";
-                child.material.color.set(await getHex(current_setting.baseFrameColor));
+                child.material.color.set(
+                    await getHex(current_setting.baseFrameColor)
+                );
                 child.material.needsUpdate = true;
             }
             if (
@@ -1043,7 +1570,9 @@ export async function showHideNodes() {
                 child.material.color
             ) {
                 child.material = child.material.clone();
-                child.material.color.set(await getHex(current_setting.rodFrameColor));
+                child.material.color.set(
+                    await getHex(current_setting.rodFrameColor)
+                );
                 child.material.needsUpdate = true;
             }
             if (
@@ -1084,7 +1613,9 @@ export async function showHideNodes() {
                         if (mesh.material) {
                             mesh.material = mesh.material.clone();
                             mesh.material.color.set(
-                                await getHex(current_setting.defaultRackStandStandColor)
+                                await getHex(
+                                    current_setting.defaultRackStandStandColor
+                                )
                             );
                             mesh.material.needsUpdate = true;
                         }
@@ -1098,7 +1629,8 @@ export async function showHideNodes() {
                 if (allModelNames.includes(modelNode.name)) {
                     await Promise.all(
                         headerNames.map(async (headerName) => {
-                            const header = modelNode.getObjectByName(headerName);
+                            const header =
+                                modelNode.getObjectByName(headerName);
                             if (header) {
                                 if (
                                     current_setting.headerRodToggle &&
@@ -1140,7 +1672,9 @@ export async function showHideNodes() {
         if (headerOptions) {
             headerOptions.value = current_setting.headerOptions;
         }
-        let headerSizeDropdown = parentElement.querySelector(".headerSizeDropdown");
+        let headerSizeDropdown = parentElement.querySelector(
+            ".headerSizeDropdown"
+        );
         if (headerSizeDropdown) {
             headerSizeDropdown.value = current_setting.defaultHeaderSize;
         }
@@ -1154,11 +1688,14 @@ export async function showHideNodes() {
         if (headerRodColorDropdown) {
             headerRodColorDropdown.value = current_setting.rodFrameColor;
         }
-        let shelfTypeDropdown = parentElement.querySelector(".shelfTypeDropdown");
+        let shelfTypeDropdown =
+            parentElement.querySelector(".shelfTypeDropdown");
         if (shelfTypeDropdown) {
             shelfTypeDropdown.value = current_setting.defaultShelfType;
         }
-        let slottedSidesToggle = parentElement.querySelector(".slottedSidesToggle");
+        let slottedSidesToggle = parentElement.querySelector(
+            ".slottedSidesToggle"
+        );
         if (slottedSidesToggle) {
             slottedSidesToggle.checked = current_setting.slottedSidesToggle;
         }
@@ -1174,7 +1711,8 @@ export async function showHideNodes() {
             ".headerFrameColorDropdown"
         );
         if (headerFrameColorDropdown) {
-            headerFrameColorDropdown.value = current_setting.topFrameBackgroundColor;
+            headerFrameColorDropdown.value =
+                current_setting.topFrameBackgroundColor;
         }
         let mainFrameColorInput = parentElement.querySelector(
             ".mainFrameColorInput"
@@ -1221,26 +1759,38 @@ export async function showHideNodes() {
         }
 
         if (current_setting.topOption == "Shelf") {
-            parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
-                element.style.display = "none";
-            });
-            parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
-                element.style.display = "block";
-            });
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
         } else if (current_setting.topOption == "Header") {
-            parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
-                element.style.display = "block";
-            });
-            parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
-                element.style.display = "none";
-            });
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
         } else {
-            parentElement.querySelectorAll(".topHeaderOptions").forEach((element) => {
-                element.style.display = "none";
-            });
-            parentElement.querySelectorAll(".topShelfOptions").forEach((element) => {
-                element.style.display = "none";
-            });
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
         }
 
         if (
@@ -1267,13 +1817,17 @@ export async function showHideNodes() {
             current_setting.topOption == "Shelf" &&
             current_setting.defaultShelfType == "Header_Wooden_Shelf"
         ) {
-            parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-                element.style.display = "block";
-            });
+            parentElement
+                .querySelectorAll(".shelfTypeBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
         } else {
-            parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-                element.style.display = "none";
-            });
+            parentElement
+                .querySelectorAll(".shelfTypeBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
         }
 
         if (
@@ -1368,7 +1922,7 @@ export async function getMainParentNode(child, nodeNames, isVisible = true) {
 
     // Create an array of promises from allModelNames
     let findParentPromises = nodeNames.map(async (val) => {
-        tempNode = await findParentNodeByName(child, val, isVisible);
+        tempNode = findParentNodeByName(child, val, isVisible);
         if (tempNode) {
             return tempNode;
         }
@@ -1881,7 +2435,7 @@ export async function generateGlassMaterial() {
     return material;
 }
 
-export async function findParentNodeByName(node, parentName, isVisible = null) {
+export function findParentNodeByName(node, parentName, isVisible = null) {
     // Base case: If the current node has no parent, return null
     if (!node || !node.parent) return null;
 
@@ -1902,7 +2456,7 @@ export async function findParentNodeByName(node, parentName, isVisible = null) {
     }
 
     // Recursively search for the matching node in the children
-    const result = await findParentNodeByName(node.parent, parentName, isVisible);
+    const result = findParentNodeByName(node.parent, parentName, isVisible);
     if (result) return result; // If a match is found, return it
 
     // If no match is found, return null
