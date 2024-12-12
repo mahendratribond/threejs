@@ -452,10 +452,10 @@ async function loadAllModels() {
                     // return gltf;
                     switch (modelPath) {
                         case "Model_1061.glb":
-                            setupMainModel(gltf);
-                            let model_1061 = gltf.getObjectByName("Model_1061");
-                            model_1061.visible = false;
-                            main_model.add(model_1061);
+                            // setupMainModel(gltf);
+                            // let model_1061 = gltf.getObjectByName("Model_1061");
+                            // model_1061.visible = false;
+                            // main_model.add(model_1061);
                             break;
                         case "Model_1200.glb":
                             setupMainModel(gltf);

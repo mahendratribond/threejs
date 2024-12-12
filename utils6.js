@@ -129,11 +129,22 @@ export function setupMainModel(main_model) {
     main_model.traverse(async (modelNode) => {
         if (modelNode.name && modelNode.name.startsWith("Base_Option")) {
             // if (modelNode.material && baseFrameTextureNames.includes(modelNode.name)) {
-            const material = await commonMaterial(
-                parseInt(params.baseFrameColor, 16)
-            );
-            modelNode.material = material;
-            modelNode.material.needsUpdate = true;
+            // const material = await commonMaterial(
+            //     parseInt(params.baseFrameColor, 16)
+            // );
+            // modelNode.material = material;
+            // modelNode.material.needsUpdate = true;
+
+            commonMaterial(parseInt(params.baseFrameColor, 16))
+    .then(material => {
+        // This code runs after material is created
+        modelNode.material = material;
+        modelNode.material.needsUpdate = true;
+    })
+    .catch(error => {
+        console.error('Error creating material:', error);
+    });
+
         }
 
         if (allModelNames.includes(modelNode.name)) {
@@ -1351,7 +1362,7 @@ export async function showHideNodes() {
         //     params.selectedGroupName
         // );
         let main_model = sharedParams.selectedGroup;
-        console.log("main_model",main_model);
+        console.log("main_model-----------",main_model);
         
         await traverseAsync(main_model, async (child) => {
             // let currentModelNode = await getMainParentNode(
