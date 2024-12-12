@@ -1,11 +1,13 @@
-
 import {
     clothsMaterial,
     commonMaterial,
 } from "./src/managers/MaterialManager.js";
 import { setTextureParams } from "./src/managers/FrameImagesManager.js";
 import {
-    THREE, OrbitControls, TransformControls, FontLoader,
+    THREE,
+    OrbitControls,
+    TransformControls,
+    FontLoader,
     CSS2DObject,
     CSS2DRenderer,
     heightMeasurementNames,
@@ -125,7 +127,7 @@ export async function setPositionCenter(model) {
     return model;
 }
 
-export function setupMainModel(main_model) {
+export async function setupMainModel(main_model) {
     main_model.traverse(async (modelNode) => {
         if (modelNode.name && modelNode.name.startsWith("Base_Option")) {
             // if (modelNode.material && baseFrameTextureNames.includes(modelNode.name)) {
@@ -134,17 +136,17 @@ export function setupMainModel(main_model) {
             // );
             // modelNode.material = material;
             // modelNode.material.needsUpdate = true;
+            // }
 
             commonMaterial(parseInt(params.baseFrameColor, 16))
-    .then(material => {
-        // This code runs after material is created
-        modelNode.material = material;
-        modelNode.material.needsUpdate = true;
-    })
-    .catch(error => {
-        console.error('Error creating material:', error);
-    });
-
+                .then((material) => {
+                    // This code runs after material is created
+                    modelNode.material = material;
+                    modelNode.material.needsUpdate = true;
+                })
+                .catch((error) => {
+                    console.error("Error creating material:", error);
+                });
         }
 
         if (allModelNames.includes(modelNode.name)) {
@@ -166,7 +168,8 @@ export function setupMainModel(main_model) {
                 modelNode.isShelf = false;
             }
 
-            let glassShelfModel = modelNode.getObjectByName("Header_Glass_Shelf");
+            let glassShelfModel =
+                modelNode.getObjectByName("Header_Glass_Shelf");
             if (glassShelfModel) {
                 modelNode.isGlassShelf = true;
             } else {
@@ -215,7 +218,10 @@ export async function cloneWithCustomProperties(source, target) {
         let sourceModel = source.getObjectByName(model);
         let targetModel = target.getObjectByName(model);
         for (let key in sourceModel) {
-            if (sourceModel.hasOwnProperty(key) && !targetModel.hasOwnProperty(key)) {
+            if (
+                sourceModel.hasOwnProperty(key) &&
+                !targetModel.hasOwnProperty(key)
+            ) {
                 targetModel[key] = sourceModel[key];
             }
         }
@@ -232,37 +238,42 @@ export async function setupArrowModel() {
             }
         });
 
-        sharedParams.arrow_model = await setPositionCenter(sharedParams.arrow_model);
+        sharedParams.arrow_model = await setPositionCenter(
+            sharedParams.arrow_model
+        );
 
-        await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-            if (allModelNames.includes(modelNode.name)) {
-                const modelBox = new THREE.Box3().setFromObject(modelNode);
-                const cone_model = sharedParams.arrow_model.getObjectByName("Cone");
-                let cone = cone_model.clone();
+        await traverseAsync(
+            sharedParams.modelGroup,
+            async function (modelNode) {
+                if (allModelNames.includes(modelNode.name)) {
+                    const modelBox = new THREE.Box3().setFromObject(modelNode);
+                    const cone_model =
+                        sharedParams.arrow_model.getObjectByName("Cone");
+                    let cone = cone_model.clone();
 
-                cone = await setPositionCenter(cone);
-                cone.scale.set(0.1, 0.1, 0.1);
-                const coneBox = new THREE.Box3().setFromObject(cone);
-                const coneHeight = coneBox.max.y - coneBox.min.y;
-                // console.log('arrowHeight', coneHeight)
-                // rod.name = rodName;
-                // cone.scale.set(0.5, 0.5, 0.5)
-                cone.position.set(
-                    modelNode.position.x, // Adjust based on offset
-                    modelBox.max.y + coneHeight / 2 + 210,
-                    // modelBox.min.y - coneHeight / 2 - 10,
-                    0
-                );
-                cone.rotation.x = Math.PI;
-                cone.visible = false;
-                modelNode.attach(cone);
+                    cone = await setPositionCenter(cone);
+                    cone.scale.set(0.1, 0.1, 0.1);
+                    const coneBox = new THREE.Box3().setFromObject(cone);
+                    const coneHeight = coneBox.max.y - coneBox.min.y;
+                    // console.log('arrowHeight', coneHeight)
+                    // rod.name = rodName;
+                    // cone.scale.set(0.5, 0.5, 0.5)
+                    cone.position.set(
+                        modelNode.position.x, // Adjust based on offset
+                        modelBox.max.y + coneHeight / 2 + 210,
+                        // modelBox.min.y - coneHeight / 2 - 10,
+                        0
+                    );
+                    cone.rotation.x = Math.PI;
+                    cone.visible = false;
+                    modelNode.attach(cone);
+                }
             }
-        });
+        );
     }
 }
 
 export async function createRod(modelNode, modelSize) {
-
     const additionalRods = await getRodCount(modelSize);
     const header = modelNode.getObjectByName("Header_300");
 
@@ -275,7 +286,11 @@ export async function createRod(modelNode, modelSize) {
         let lassShelfFixingY = params.glassShelfFixingSize.y / 2; //(frameSize.y / 2 + glassShelfFixingSize.y / 2);
 
         // Function to create and position a rod
-        const createAndPositionRod = async (xOffset, rodName, shelfFixingName) => {
+        const createAndPositionRod = async (
+            xOffset,
+            rodName,
+            shelfFixingName
+        ) => {
             let rod = sharedParams.header_rod_model.clone();
             rod.name = rodName;
             modelNode.add(rod);
@@ -289,7 +304,8 @@ export async function createRod(modelNode, modelSize) {
 
             const rodBox = new THREE.Box3().setFromObject(rod);
 
-            let shelf_fixing = sharedParams.header_glass_shelf_fixing_model.clone();
+            let shelf_fixing =
+                sharedParams.header_glass_shelf_fixing_model.clone();
             shelf_fixing.name = shelfFixingName;
             modelNode.add(shelf_fixing);
             // console.log('shelf_fixing.position', shelf_fixing.position)
@@ -299,9 +315,9 @@ export async function createRod(modelNode, modelSize) {
             shelf_fixing.position.set(
                 rod.position.x, // Adjust based on offset
                 shelf_fixing.position.y +
-                headerBox.min.y +
-                params.rodSize.y +
-                lassShelfFixingY,
+                    headerBox.min.y +
+                    params.rodSize.y +
+                    lassShelfFixingY,
                 shelf_fixing.position.z
             );
             shelf_fixing.visible = false;
@@ -328,17 +344,18 @@ export async function createRod(modelNode, modelSize) {
             // Place additional rods
             for (let i = 1; i <= additionalRods; i++) {
                 let xOffset = -headerSize.x / 2 + i * spacing;
-                await createAndPositionRod(xOffset, "Rod", "Glass_Shelf_Fixing");
+                await createAndPositionRod(
+                    xOffset,
+                    "Rod",
+                    "Glass_Shelf_Fixing"
+                );
             }
         }
     }
 
     return modelNode;
 }
-export async function createSupportBase(
-    modelNode,
-    modelSize
-) {
+export async function createSupportBase(modelNode, modelSize) {
     const additionalSupportBase = await getSupportBaseCount(modelSize);
     const base = modelNode.getObjectByName("Base_Solid");
     // Ensure both header and frame nodes exist
@@ -428,22 +445,31 @@ export async function setupGlassShelfFixingModel() {
         );
     }
     if (sharedParams.header_rod_model) {
-        await traverseAsync(sharedParams.header_rod_model, async function (child) {
-            if (child.material && rodFrameTextureNames.includes(child.name)) {
-                const material = await commonMaterial(
-                    parseInt(params.rodFrameColor, 16)
-                );
-                child.material = material;
-                child.material.needsUpdate = true;
+        await traverseAsync(
+            sharedParams.header_rod_model,
+            async function (child) {
+                if (
+                    child.material &&
+                    rodFrameTextureNames.includes(child.name)
+                ) {
+                    const material = await commonMaterial(
+                        parseInt(params.rodFrameColor, 16)
+                    );
+                    child.material = material;
+                    child.material.needsUpdate = true;
+                }
             }
-        });
+        );
     }
 
     await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
         if (allModelNames.includes(modelNode.name)) {
             modelSize = await getModelSize(modelNode.name);
 
-            if (sharedParams.header_rod_model && sharedParams.header_glass_shelf_fixing_model) {
+            if (
+                sharedParams.header_rod_model &&
+                sharedParams.header_glass_shelf_fixing_model
+            ) {
                 await createRod(modelNode, modelSize);
             }
         }
@@ -470,11 +496,11 @@ export async function setupSupportBaseModel() {
         if (allModelNames.includes(modelNode.name)) {
             modelSize = await getModelSize(modelNode.name);
 
-            if (sharedParams.support_base_middle && sharedParams.support_base_side) {
-                await createSupportBase(
-                    modelNode,
-                    modelSize
-                );
+            if (
+                sharedParams.support_base_middle &&
+                sharedParams.support_base_side
+            ) {
+                await createSupportBase(modelNode, modelSize);
             }
         }
     });
@@ -483,101 +509,110 @@ export async function setupSupportBaseModel() {
 export async function setupHeader500HeightModel() {
     let header;
     if (sharedParams.header_500_height_model) {
+        await traverseAsync(
+            sharedParams.modelGroup,
+            async function (modelNode) {
+                if (allModelNames.includes(modelNode.name)) {
+                    let frame = modelNode.getObjectByName("Frame");
+                    const frameBox = new THREE.Box3().setFromObject(frame);
 
-        await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-            if (allModelNames.includes(modelNode.name)) {
-                let frame = modelNode.getObjectByName("Frame");
-                const frameBox = new THREE.Box3().setFromObject(frame);
+                    let header_300 = modelNode.getObjectByName("Header_300");
+                    let header_500_model =
+                        sharedParams.header_500_height_model.getObjectByName(
+                            modelNode.name
+                        );
+                    const header500ModelSize = await getNodeSize(
+                        header_500_model
+                    );
+                    const header300ModelSize = await getNodeSize(header_300);
 
-                let header_300 = modelNode.getObjectByName("Header_300");
-                let header_500_model = sharedParams.header_500_height_model.getObjectByName(
-                    modelNode.name
-                );
-                const header500ModelSize = await getNodeSize(header_500_model);
-                const header300ModelSize = await getNodeSize(header_300);
+                    if (header_300 && header_500_model) {
+                        header = await getModelNode(header_500_model, "Header");
+                        if (!header) {
+                            header = await getModelNode(
+                                header_500_model,
+                                "Header_"
+                            );
+                        }
+                        if (header) {
+                            header = await updateModelName(
+                                header,
+                                "Header_Frame_",
+                                "Header_Frame"
+                            );
 
-                if (header_300 && header_500_model) {
-                    header = await getModelNode(header_500_model, "Header");
-                    if (!header) {
-                        header = await getModelNode(header_500_model, "Header_");
-                    }
-                    if (header) {
-                        header = await updateModelName(
-                            header,
-                            "Header_Frame_",
-                            "Header_Frame"
-                        );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1",
+                                "Header_Graphic1"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1_",
+                                "Header_Graphic1"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1-Mat",
+                                "Header_Graphic1-Mat"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1-Mat_",
+                                "Header_Graphic1-Mat"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1-Fabric_Colour",
+                                "Header_Graphic1-Fabric_Colour"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic1-Fabric_Colour_",
+                                "Header_Graphic1-Fabric_Colour"
+                            );
 
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1",
-                            "Header_Graphic1"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1_",
-                            "Header_Graphic1"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1-Mat",
-                            "Header_Graphic1-Mat"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1-Mat_",
-                            "Header_Graphic1-Mat"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1-Fabric_Colour",
-                            "Header_Graphic1-Fabric_Colour"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic1-Fabric_Colour_",
-                            "Header_Graphic1-Fabric_Colour"
-                        );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2",
+                                "Header_Graphic2"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2_",
+                                "Header_Graphic2"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2-Mat",
+                                "Header_Graphic2-Mat"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2-Mat_",
+                                "Header_Graphic2-Mat"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2-Fabric_Colour",
+                                "Header_Graphic2-Fabric_Colour"
+                            );
+                            header = await updateModelName(
+                                header,
+                                "Header_Graphic2-Fabric_Colour_",
+                                "Header_Graphic2-Fabric_Colour"
+                            );
 
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2",
-                            "Header_Graphic2"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2_",
-                            "Header_Graphic2"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2-Mat",
-                            "Header_Graphic2-Mat"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2-Mat_",
-                            "Header_Graphic2-Mat"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2-Fabric_Colour",
-                            "Header_Graphic2-Fabric_Colour"
-                        );
-                        header = await updateModelName(
-                            header,
-                            "Header_Graphic2-Fabric_Colour_",
-                            "Header_Graphic2-Fabric_Colour"
-                        );
-
-                        header.name = "Header_500";
-                        header.visible = false;
-                        header.position.y = frameBox.max.y + header500ModelSize.y / 2;
-                        modelNode.attach(header);
+                            header.name = "Header_500";
+                            header.visible = false;
+                            header.position.y =
+                                frameBox.max.y + header500ModelSize.y / 2;
+                            modelNode.attach(header);
+                        }
                     }
                 }
             }
-        });
+        );
     }
 }
 
@@ -585,7 +620,10 @@ export async function setupHeaderWoodenShelfModel() {
     await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
         if (allModelNames.includes(modelNode.name)) {
             if (sharedParams.header_wooden_shelf_model) {
-                let model = sharedParams.header_wooden_shelf_model.getObjectByName(modelNode.name);
+                let model =
+                    sharedParams.header_wooden_shelf_model.getObjectByName(
+                        modelNode.name
+                    );
                 if (model) {
                     const modelSize = await getNodeSize(model);
                     const frame = modelNode.getObjectByName("Frame");
@@ -622,7 +660,10 @@ export async function setupHeaderGlassShelfModel() {
     await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
         if (allModelNames.includes(modelNode.name)) {
             if (sharedParams.header_glass_shelf_model) {
-                let model = sharedParams.header_glass_shelf_model.getObjectByName(modelNode.name);
+                let model =
+                    sharedParams.header_glass_shelf_model.getObjectByName(
+                        modelNode.name
+                    );
                 if (model) {
                     const modelSize = await getNodeSize(model);
                     const frame = modelNode.getObjectByName("Frame");
@@ -701,9 +742,12 @@ export async function setupSlottedSidesModel() {
 
             if (sharedParams.slotted_sides_model) {
                 let slotted_sides_ = sharedParams.slotted_sides_model.clone();
-                let slotted_sides = slotted_sides_.getObjectByName(modelNode.name);
+                let slotted_sides = slotted_sides_.getObjectByName(
+                    modelNode.name
+                );
                 if (slotted_sides) {
-                    slotted_left_side = slotted_sides.getObjectByName("Left_Ex_Slotted");
+                    slotted_left_side =
+                        slotted_sides.getObjectByName("Left_Ex_Slotted");
                     if (slotted_left_side) {
                         let leftSide = frame.getObjectByName("Left_Ex");
                         let leftSideWorldPosition = new THREE.Vector3();
@@ -738,26 +782,10 @@ export async function setupWoodenRackModel(model) {
             "Rack_Wooden_Shelf_",
             "Rack_Wooden_Shelf"
         );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_LH_",
-            "Rack_Stand_LH"
-        );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_LH",
-            "Rack_Stand_LH"
-        );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_RH_",
-            "Rack_Stand_RH"
-        );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_RH",
-            "Rack_Stand_RH"
-        );
+        model = await updateModelName(model, "Rack_Stand_LH_", "Rack_Stand_LH");
+        model = await updateModelName(model, "Rack_Stand_LH", "Rack_Stand_LH");
+        model = await updateModelName(model, "Rack_Stand_RH_", "Rack_Stand_RH");
+        model = await updateModelName(model, "Rack_Stand_RH", "Rack_Stand_RH");
         model.traverse(async function (child) {
             if (child.material && rackPartNames.includes(child.name)) {
                 const material = await commonMaterial(
@@ -777,16 +805,8 @@ export async function setupGlassRackModel(model) {
             "Rack_Glass_Shelf_",
             "Rack_Glass_Shelf"
         );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_LH_",
-            "Rack_Stand_LH"
-        );
-        model = await updateModelName(
-            model,
-            "Rack_Stand_RH_",
-            "Rack_Stand_RH"
-        );
+        model = await updateModelName(model, "Rack_Stand_LH_", "Rack_Stand_LH");
+        model = await updateModelName(model, "Rack_Stand_RH_", "Rack_Stand_RH");
 
         const glassMaterial = await generateGlassMaterial();
         const defaultMaterial = await commonMaterial(
@@ -796,7 +816,9 @@ export async function setupGlassRackModel(model) {
         model.traverse(async function (child) {
             if (rackPartNames.includes(child.name)) {
                 let material =
-                    child.name === "Rack_Glass_Shelf" ? glassMaterial : defaultMaterial;
+                    child.name === "Rack_Glass_Shelf"
+                        ? glassMaterial
+                        : defaultMaterial;
 
                 // Assign material to the child
                 child.material = material;
@@ -1335,7 +1357,618 @@ export async function traverseAsync(modelNode, callback) {
 //     await drawMeasurementBoxesWithLabels();
 // }
 
+// Function to collect all nodes with their conditions
+
+function collectNodes(model) {
+    const nodeCollections = {
+        // Basic nodes with name checks
+        coneNodes: [],
+        modelNodes: [],
+        leftRightEx: [], // Left_Ex, Right_Ex
+        leftRightExSlotted: [], // Left_Ex_Slotted, Right_Ex_Slotted
+        hangerNodes: [],
+        rackNodes: [],
+        headerShelfWooden: [], // Header_Wooden_Shelf
+        headerShelfGlass: [], // Header_Glass_Shelf
+        glassShelfFixing: [], // Glass_Shelf_Fixing
+        rodNodes: [], // Rod nodes
+        headerNodes: [], // All header nodes
+        baseFrameNodes: [], // Base frame nodes
+        frameBorderNodes: [], // Nodes needing frame border updates
+        baseMaterialNodes: [], // Base material nodes
+        rodFrameNodes: [], // Rod frame nodes
+        hangerStandNodes: [], // Hanger stand nodes
+        rackWoodenNodes: [], // Rack wooden nodes
+        rackStandNodes: [], // Rack stand nodes
+        clothingNodes: [], // Clothing nodes
+        hangerClubNodes: [], // Hanger club nodes
+        nodeToHide: [], // hide nodes
+    };
+
+    // Single traverse to collect all nodes
+    model.traverse((child) => {
+        // Save original context with each node
+        child.updateMatrixWorld();
+
+        // Collect nodes based on name
+        switch (child.name) {
+            case "Cone":
+                nodeCollections.coneNodes.push(child);
+                break;
+            case "Left_Ex":
+            case "Right_Ex":
+                nodeCollections.leftRightEx.push(child);
+                break;
+            case "Left_Ex_Slotted":
+            case "Right_Ex_Slotted":
+                nodeCollections.leftRightExSlotted.push(child);
+                break;
+            case "Header_Wooden_Shelf":
+                nodeCollections.headerShelfWooden.push(child);
+                break;
+            case "Header_Glass_Shelf":
+                nodeCollections.headerShelfGlass.push(child);
+                break;
+            case "Rod":
+                nodeCollections.rodNodes.push(child);
+                break;
+            case "Glass_Shelf_Fixing":
+                nodeCollections.glassShelfFixing.push(child);
+                break;
+            case "Rack_Wooden_Shelf":
+                nodeCollections.rackWoodenNodes.push(child);
+                break;
+            case "Clothing":
+                nodeCollections.clothingNodes.push(child);
+                break;
+            case "Hanger_Clubs":
+                nodeCollections.hangerClubNodes.push(child);
+                break;
+            case "Base_Flat":
+                nodeCollections.nodeToHide.push(child);
+                break;
+        }
+
+        // Collection based on includes checks
+        if (allModelNames.includes(child.name)) {
+            nodeCollections.modelNodes.push(child);
+        }
+        if (hangerNames.includes(child.name)) {
+            nodeCollections.hangerNodes.push(child);
+        }
+        if (rackNames.includes(child.name)) {
+            nodeCollections.rackNodes.push(child);
+        }
+        if (headerNames.includes(child.name)) {
+            nodeCollections.headerNodes.push(child);
+        }
+        if (baseFrameNames.includes(child.name)) {
+            nodeCollections.baseFrameNodes.push(child);
+        }
+        if (allFrameBorderNames.includes(child.name)) {
+            nodeCollections.frameBorderNodes.push(child);
+        }
+        if (rodFrameTextureNames.includes(child.name)) {
+            if (child.type === "Mesh"){
+                nodeCollections.rodFrameNodes.push(child);
+            }
+        }
+
+        // Material and special condition nodes
+        if (child.name && child.material) {
+            if (
+                child.name.startsWith("Base_Option") ||
+                child.name === "Base_Support_Sides" ||
+                child.name === "Bolts" ||
+                child.name === "Plastic_Caps"
+            ) {
+                nodeCollections.baseMaterialNodes.push(child);
+            }
+            if (
+                [
+                    "Hanger_Stand",
+                    "Hanger_Stand-Arm_Metal",
+                    "Hanger_Stand-Fixture_Material",
+                ].includes(child.name)
+            ) {
+                nodeCollections.hangerStandNodes.push(child);
+            }
+            if (["Rack_Stand_LH", "Rack_Stand_RH"].includes(child.name)) {
+                nodeCollections.rackStandNodes.push(child);
+            }
+        }
+    });
+
+    return nodeCollections;
+}
+
 export async function showHideNodes() {
+    let current_setting = setting[params.selectedGroupName];
+    console.log("current_setting", current_setting);
+
+    let main_model = sharedParams.selectedGroup;
+    let isSlottedSides = main_model.activeModel?.isSlottedSides || false;
+    let isShelf = main_model.activeModel?.isShelf || false;
+    let isGlassShelf = main_model.activeModel?.isGlassShelf || false;
+
+    // Collect all nodes once
+    const nodes = collectNodes(main_model.activeModel);
+    console.log("nodes---->", main_model);
+    console.log("nodes---->", nodes);
+    for (const hideNode of nodes.nodeToHide) {
+        hideNode.visible = false;
+    }
+    // Update materials and visibility in chunks
+    async function updateInChunks(nodeArray, updateFn) {
+        const chunkSize = 10;
+        for (let i = 0; i < nodeArray.length; i += chunkSize) {
+            const chunk = nodeArray.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(updateFn));
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+    }
+
+    // Apply updates based on conditions
+    await Promise.all([
+        // Update cone nodes
+        updateInChunks(nodes.coneNodes, (node) => {
+            node.visible = true;
+            return Promise.resolve();
+        }),
+
+        // Update model nodes
+        updateInChunks(nodes.modelNodes, (node) => {
+            node.visible = node.name === current_setting.defaultModel;
+            if (node.visible) {
+                main_model.activeModel = node;
+                allGroups.push(main_model);
+            }
+            return Promise.resolve();
+        }),
+
+        // Update Left/Right Ex nodes
+        updateInChunks(nodes.leftRightEx, (node) => {
+            node.visible = !current_setting.slottedSidesToggle;
+            if (!current_setting.slottedSidesToggle) {
+                for (const hideLeftRightslotted of nodes.leftRightExSlotted) {
+                    hideLeftRightslotted.visible = true;
+                }
+            }
+            return Promise.resolve();
+        }),
+
+        // Update Left/Right Ex Slotted nodes
+        updateInChunks(nodes.leftRightExSlotted, (node) => {
+            if (current_setting.slottedSidesToggle) {
+                for (const hideLeftRight of nodes.leftRightEx) {
+                    hideLeftRight.visible = false;
+                }
+            }
+            node.visible = current_setting.slottedSidesToggle;
+            return Promise.resolve();
+        }),
+
+        updateInChunks(nodes.rodNodes, (node) => {
+            node.visible =
+                (current_setting.topOption == "Shelf" &&
+                    (current_setting.defaultShelfType ==
+                        "Header_Wooden_Shelf" ||
+                        current_setting.defaultShelfType ==
+                            "Header_Glass_Shelf")) ||
+                (current_setting.headerRodToggle &&
+                    current_setting.topOption == "Header");
+            return Promise.resolve();
+        }),
+
+        // Header nodes
+        updateInChunks(nodes.headerNodes, (node) => {
+            node.visible =
+                current_setting.topOption == "Header" &&
+                current_setting.defaultHeaderSize == node.name;
+            if (params.topOption == "Header") {
+                if (
+                    current_setting.headerRodToggle &&
+                    !current_setting.headerUpDown
+                ) {
+                    node.position.y += params.rodSize.y;
+                } else if (
+                    !current_setting.headerRodToggle &&
+                    current_setting.headerUpDown
+                ) {
+                    node.position.y -= params.rodSize.y;
+                }
+                setting[params.selectedGroupName].headerUpDown =
+                    setting[params.selectedGroupName].headerRodToggle;
+            }
+            return Promise.resolve();
+        }),
+
+        // Header Wooden Shelf nodes
+        updateInChunks(nodes.headerShelfWooden, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Wooden_Shelf";
+            return Promise.resolve();
+        }),
+
+        // Header Glass Shelf nodes
+        updateInChunks(nodes.headerShelfGlass, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Glass_Shelf";
+            return Promise.resolve();
+        }),
+
+        // Continue with all your other conditions...
+        // Example for frame border nodes:
+        updateInChunks(nodes.frameBorderNodes, async (node) => {
+            if (current_setting.frameMaterialType === "texture") {
+                let frame_material =
+                    sharedParams.border_texture_material.clone();
+                let frame_texture_border = await new THREE.TextureLoader().load(
+                    "./assets/images/borders/" +
+                        current_setting.frameBorderColor
+                );
+                frame_texture_border = await setTextureParams(
+                    frame_texture_border
+                );
+                frame_material.map = frame_texture_border;
+                node.material = frame_material;
+            } else if (current_setting.frameMaterialType === "color") {
+                const material = await commonMaterial(
+                    parseInt(current_setting.frameBorderColor, 16)
+                );
+                node.material = material;
+            }
+            node.material.needsUpdate = true;
+        }),
+
+        // Base Frame nodes
+        updateInChunks(nodes.baseFrameNodes, (node) => {
+            node.visible = node.name === current_setting.selectedBaseFrame;
+            return Promise.resolve();
+        }),
+
+        updateInChunks(nodes.baseMaterialNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                await getHex(current_setting.baseFrameColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        updateInChunks(nodes.rackNodes, async (node) => {
+            let rackArr = node.rackArrayKey;
+            let rackModelName = rackArr.split("-")[1];
+            let rackside = rackArr.split("-")[2];
+            let isSameSide = false;
+            let currentModel = main_model.getObjectByName(rackModelName);
+            let frame = currentModel.getObjectByName("Frame");
+
+            for (const hangerFrame of frame.children) {
+                if (
+                    hangerNames.includes(hangerFrame.name) &&
+                    hangerFrame.visible
+                ) {
+                    let hangerArrKey = hangerFrame.hangerArrayKey;
+                    let hangerModel = hangerArrKey.split("-")[1];
+                    let hangerSide = hangerArrKey.split("-")[2];
+                    if (
+                        rackModelName === hangerModel &&
+                        rackside === hangerSide
+                    ) {
+                        isSameSide = true;
+                    }
+                }
+            }
+
+            node.visible = current_setting.slottedSidesToggle && !isSameSide;
+            return Promise.resolve();
+        }),
+
+        // Rack wooden nodes
+        updateInChunks(nodes.rackWoodenNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                await getHex(current_setting.defaultRackShelfStandColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        // Rack stand nodes
+        updateInChunks(nodes.rackStandNodes, async (node) => {
+            if (node.material) {
+                node.material = node.material.clone();
+                node.material.color.set(
+                    await getHex(current_setting.defaultRackStandStandColor)
+                );
+                node.material.needsUpdate = true;
+            } else {
+                node.traverse(async function (mesh) {
+                    if (mesh.material) {
+                        mesh.material = mesh.material.clone();
+                        mesh.material.color.set(
+                            await getHex(
+                                current_setting.defaultRackStandStandColor
+                            )
+                        );
+                        mesh.material.needsUpdate = true;
+                    }
+                });
+            }
+        }),
+
+        // Hanger stand nodes
+        updateInChunks(nodes.hangerStandNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                await getHex(current_setting.defaultHangerStandColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        // Clothing nodes
+        updateInChunks(nodes.clothingNodes, (node) => {
+            node.visible = current_setting.hangerClothesToggle;
+            return Promise.resolve();
+        }),
+
+        // Hanger Club nodes
+        updateInChunks(nodes.hangerClubNodes, (node) => {
+            node.visible = current_setting.hangerGolfClubsToggle;
+            return Promise.resolve();
+        }),
+
+        // Rod frame nodes
+        updateInChunks(nodes.rodFrameNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                await getHex(current_setting.rodFrameColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        // Add all your other conditions here following the same pattern
+    ]);
+
+    // Update UI elements at the end
+    updateUIElements(current_setting);
+}
+
+// Helper function for UI updates (keep your existing UI update code)
+async function updateUIElements(current_setting) {
+    const parentElement = document.querySelector(
+        `div.accordion-item[data-model="${params.selectedGroupName}"]`
+    );
+    if (!parentElement) return;
+
+    let frameSize = parentElement.querySelector(".frameSize");
+    if (frameSize) {
+        frameSize.value = current_setting.defaultModel;
+    }
+    let topDropdown = parentElement.querySelector(".topDropdown");
+    if (topDropdown) {
+        topDropdown.value = current_setting.topOption;
+    }
+    let headerOptions = parentElement.querySelector(".headerOptions");
+    if (headerOptions) {
+        headerOptions.value = current_setting.headerOptions;
+    }
+    let headerSizeDropdown = parentElement.querySelector(".headerSizeDropdown");
+    if (headerSizeDropdown) {
+        headerSizeDropdown.value = current_setting.defaultHeaderSize;
+    }
+    let headerRodToggle = parentElement.querySelector(".headerRodToggle");
+    if (headerRodToggle) {
+        headerRodToggle.checked = current_setting.headerRodToggle;
+    }
+    let headerRodColorDropdown = parentElement.querySelector(
+        ".headerRodColorDropdown"
+    );
+    if (headerRodColorDropdown) {
+        headerRodColorDropdown.value = current_setting.rodFrameColor;
+    }
+    let shelfTypeDropdown = parentElement.querySelector(".shelfTypeDropdown");
+    if (shelfTypeDropdown) {
+        shelfTypeDropdown.value = current_setting.defaultShelfType;
+    }
+    let slottedSidesToggle = parentElement.querySelector(".slottedSidesToggle");
+    if (slottedSidesToggle) {
+        slottedSidesToggle.checked = current_setting.slottedSidesToggle;
+    }
+    let headerFrameColorInput = parentElement.querySelector(
+        ".headerFrameColorInput"
+    );
+    if (headerFrameColorInput) {
+        headerFrameColorInput.value = await getHex(
+            current_setting.topFrameBackgroundColor
+        );
+    }
+    let headerFrameColorDropdown = parentElement.querySelector(
+        ".headerFrameColorDropdown"
+    );
+    if (headerFrameColorDropdown) {
+        headerFrameColorDropdown.value =
+            current_setting.topFrameBackgroundColor;
+    }
+    let mainFrameColorInput = parentElement.querySelector(
+        ".mainFrameColorInput"
+    );
+    if (mainFrameColorInput) {
+        mainFrameColorInput.value = await getHex(
+            current_setting.mainFrameBackgroundColor
+        );
+    }
+    let baseSelectorDropdown = parentElement.querySelector(
+        ".baseSelectorDropdown"
+    );
+    if (baseSelectorDropdown) {
+        baseSelectorDropdown.value = current_setting.selectedBaseFrame;
+    }
+    let baseColor = parentElement.querySelector(".baseColor");
+    if (baseColor) {
+        baseColor.value = current_setting.baseFrameColor;
+    }
+    let hangerClothesToggle = parentElement.querySelector(
+        ".hangerClothesToggle"
+    );
+    if (hangerClothesToggle) {
+        hangerClothesToggle.value = current_setting.hangerClothesToggle;
+    }
+
+    let hangerGolfClubsToggle = parentElement.querySelector(
+        ".hangerGolfClubsToggle"
+    );
+    if (hangerGolfClubsToggle) {
+        hangerGolfClubsToggle.value = current_setting.hangerGolfClubsToggle;
+    }
+    let hangerStandColor = parentElement.querySelector(".hangerStandColor");
+    if (hangerStandColor) {
+        hangerStandColor.value = current_setting.defaultHangerStandColor;
+    }
+    let rackShelfColor = parentElement.querySelector(".rackShelfColor");
+    if (rackShelfColor) {
+        rackShelfColor.value = current_setting.defaultRackShelfStandColor;
+    }
+    let rackStandColor = parentElement.querySelector(".rackStandColor");
+    if (rackStandColor) {
+        rackStandColor.value = current_setting.defaultRackStandStandColor;
+    }
+
+    if (current_setting.topOption == "Shelf") {
+        parentElement
+            .querySelectorAll(".topHeaderOptions")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+        parentElement
+            .querySelectorAll(".topShelfOptions")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+    } else if (current_setting.topOption == "Header") {
+        parentElement
+            .querySelectorAll(".topHeaderOptions")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+        parentElement
+            .querySelectorAll(".topShelfOptions")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+    } else {
+        parentElement
+            .querySelectorAll(".topHeaderOptions")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+        parentElement
+            .querySelectorAll(".topShelfOptions")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+    }
+
+    if (
+        (current_setting.topOption == "Header" &&
+            current_setting.headerRodToggle) ||
+        (current_setting.topOption == "Shelf" &&
+            (current_setting.defaultShelfType == "Header_Wooden_Shelf" ||
+                current_setting.defaultShelfType == "Header_Glass_Shelf"))
+    ) {
+        parentElement
+            .querySelectorAll(".headerRodColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+    } else {
+        parentElement
+            .querySelectorAll(".headerRodColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+    }
+
+    if (
+        current_setting.topOption == "Shelf" &&
+        current_setting.defaultShelfType == "Header_Wooden_Shelf"
+    ) {
+        parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
+            element.style.display = "block";
+        });
+    } else {
+        parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
+            element.style.display = "none";
+        });
+    }
+
+    if (
+        current_setting.topOption == "Header" &&
+        current_setting.headerOptions == "SEG"
+    ) {
+        parentElement
+            .querySelectorAll(".headerFrameColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+        parentElement
+            .querySelectorAll(".headerFrameColorInputBox")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+    } else if (
+        current_setting.topOption == "Header" &&
+        current_setting.headerOptions == "ALG"
+    ) {
+        parentElement
+            .querySelectorAll(".headerFrameColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+        parentElement
+            .querySelectorAll(".headerFrameColorInputBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+    } else if (
+        current_setting.topOption == "Header" &&
+        current_setting.headerOptions == "ALG3D"
+    ) {
+        parentElement
+            .querySelectorAll(".headerFrameColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+        parentElement
+            .querySelectorAll(".headerFrameColorInputBox")
+            .forEach((element) => {
+                element.style.display = "block";
+            });
+    } else {
+        parentElement
+            .querySelectorAll(".headerFrameColorDropdownBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+        parentElement
+            .querySelectorAll(".headerFrameColorInputBox")
+            .forEach((element) => {
+                element.style.display = "none";
+            });
+    }
+}
+
+export function updateActiveModel(modelName) {
+    let main_model = sharedParams.selectedGroup;
+    for (const node of main_model.children) {
+        node.visible = false;
+    }
+    main_model.activeModel = main_model.getObjectByName(modelName);
+    main_model.activeModel.visible = true;
+}
+
+export async function showHideNode1s() {
     // console.log(sharedParams.modelGroup);
     // let currentModelNode = params.selectedGroupName;
     let current_setting = setting[params.selectedGroupName];
@@ -1362,8 +1995,8 @@ export async function showHideNodes() {
         //     params.selectedGroupName
         // );
         let main_model = sharedParams.selectedGroup;
-        console.log("main_model-----------",main_model);
-        
+        console.log("main_model-----------", main_model);
+
         await traverseAsync(main_model, async (child) => {
             // let currentModelNode = await getMainParentNode(
             //     child,
@@ -1626,34 +2259,34 @@ export async function showHideNodes() {
             }
         });
 
-        // if (params.topOption == "Header") {
-        //     await traverseAsync(main_model, async (modelNode) => {
-        //         if (allModelNames.includes(modelNode.name)) {
-        //             await Promise.all(
-        //                 headerNames.map(async (headerName) => {
-        //                     const header =
-        //                         modelNode.getObjectByName(headerName);
-        //                     if (header) {
-        //                         if (
-        //                             current_setting.headerRodToggle &&
-        //                             !current_setting.headerUpDown
-        //                         ) {
-        //                             header.position.y += params.rodSize.y;
-        //                         } else if (
-        //                             !current_setting.headerRodToggle &&
-        //                             current_setting.headerUpDown
-        //                         ) {
-        //                             header.position.y -= params.rodSize.y;
-        //                         }
-        //                     }
-        //                 })
-        //             );
-        //         }
-        //     });
+        if (params.topOption == "Header") {
+            await traverseAsync(main_model, async (modelNode) => {
+                if (allModelNames.includes(modelNode.name)) {
+                    await Promise.all(
+                        headerNames.map(async (headerName) => {
+                            const header =
+                                modelNode.getObjectByName(headerName);
+                            if (header) {
+                                if (
+                                    current_setting.headerRodToggle &&
+                                    !current_setting.headerUpDown
+                                ) {
+                                    header.position.y += params.rodSize.y;
+                                } else if (
+                                    !current_setting.headerRodToggle &&
+                                    current_setting.headerUpDown
+                                ) {
+                                    header.position.y -= params.rodSize.y;
+                                }
+                            }
+                        })
+                    );
+                }
+            });
 
-        //     setting[params.selectedGroupName].headerUpDown =
-        //         setting[params.selectedGroupName].headerRodToggle;
-        // }
+            setting[params.selectedGroupName].headerUpDown =
+                setting[params.selectedGroupName].headerRodToggle;
+        }
     }
 
     // console.log("sharedParams.modelGroup", sharedParams.modelGroup);
@@ -1948,10 +2581,15 @@ export async function centerMainModel() {
 
         // First pass: Calculate total width and collect visible models
         allGroupNames.forEach((modelName) => {
-            const main_model = sharedParams.modelGroup.getObjectByName(modelName);
+            const main_model =
+                sharedParams.modelGroup.getObjectByName(modelName);
 
             main_model.children.forEach((model) => {
-                if (allModelNames.includes(model.name) && model && model.visible) {
+                if (
+                    allModelNames.includes(model.name) &&
+                    model &&
+                    model.visible
+                ) {
                     // Only consider visible models
                     models.push(model);
 
@@ -1993,7 +2631,8 @@ export async function centerMainModel() {
             let isPositive = Math.sign(model.parent.spacing);
             let newPositionX;
             if (isPositive === -1) {
-                newPositionX = -modelSpacing + currentX + modelWidth / 2 + modelSpacing;
+                newPositionX =
+                    -modelSpacing + currentX + modelWidth / 2 + modelSpacing;
             } else {
                 newPositionX = currentX + modelWidth / 2 + modelSpacing;
             }
@@ -2024,10 +2663,7 @@ export async function centerMainModel() {
 }
 
 // Function to check for collision
-export async function checkForCollision(
-    movingModelGroup,
-    moveAmount
-) {
+export async function checkForCollision(movingModelGroup, moveAmount) {
     const movingModelBoundingBox = await computeBoundingBox(
         movingModelGroup,
         allModelNames
@@ -2272,18 +2908,27 @@ export async function updateLabelOcclusion() {
             object.getWorldPosition(labelPosition);
 
             // Calculate direction from camera to the label
-            sharedParams.direction.subVectors(labelPosition, sharedParams.camera.position).normalize();
+            sharedParams.direction
+                .subVectors(labelPosition, sharedParams.camera.position)
+                .normalize();
 
             // Set raycaster from the camera towards the label
-            sharedParams.raycaster.set(sharedParams.camera.position, sharedParams.direction);
+            sharedParams.raycaster.set(
+                sharedParams.camera.position,
+                sharedParams.direction
+            );
 
             // Perform raycast and check for intersections
-            const intersects = sharedParams.raycaster.intersectObjects(sharedParams.scene.children, true);
+            const intersects = sharedParams.raycaster.intersectObjects(
+                sharedParams.scene.children,
+                true
+            );
 
             // If there's an object closer to the camera than the label, hide the label
             if (
                 intersects.length > 0 &&
-                intersects[0].distance < labelPosition.distanceTo(sharedParams.camera.position)
+                intersects[0].distance <
+                    labelPosition.distanceTo(sharedParams.camera.position)
             ) {
                 object.renderOrder = -3; // Send behind the other objects
             } else {
@@ -2307,8 +2952,10 @@ export async function updateMeasurementGroups() {
 
             // Determine if the camera is on the left or right side of the model
             const cameraOnLeft = sharedParams.camera.position.x < center.x;
-            const cameraZAdjustment = sharedParams.camera.position.z < center.z ? -70 : 70; // Adjust if camera is in front or behind
-            const lableZAdjustment = sharedParams.camera.position.z < center.z ? -20 : 20; // Adjust if camera is in front or behind
+            const cameraZAdjustment =
+                sharedParams.camera.position.z < center.z ? -70 : 70; // Adjust if camera is in front or behind
+            const lableZAdjustment =
+                sharedParams.camera.position.z < center.z ? -20 : 20; // Adjust if camera is in front or behind
             const lableYAdjustment = 30; // Adjust if camera is in front or behind
 
             // Create width measurement group
@@ -2322,7 +2969,10 @@ export async function updateMeasurementGroups() {
                 }, // linePosition
                 new THREE.Vector3(
                     min.x + width / 2,
-                    max.y + 1 + params.measurementLineDistance + lableYAdjustment,
+                    max.y +
+                        1 +
+                        params.measurementLineDistance +
+                        lableYAdjustment,
                     cameraZAdjustment + lableZAdjustment
                 ), // labelPosition
                 {
@@ -2345,7 +2995,11 @@ export async function updateMeasurementGroups() {
 
             await updateMeasurementGroupPosition(
                 "MeasurementHeight",
-                { x: heightXPosition, y: min.y + height / 2, z: cameraZAdjustment }, // linePosition
+                {
+                    x: heightXPosition,
+                    y: min.y + height / 2,
+                    z: cameraZAdjustment,
+                }, // linePosition
                 new THREE.Vector3(
                     heightXPosition,
                     min.y + height / 2,
@@ -2392,7 +3046,9 @@ export async function updateMeasurementGroupPosition(
         if (box) box.position.copy(linePosition);
 
         // Update start and end line positions
-        const startLine = measurementGroup.getObjectByName(`${groupName}StartLine`);
+        const startLine = measurementGroup.getObjectByName(
+            `${groupName}StartLine`
+        );
         const endLine = measurementGroup.getObjectByName(`${groupName}EndLine`);
         if (startLine) startLine.position.copy(startLinePosition);
         if (endLine) endLine.position.copy(endLinePosition);
@@ -2465,11 +3121,7 @@ export function findParentNodeByName(node, parentName, isVisible = null) {
     return null;
 }
 
-export async function addCloseButton(
-    modelName,
-    accordionItem,
-    mergedArray
-) {
+export async function addCloseButton(modelName, accordionItem, mergedArray) {
     const closeButtonDiv = document.createElement("div");
     closeButtonDiv.classList.add("control-group");
     const closeButton = document.createElement("button");
@@ -2491,7 +3143,8 @@ export async function addCloseButton(
     closeButton.addEventListener("click", async () => {
         const confirmDelete = confirm("Do you want to delete the model?");
         if (confirmDelete) {
-            const modelToRemove = sharedParams.modelGroup.getObjectByName(modelName);
+            const modelToRemove =
+                sharedParams.modelGroup.getObjectByName(modelName);
             if (modelToRemove) {
                 sharedParams.modelGroup.remove(modelToRemove);
             }
@@ -2511,7 +3164,8 @@ export async function addAnotherModels(
     side = null
 ) {
     if (sharedParams.modelGroup) {
-        let defaultModel = sharedParams.modelGroup.getObjectByName("main_model");
+        let defaultModel =
+            sharedParams.modelGroup.getObjectByName("main_model");
         // console.log('defaultModel', defaultModel);
 
         const newModel = defaultModel.clone();
@@ -2519,7 +3173,10 @@ export async function addAnotherModels(
 
         const nodesToRemove = [];
         await traverseAsync(newModel, async (child) => {
-            if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+            if (
+                hangerNames.includes(child.name) ||
+                rackNames.includes(child.name)
+            ) {
                 // Mark node for removal
                 nodesToRemove.push(child);
             }
@@ -2547,10 +3204,16 @@ export async function addAnotherModels(
         newModel.name = modelName; // If modelName is not null or undefined
 
         //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
-        const modelBoundingBox = await computeBoundingBox(newModel, allModelNames);
+        const modelBoundingBox = await computeBoundingBox(
+            newModel,
+            allModelNames
+        );
         const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
 
-        const boundingBox = await computeBoundingBox(sharedParams.modelGroup, allModelNames);
+        const boundingBox = await computeBoundingBox(
+            sharedParams.modelGroup,
+            allModelNames
+        );
         const center = boundingBox.getCenter(new THREE.Vector3());
         const cameraOnLeft = side || sharedParams.camera.position.x < center.x;
 
@@ -2565,7 +3228,9 @@ export async function addAnotherModels(
         }
 
         if (!setting[modelName]) {
-            setting[modelName] = JSON.parse(JSON.stringify(setting["main_model"]));
+            setting[modelName] = JSON.parse(
+                JSON.stringify(setting["main_model"])
+            );
             setting[modelName].topFrameBackgroundColor =
                 params.topFrameBackgroundColor;
             setting[modelName].mainFrameBackgroundColor =
@@ -2578,14 +3243,19 @@ export async function addAnotherModels(
                 frameTop1Names.includes(mesh.name) ||
                 frameMainNames.includes(mesh.name)
             ) {
-                let currentModelNode = await getMainParentNode(mesh, allModelNames);
+                let currentModelNode = await getMainParentNode(
+                    mesh,
+                    allModelNames
+                );
                 if (
                     params.lastInnerMaterial[currentModelNode.name] &&
                     params.lastInnerMaterial[currentModelNode.name][mesh.name]
                 ) {
                     // const material = await commonMaterial(parseInt('0xffffff', 16))
                     const material =
-                        params.lastInnerMaterial[currentModelNode.name][mesh.name];
+                        params.lastInnerMaterial[currentModelNode.name][
+                            mesh.name
+                        ];
                     mesh.material = material;
                     mesh.needsUpdate = true;
                 }
@@ -2609,24 +3279,24 @@ export async function addAnotherModels(
 }
 
 // Function to dynamically generate and append cards for visible models
-export async function addAnotherModelView(
-    mergedArray,
-    cameraOnLeft,
-) {
+export async function addAnotherModelView(mergedArray, cameraOnLeft) {
     const rightControls = document.querySelector(".model_items");
 
     // Loop through the mergedArray and append cards for visible models
     await mergedArray.forEach(async (modelName) => {
         if (
             modelName.startsWith("Other_") &&
-            !document.querySelector(`.accordion-item[data-model="${modelName}"]`)
+            !document.querySelector(
+                `.accordion-item[data-model="${modelName}"]`
+            )
         ) {
             // Clone the accordion item
             const accordionItem = await cloneAccordionItem(modelName);
 
             if (accordionItem) {
                 // Ensure accordionItem is valid
-                const accordionContainer = document.querySelector("#accordionModel");
+                const accordionContainer =
+                    document.querySelector("#accordionModel");
 
                 // Collapse all currently open accordion items
                 const openAccordionItems = accordionContainer.querySelectorAll(
@@ -2746,15 +3416,12 @@ export async function cloneAccordionItem(modelName) {
     return newAccordionItem;
 }
 
-export async function addRacks(
-    rackType,
-    lastside = null,
-    position = null
-) {
+export async function addRacks(rackType, lastside = null, position = null) {
     if (sharedParams.modelGroup) {
         let selectedGroupName = params.selectedGroupName;
         let defaultModelName = setting[selectedGroupName].defaultModel;
-        let selectedGroupModel = sharedParams.modelGroup.getObjectByName(selectedGroupName);
+        let selectedGroupModel =
+            sharedParams.modelGroup.getObjectByName(selectedGroupName);
         let defaultModel = selectedGroupModel.getObjectByName(defaultModelName);
         let rack_model;
         if (rackType == "RackGlassShelf") {
@@ -2772,7 +3439,8 @@ export async function addRacks(
                 if (lastside) {
                     side = lastside;
                 } else {
-                    side = sharedParams.camera.position.z > 0 ? "Front" : "Back";
+                    side =
+                        sharedParams.camera.position.z > 0 ? "Front" : "Back";
                 }
                 let sameSide = false;
                 for (const frameHanger of frame.children) {
@@ -2793,7 +3461,12 @@ export async function addRacks(
                     sameSide === false
                 ) {
                     const rackPrefix =
-                        selectedGroupName + "-" + defaultModelName + "-" + side + "-"; // Prefix to match keys
+                        selectedGroupName +
+                        "-" +
+                        defaultModelName +
+                        "-" +
+                        side +
+                        "-"; // Prefix to match keys
                     let rackArrayKey = rackPrefix + rackType;
 
                     // Calculate the bounding box for the frame to find the center
@@ -2805,12 +3478,19 @@ export async function addRacks(
                     ); // Get center of frame
 
                     const boundingBox =
-                        params.calculateBoundingBox[defaultModelName][frame.name];
+                        params.calculateBoundingBox[defaultModelName][
+                            frame.name
+                        ];
 
                     // Now compute the bounding box relative to the world coordinates
-                    const rackBoundingBox = new THREE.Box3().setFromObject(rack);
-                    const rackCenter = rackBoundingBox.getCenter(new THREE.Vector3());
-                    const rackLength = rackBoundingBox.max.z - rackBoundingBox.min.z;
+                    const rackBoundingBox = new THREE.Box3().setFromObject(
+                        rack
+                    );
+                    const rackCenter = rackBoundingBox.getCenter(
+                        new THREE.Vector3()
+                    );
+                    const rackLength =
+                        rackBoundingBox.max.z - rackBoundingBox.min.z;
 
                     rack.position.x = topExSideCenter.x; // Ensure it stays centered
 
@@ -2820,19 +3500,23 @@ export async function addRacks(
                     let gmargin = 20;
 
                     if (side == "Front") {
-                        rack.position.z = boundingBox.max.z + rackLength / 2 + margin;
+                        rack.position.z =
+                            boundingBox.max.z + rackLength / 2 + margin;
                         rack.rotation.y = Math.PI;
                         if (rack.name == "RackGlassShelf") {
                             rack.position.z -= gmargin;
                         }
                     } else {
-                        rack.position.z = boundingBox.min.z - rackLength / 2 - margin;
+                        rack.position.z =
+                            boundingBox.min.z - rackLength / 2 - margin;
                         if (rack.name == "RackGlassShelf") {
                             rack.position.z += gmargin;
                         }
                     }
 
-                    let removeRackIcon = await getRemoveIcon(`removeRack-${rackType}`);
+                    let removeRackIcon = await getRemoveIcon(
+                        `removeRack-${rackType}`
+                    );
 
                     removeRackIcon.position.set(
                         rackBoundingBox.max.x, // Offset in world space
@@ -2856,7 +3540,8 @@ export async function addRacks(
                     };
 
                     params.rackCount = params.rackCount || {};
-                    params.rackCount[rackArrayKey] = params.rackCount[rackArrayKey] || 0;
+                    params.rackCount[rackArrayKey] =
+                        params.rackCount[rackArrayKey] || 0;
                     params.rackCount[rackArrayKey] += 1;
 
                     let count = params.rackCount[rackArrayKey];
@@ -2987,7 +3672,10 @@ async function getComponentSize(model, modelComponentsData) {
                     const frameChild = child.clone();
                     for (let i = frameChild.children.length - 1; i >= 0; i--) {
                         const modelNode = frameChild.children[i];
-                        if (modelNode.name && modelNode.name.startsWith("Hanger_")) {
+                        if (
+                            modelNode.name &&
+                            modelNode.name.startsWith("Hanger_")
+                        ) {
                             modelNode.parent.remove(modelNode);
                         }
                     }
@@ -3010,7 +3698,9 @@ async function getComponentSize(model, modelComponentsData) {
                 } else {
                     setModelSize(child, modelSize);
                 }
-            } else if (["Base_Solid", "Base_Support_Sides"].includes(child.name)) {
+            } else if (
+                ["Base_Solid", "Base_Support_Sides"].includes(child.name)
+            ) {
                 setModelSize(child, modelSize);
             } else if (
                 child.parent.name.startsWith("Hanger") &&

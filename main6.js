@@ -212,8 +212,8 @@ async function init() {
     sharedParams.modelGroup.name = "main_group";
     console.log(sharedParams.modelGroup);
     // return
-    setupMainModel(main_model);
     loadAllModels();
+    await setupMainModel(main_model);
     // await showHideNodes();
     // loadHangerModels();
 
@@ -245,7 +245,7 @@ async function init() {
     // await otherModelSetup();
     await showHideNodes();
     setupMainModel(sharedParams.modelGroup);
-
+    
     await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
         if (allModelNames.includes(modelNode.name)) {
             modelNode.traverse(async function (child) {
@@ -452,10 +452,10 @@ async function loadAllModels() {
                     // return gltf;
                     switch (modelPath) {
                         case "Model_1061.glb":
-                            // setupMainModel(gltf);
-                            // let model_1061 = gltf.getObjectByName("Model_1061");
-                            // model_1061.visible = false;
-                            // main_model.add(model_1061);
+                            setupMainModel(gltf);
+                            let model_1061 = gltf.getObjectByName("Model_1061");
+                            model_1061.visible = false;
+                            main_model.add(model_1061);
                             break;
                         case "Model_1200.glb":
                             setupMainModel(gltf);
@@ -501,7 +501,6 @@ async function loadAllModels() {
                             sharedParams.hanger_model.add(
                                 sharedParams.hanger_rail_single
                             );
-                            console.log(sharedParams.hanger_model);
                             break;
                         case "Hanger_Rail_D_500mm.glb":
                             sharedParams.hanger_rail_d_500 = gltf;
@@ -556,6 +555,7 @@ async function loadAllModels() {
                             // params.rodSize = await getNodeSize(
                             //     sharedParams.header_rod_model
                             // );
+                            params.rodSize = {x: 50, y: 50, z: 50};                            
                             break;
                         case "header_glass_shelf_fixing_model.glb":
                             sharedParams.header_glass_shelf_fixing_model = gltf;

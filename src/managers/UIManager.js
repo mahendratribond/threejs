@@ -17,6 +17,7 @@ import {
     showHideNodes,
     centerMainModel,
     addAnotherModels,
+    updateActiveModel,
     checkForCollision,
     findParentNodeByName,
     drawMeasurementBoxesWithLabels,
@@ -142,11 +143,16 @@ export class UIManager {
         // Event listeners for controls
         if (this.elements.frameSize) {
             this.elements.frameSize.value = params.defaultModel;
+            
             // frameSize.addEventListener("change", async function (event) {
-            document.addEventListener("change", async function (event) {
-                if (event.target.classList.contains("frameSize")) {
-                    setting[params.selectedGroupName].defaultModel =
+                document.addEventListener("change", async function (event) {
+                    if (event.target.classList.contains("frameSize")) {
+                        setting[params.selectedGroupName].defaultModel =
                         event.target.value;
+                    console.log(setting[params.selectedGroupName].defaultModel);
+                    updateActiveModel(
+                        setting[params.selectedGroupName].defaultModel
+                    );
                     await showHideNodes();
                     await centerMainModel();
                     // await lightSetup();
@@ -168,7 +174,7 @@ export class UIManager {
                     console.log(
                         "params.selectedGroupName",
                         params.selectedGroupName
-                    );
+                    );                    
                     setting[params.selectedGroupName].topOption =
                         event.target.value;
                     setting[params.selectedGroupName].headerRodToggle = false;
@@ -180,6 +186,8 @@ export class UIManager {
                             params.selectedGroupName
                         ].headerRodToggle = true;
                     }
+                    console.log(setting[params.selectedGroupName].topOption);
+                    
 
                     const headerRodToggle =
                         document.querySelector(".headerRodToggle");
@@ -259,6 +267,10 @@ export class UIManager {
                 if (event.target.classList.contains("slottedSidesToggle")) {
                     setting[params.selectedGroupName].slottedSidesToggle =
                         event.target.checked;
+                    console.log(
+                        setting[params.selectedGroupName].slottedSidesToggle
+                    );
+                    
                     await otherModelSetup();
                     await showHideNodes();
                 }
