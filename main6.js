@@ -119,11 +119,11 @@ import {
     modelQueue,
     params,
     setting,
+    allGroups,
     sharedParams,
 } from "./config.js";
 
-let previousData;
-let loadedModels = new Map();
+let previousData, main_model;
 const lights = [];
 const lightHelpers = [];
 
@@ -203,27 +203,19 @@ async function init() {
 
     sharedParams.modelGroup = new THREE.Group();
     sharedParams.scene.add(sharedParams.modelGroup);
-    let main_model = await loadGLTFModel(params.defaultModel + ".glb")
+    main_model = await loadGLTFModel(params.defaultModel + ".glb");
     main_model.name = params.selectedGroupName;
+    main_model.activeModel = main_model.children[0];
+    allGroups.push(main_model);
+    sharedParams.selectedGroup = main_model;
     sharedParams.modelGroup.add(main_model);
-    await setupMainModel(main_model);
-    await showHideNodes();
-    loadHangerModels();
     sharedParams.modelGroup.name = "main_group";
-
-    for (let val of allModelNames) {
-        let model_name = val + ".glb";
-        let already_added = sharedParams.modelGroup.getObjectByName(val);
-        if (!already_added) {
-            let model_load = await loadGLTFModel(model_name);
-            await setupMainModel(model_load);
-            let model = model_load.getObjectByName(val);
-            model.visible = false;
-            main_model.add(model);  
-        }
-    }
-
-    await showHideNodes();
+    console.log(sharedParams.modelGroup);
+    // return
+    setupMainModel(main_model);
+    loadAllModels();
+    // await showHideNodes();
+    // loadHangerModels();
 
     // Transform controls
     sharedParams.transformControls = new TransformControls(
@@ -250,9 +242,9 @@ async function init() {
     window.addEventListener("resize", uiManager.onWindowResize());
 
     await calculateBoundingBox(sharedParams.modelGroup);
-    await otherModelSetup();
+    // await otherModelSetup();
     await showHideNodes();
-    await setupMainModel(sharedParams.modelGroup);
+    setupMainModel(sharedParams.modelGroup);
 
     await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
         if (allModelNames.includes(modelNode.name)) {
@@ -447,6 +439,187 @@ async function loadPreviousModels() {
         }
     }
     await loaderShowHide(false);
+}
+
+async function loadAllModels() {
+    try {
+        // Create an array of promises for all model loads
+        const loadPromises = modelQueue.map((modelPath) =>
+            loadGLTFModel(modelPath)
+                .then(async (gltf) => {
+                    // console.log(`Loaded: ${modelPath}`, gltf);
+                    // loadedModels.set(modelPath, gltf);
+                    // return gltf;
+                    switch (modelPath) {
+                        case "Model_1061.glb":
+                            setupMainModel(gltf);
+                            let model_1061 = gltf.getObjectByName("Model_1061");
+                            model_1061.visible = false;
+                            main_model.add(model_1061);
+                            break;
+                        case "Model_1200.glb":
+                            setupMainModel(gltf);
+                            let Model_1200 = gltf.getObjectByName("Model_1200");
+                            Model_1200.visible = false;
+                            main_model.add(Model_1200);
+                            break;
+                        case "Model_1500.glb":
+                            setupMainModel(gltf);
+                            let Model_1500 = gltf.getObjectByName("Model_1500");
+                            Model_1500.visible = false;
+                            main_model.add(Model_1500);
+                            break;
+                        case "Model_2000.glb":
+                            setupMainModel(gltf);
+                            let Model_2000 = gltf.getObjectByName("Model_2000");
+                            Model_2000.visible = false;
+                            main_model.add(Model_2000);
+                            break;
+                        case "Model_3000.glb":
+                            setupMainModel(gltf);
+                            let Model_3000 = gltf.getObjectByName("Model_3000");
+                            Model_3000.visible = false;
+                            main_model.add(Model_3000);
+                            break;
+                        case "Hanger_Rail_Step.glb":
+                            sharedParams.hanger_rail_step = gltf;
+                            await setupHangerModel(
+                                sharedParams.hanger_rail_step
+                            );
+                            sharedParams.hanger_model =
+                                sharedParams.hanger_rail_step;
+                            break;
+                        case "Hanger_Rail_Single.glb":
+                            sharedParams.hanger_rail_single = gltf;
+                            await setupHangerModel(
+                                sharedParams.hanger_rail_single
+                            );
+                            sharedParams.hanger_rail_single =
+                                sharedParams.hanger_rail_single.getObjectByName(
+                                    "Hanger_Rail_Single"
+                                );
+                            sharedParams.hanger_model.add(
+                                sharedParams.hanger_rail_single
+                            );
+                            console.log(sharedParams.hanger_model);
+                            break;
+                        case "Hanger_Rail_D_500mm.glb":
+                            sharedParams.hanger_rail_d_500 = gltf;
+                            await setupHangerModel(
+                                sharedParams.hanger_rail_d_500
+                            );
+                            sharedParams.hanger_rail_d_500 =
+                                sharedParams.hanger_rail_d_500.getObjectByName(
+                                    "Hanger_Rail_D_500mm"
+                                );
+                            sharedParams.hanger_model.add(
+                                sharedParams.hanger_rail_d_500
+                            );
+                            break;
+                        case "Hanger_Rail_D_1000mm.glb":
+                            sharedParams.hanger_rail_d_1000 = gltf;
+                            await setupHangerModel(
+                                sharedParams.hanger_rail_d_1000
+                            );
+                            sharedParams.hanger_rail_d_1000 =
+                                sharedParams.hanger_rail_d_1000.getObjectByName(
+                                    "Hanger_Rail_D_1000mm"
+                                );
+                            sharedParams.hanger_model.add(
+                                sharedParams.hanger_rail_d_1000
+                            );
+                            break;
+                        case "hanger_golf_club_model.glb":
+                            sharedParams.hanger_golf_club_model = gltf;
+                            await setupHangerGolfClubModel(
+                                sharedParams.hanger_golf_club_model
+                            );
+                            break;
+                        case "rack_glass_model.glb":
+                            sharedParams.rack_glass_model = gltf;
+                            await setupGlassRackModel(
+                                sharedParams.rack_glass_model
+                            );
+                            break;
+                        case "rack_wooden_model.glb":
+                            sharedParams.rack_wooden_model = gltf;
+                            await setupWoodenRackModel(
+                                sharedParams.rack_wooden_model
+                            );
+                            break;
+                        case "arrow_model.glb":
+                            sharedParams.arrow_model = gltf;
+                            await setupArrowModel();
+                            break;
+                        case "header_rod_model.glb":
+                            sharedParams.header_rod_model = gltf;
+                            // params.rodSize = await getNodeSize(
+                            //     sharedParams.header_rod_model
+                            // );
+                            break;
+                        case "header_glass_shelf_fixing_model.glb":
+                            sharedParams.header_glass_shelf_fixing_model = gltf;
+                            // params.glassShelfFixingSize = await getNodeSize(
+                            //     sharedParams.header_glass_shelf_fixing_model
+                            // );
+                            await setupGlassShelfFixingModel();
+                            break;
+                        case "header_500_height_model.glb":
+                            sharedParams.header_500_height_model = gltf;
+                            await setupHeader500HeightModel();
+                            break;
+                        case "header_wooden_shelf_model.glb":
+                            sharedParams.header_wooden_shelf_model = gltf;
+                            await setupHeaderWoodenShelfModel();
+                            break;
+                        case "header_glass_shelf_model.glb":
+                            sharedParams.header_glass_shelf_model = gltf;
+                            await setupHeaderGlassShelfModel();
+                            break;
+                        case "slotted_sides_model.glb":
+                            sharedParams.slotted_sides_model = gltf;
+                            await setupSlottedSidesModel();
+                            break;
+                        case "support_base_middle.glb":
+                            sharedParams.support_base_middle = gltf;
+                            await setupSupportBaseModel();
+                            break;
+                        case "support_base_sides.glb":
+                            sharedParams.support_base_side = gltf;
+                            await setupSupportBaseModel();
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .catch((error) => {
+                    console.error(`Failed to load ${modelPath}:`, error);
+                    return null;
+                })
+        );
+
+        // Optional: Add a loading indicator
+        // this.showLoadingProgress(loadPromises.length);
+        console.log(loadPromises.length);
+
+        // Load all models in parallel
+        const results = await Promise.allSettled(loadPromises);
+
+        // Process results
+        results.forEach((result, index) => {
+            const modelPath = modelQueue[index];
+            if (result.status === "fulfilled" && result.value) {
+                // Model loaded successfully
+                const model = result.value;
+                console.log("model in loop", model);
+            }
+        });
+
+        console.log("All models loaded");
+        // this.hideLoadingProgress();
+    } catch (error) {
+        console.error("Error loading models:", error);
+    }
 }
 
 async function loadHangerModels() {

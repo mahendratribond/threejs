@@ -617,14 +617,17 @@ export class UIManager {
                         });
                         bsCollapse.hide(); // Explicitly hide the open accordion
                     });
-                    const openedAccordionItem =
-                        event.target.closest(".accordion-item");
+                    const openedAccordionItem = event.target.closest(".accordion-item");
 
                     // Find the data-model attribute of the currently open accordion item
                     const modelName =
                         openedAccordionItem.getAttribute("data-model");
                     if (modelName) {
                         params.selectedGroupName = modelName;
+                        let main_model = sharedParams.modelGroup.getObjectByName(
+                            params.selectedGroupName
+                        );
+                        sharedParams.selectedGroup = main_model;
                         await otherModelSetup();
                         await showHideNodes();
                     }

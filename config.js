@@ -61,7 +61,10 @@ export let sharedParams = {
     support_base_middle: null,
     support_base_side: null,
     //   previousData: null,
+    selectedGroup:null,
 };
+
+export let allGroups = [];
 
 export let allGroupNames = ["main_model"];
 export let allModelNames = [
@@ -143,7 +146,7 @@ export let hangerStandBaseNodes = ["Top_Ex"];
 export let allGroupModelName = ["main_model"];
 
 export let modelQueue = [
-    "Model_661.glb",
+    // "Model_661.glb",
     "Model_1061.glb",
     "Model_1200.glb",
     "Model_1500.glb",

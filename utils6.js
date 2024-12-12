@@ -27,6 +27,7 @@ import {
     rackNames,
     params,
     setting,
+    allGroups,
     sharedParams,
 } from "./config.js";
 import {
@@ -124,8 +125,8 @@ export async function setPositionCenter(model) {
     return model;
 }
 
-export async function setupMainModel(main_model) {
-    main_model.traverse(async function (modelNode) {
+export function setupMainModel(main_model) {
+    main_model.traverse(async (modelNode) => {
         if (modelNode.name && modelNode.name.startsWith("Base_Option")) {
             // if (modelNode.material && baseFrameTextureNames.includes(modelNode.name)) {
             const material = await commonMaterial(
@@ -168,19 +169,7 @@ export async function setupMainModel(main_model) {
                 modelNode.isSlottedSides = false;
             }
         }
-
-        // if (frameTop1Names.includes(modelNode.name) || frameMainNames.includes(modelNode.name)) {
-        //     if (modelNode.material) {
-        //         console.log('modelNode.material', modelNode.material);
-
-        //         const material = await commonMaterial(parseInt('0xffffff', 16))
-        //         modelNode.material = material
-        //         modelNode.material.needsUpdate = true;
-        //     }
-        // }
     });
-
-    // console.log(main_model)
 }
 
 export async function getModelNode(model, prefix) {
@@ -1348,26 +1337,32 @@ export async function showHideNodes() {
         let frame_texture_border = new THREE.TextureLoader().load(
             "./assets/images/borders/" + current_setting.frameBorderColor
         );
-        // frame_texture_border = await setTextureParams(frame_texture_border);
-        // frame_material.map = frame_texture_border;
+        frame_texture_border = await setTextureParams(frame_texture_border);
+        frame_material.map = frame_texture_border;
     }
     if (sharedParams.modelGroup) {
-        await traverseAsync(sharedParams.modelGroup, async (child) => {
-            if (child.name === "Cone") {
-                child.visible = false;
-            }
-        });
-        let main_model = sharedParams.modelGroup.getObjectByName(
-            params.selectedGroupName
-        );
+        // await traverseAsync(sharedParams.modelGroup, async (child) => {
+        //     if (child.name === "Cone") {
+        //         child.visible = false;
+        //     }
+        // });
+
+        // let main_model = sharedParams.modelGroup.getObjectByName(
+        //     params.selectedGroupName
+        // );
+        let main_model = sharedParams.selectedGroup;
+        console.log("main_model",main_model);
+        
         await traverseAsync(main_model, async (child) => {
-            let currentModelNode = await getMainParentNode(
-                child,
-                allModelNames,
-                false
-            );
+            // let currentModelNode = await getMainParentNode(
+            //     child,
+            //     allModelNames,
+            //     false
+            // );
+            let currentModelNode = main_model.activeModel;
             // console.log('currentModelNode', currentModelNode)
             // console.log('child', child)
+            // return
             // console.log('child.name', child.name)
 
             let isSlottedSides = currentModelNode.isSlottedSides || false;
@@ -1376,13 +1371,16 @@ export async function showHideNodes() {
 
             child.updateMatrixWorld();
             if (child.name === "Cone") {
-                child.visible =
-                    (await isActiveGroup(currentModelNode)) &&
-                    Object.keys(setting).length > 1;
+                // child.visible =
+                //     (await isActiveGroup(currentModelNode)) &&
+                //     Object.keys(setting).length > 1;
+                child.visible = true;
             }
             if (child.name && allModelNames.includes(child.name)) {
                 if (child.name === current_setting.defaultModel) {
                     child.visible = true; // Show the selected model
+                    main_model.activeModel = child;
+                    allGroups.push(main_model);
                 } else {
                     child.visible = false; // Hide other models
                 }
@@ -1477,13 +1475,6 @@ export async function showHideNodes() {
 
             if (allFrameBorderNames.includes(child.name)) {
                 if (current_setting.frameMaterialType === "texture") {
-                    // let frame_texture_border = new THREE.TextureLoader().load(
-                    //   "./assets/images/borders/" + current_setting.frameBorderColor
-                    // );
-                    // frame_texture_border = await setTextureParams(frame_texture_border);
-                    // let frame_material = border_texture_material_Clone;
-                    // frame_material.map = frame_texture_border;
-                    // // child.material = child.material.clone()
                     child.material = frame_material;
                     child.material.needsUpdate = true;
                 } else if (current_setting.frameMaterialType === "color") {
@@ -1624,34 +1615,34 @@ export async function showHideNodes() {
             }
         });
 
-        if (params.topOption == "Header") {
-            await traverseAsync(main_model, async (modelNode) => {
-                if (allModelNames.includes(modelNode.name)) {
-                    await Promise.all(
-                        headerNames.map(async (headerName) => {
-                            const header =
-                                modelNode.getObjectByName(headerName);
-                            if (header) {
-                                if (
-                                    current_setting.headerRodToggle &&
-                                    !current_setting.headerUpDown
-                                ) {
-                                    header.position.y += params.rodSize.y;
-                                } else if (
-                                    !current_setting.headerRodToggle &&
-                                    current_setting.headerUpDown
-                                ) {
-                                    header.position.y -= params.rodSize.y;
-                                }
-                            }
-                        })
-                    );
-                }
-            });
+        // if (params.topOption == "Header") {
+        //     await traverseAsync(main_model, async (modelNode) => {
+        //         if (allModelNames.includes(modelNode.name)) {
+        //             await Promise.all(
+        //                 headerNames.map(async (headerName) => {
+        //                     const header =
+        //                         modelNode.getObjectByName(headerName);
+        //                     if (header) {
+        //                         if (
+        //                             current_setting.headerRodToggle &&
+        //                             !current_setting.headerUpDown
+        //                         ) {
+        //                             header.position.y += params.rodSize.y;
+        //                         } else if (
+        //                             !current_setting.headerRodToggle &&
+        //                             current_setting.headerUpDown
+        //                         ) {
+        //                             header.position.y -= params.rodSize.y;
+        //                         }
+        //                     }
+        //                 })
+        //             );
+        //         }
+        //     });
 
-            setting[params.selectedGroupName].headerUpDown =
-                setting[params.selectedGroupName].headerRodToggle;
-        }
+        //     setting[params.selectedGroupName].headerUpDown =
+        //         setting[params.selectedGroupName].headerRodToggle;
+        // }
     }
 
     // console.log("sharedParams.modelGroup", sharedParams.modelGroup);
@@ -1886,7 +1877,7 @@ export async function showHideNodes() {
         }
     }
 
-    await drawMeasurementBoxesWithLabels();
+    // await drawMeasurementBoxesWithLabels();
 }
 
 // Function to find the next visible child
@@ -2599,7 +2590,9 @@ export async function addAnotherModels(
         });
 
         sharedParams.modelGroup.add(newModel);
-
+        newModel.activeModel = newModel.children[0];
+        allGroups.push(newModel);
+        sharedParams.selectedGroup = newModel;
         await addAnotherModelView(allGroupNames, cameraOnLeft);
     }
 }
