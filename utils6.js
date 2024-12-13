@@ -205,11 +205,11 @@ export async function updateModelName(model, oldName, newName) {
     model.traverse((child) => {
         if (pattern.test(child.name) || child.name == oldName) {
             // If the child name matches the pattern
-            // console.log('Updating:', child.name, 'to', newName);
+            console.log('Updating:', child.name, 'to', newName);
             child.name = newName; // Update the name directly
         }
     });
-
+    model.updateMatrixWorld(true);
     return model;
 }
 
@@ -1621,6 +1621,28 @@ export async function showHideNodes() {
                 node.material = material;
             }
             node.material.needsUpdate = true;
+        }),
+        updateInChunks(nodes.headerShelfWooden, async (node) => {
+            // console.log('Header_Wooden_Shelf', dropdownType, child.name)
+            if (current_setting.shelfMaterialType === "texture") {
+                // Load texture
+                let texture_border = new THREE.TextureLoader().load(
+                    "./assets/images/borders/" +
+                        current_setting.defaultShelfColor
+                );
+                texture_border = await setTextureParams(texture_border);
+                let material = border_texture_material_Clone;
+                material.map = texture_border;
+                node.material = material;
+                node.material.needsUpdate = true;
+            } else if (current_setting.shelfMaterialType === "color") {
+                // Apply color
+                const material = await commonMaterial(
+                    parseInt(current_setting.defaultShelfColor, 16)
+                );
+                node.material = material;
+                node.material.needsUpdate = true;
+            }
         }),
 
         // Base Frame nodes

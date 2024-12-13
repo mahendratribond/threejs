@@ -74,7 +74,7 @@ import {
 import {
     addHangers,
     cloneWithCustomHangerProperties,
-    setupHangerModel,
+    // setupHangerModel,
     setupHangerGolfClubModel,
 } from "./src/managers/HangerManager.js";
 import {
@@ -117,6 +117,7 @@ import {
     hangerNames,
     rackNames,
     modelQueue,
+    GLTFExporter,
     params,
     setting,
     allGroups,
@@ -211,9 +212,9 @@ async function init() {
     sharedParams.modelGroup.add(main_model);
     sharedParams.modelGroup.name = "main_group";
     console.log(sharedParams.modelGroup);
+    setupMainModel(main_model);
+    await loadAllModels();
     // return
-    loadAllModels();
-    await setupMainModel(main_model);
     // await showHideNodes();
     // loadHangerModels();
 
@@ -244,27 +245,27 @@ async function init() {
     await calculateBoundingBox(sharedParams.modelGroup);
     // await otherModelSetup();
     await showHideNodes();
-    setupMainModel(sharedParams.modelGroup);
+    // setupMainModel(sharedParams.modelGroup);
     
-    await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
-        if (allModelNames.includes(modelNode.name)) {
-            modelNode.traverse(async function (child) {
-                if (
-                    frameTop1Names.includes(child.name) ||
-                    frameMainNames.includes(child.name)
-                ) {
-                    if (child.isMesh && child.material) {
-                        params.lastInnerMaterial =
-                            params.lastInnerMaterial || {};
-                        params.lastInnerMaterial[modelNode.name] =
-                            params.lastInnerMaterial[modelNode.name] || {};
-                        params.lastInnerMaterial[modelNode.name][child.name] =
-                            child.material;
-                    }
-                }
-            });
-        }
-    });
+    // await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
+    //     if (allModelNames.includes(modelNode.name)) {
+    //         modelNode.traverse(async function (child) {
+    //             if (
+    //                 frameTop1Names.includes(child.name) ||
+    //                 frameMainNames.includes(child.name)
+    //             ) {
+    //                 if (child.isMesh && child.material) {
+    //                     params.lastInnerMaterial =
+    //                         params.lastInnerMaterial || {};
+    //                     params.lastInnerMaterial[modelNode.name] =
+    //                         params.lastInnerMaterial[modelNode.name] || {};
+    //                     params.lastInnerMaterial[modelNode.name][child.name] =
+    //                         child.material;
+    //                 }
+    //             }
+    //         });
+    //     }
+    // });
 
     sharedParams.labelRenderer = await initLabelRenderer();
     document.body.appendChild(sharedParams.labelRenderer.domElement);
@@ -441,11 +442,22 @@ async function loadPreviousModels() {
     await loaderShowHide(false);
 }
 
+async function exportModel(model, name) {
+    model.position.set(0, 0, 0);
+    model.updateMatrixWorld();
+    const gltfExporter = new GLTFExporter();
+    const result = await gltfExporter.parseAsync(model, { binary: true });
+    const blob = new Blob([result], { type: "application/octet-stream" });
+    const modellink = document.createElement("a");
+    modellink.href = URL.createObjectURL(blob);
+    modellink.download = name;
+    modellink.click();
+}
 async function loadAllModels() {
     try {
         // Create an array of promises for all model loads
-        const loadPromises = modelQueue.map((modelPath) =>
-            loadGLTFModel(modelPath)
+        const loadPromises = modelQueue.map(async (modelPath) =>
+            await loadGLTFModel(modelPath)
                 .then(async (gltf) => {
                     // console.log(`Loaded: ${modelPath}`, gltf);
                     // loadedModels.set(modelPath, gltf);
@@ -483,17 +495,10 @@ async function loadAllModels() {
                             break;
                         case "Hanger_Rail_Step.glb":
                             sharedParams.hanger_rail_step = gltf;
-                            await setupHangerModel(
-                                sharedParams.hanger_rail_step
-                            );
-                            sharedParams.hanger_model =
-                                sharedParams.hanger_rail_step;
+                            sharedParams.hanger_model = sharedParams.hanger_rail_step;
                             break;
                         case "Hanger_Rail_Single.glb":
                             sharedParams.hanger_rail_single = gltf;
-                            await setupHangerModel(
-                                sharedParams.hanger_rail_single
-                            );
                             sharedParams.hanger_rail_single =
                                 sharedParams.hanger_rail_single.getObjectByName(
                                     "Hanger_Rail_Single"
@@ -504,9 +509,6 @@ async function loadAllModels() {
                             break;
                         case "Hanger_Rail_D_500mm.glb":
                             sharedParams.hanger_rail_d_500 = gltf;
-                            await setupHangerModel(
-                                sharedParams.hanger_rail_d_500
-                            );
                             sharedParams.hanger_rail_d_500 =
                                 sharedParams.hanger_rail_d_500.getObjectByName(
                                     "Hanger_Rail_D_500mm"
@@ -517,9 +519,6 @@ async function loadAllModels() {
                             break;
                         case "Hanger_Rail_D_1000mm.glb":
                             sharedParams.hanger_rail_d_1000 = gltf;
-                            await setupHangerModel(
-                                sharedParams.hanger_rail_d_1000
-                            );
                             sharedParams.hanger_rail_d_1000 =
                                 sharedParams.hanger_rail_d_1000.getObjectByName(
                                     "Hanger_Rail_D_1000mm"
@@ -530,9 +529,17 @@ async function loadAllModels() {
                             break;
                         case "hanger_golf_club_model.glb":
                             sharedParams.hanger_golf_club_model = gltf;
-                            await setupHangerGolfClubModel(
-                                sharedParams.hanger_golf_club_model
-                            );
+                            // await setupHangerGolfClubModel(
+                            //     sharedParams.hanger_golf_club_model,
+                            // );
+                            console.log(sharedParams.hanger_golf_club_model);
+                            // await exportModel(
+                            //     sharedParams.hanger_golf_club_model,
+                            //     modelPath
+                            // ); 
+                            // console.log(sharedParams.hanger_golf_club_model);
+                            // 
+                            
                             break;
                         case "rack_glass_model.glb":
                             sharedParams.rack_glass_model = gltf;
@@ -619,86 +626,6 @@ async function loadAllModels() {
         // this.hideLoadingProgress();
     } catch (error) {
         console.error("Error loading models:", error);
-    }
-}
-
-async function loadHangerModels() {
-    if (!sharedParams.hanger_rail_step) {
-        sharedParams.hanger_rail_step = await loadGLTFModel(
-            "Hanger_Rail_Step.glb"
-        );
-        await setupHangerModel(sharedParams.hanger_rail_step);
-        sharedParams.hanger_model = sharedParams.hanger_rail_step;
-        let loader = document.querySelector(".Hanger_Rail_Step_loader");
-        await removeLoader(loader);
-    }
-    if (!sharedParams.hanger_rail_single) {
-        sharedParams.hanger_rail_single = await loadGLTFModel(
-            "Hanger_Rail_Single.glb"
-        );
-        await setupHangerModel(sharedParams.hanger_rail_single);
-        sharedParams.hanger_rail_single =
-            sharedParams.hanger_rail_single.getObjectByName(
-                "Hanger_Rail_Single"
-            );
-        sharedParams.hanger_model.add(sharedParams.hanger_rail_single);
-        let loader = document.querySelector(".Hanger_Rail_Single_loader");
-        await removeLoader(loader);
-    }
-
-    if (!sharedParams.hanger_rail_d_500) {
-        sharedParams.hanger_rail_d_500 = await loadGLTFModel(
-            "Hanger_Rail_D_500mm.glb"
-        );
-        await setupHangerModel(sharedParams.hanger_rail_d_500);
-        sharedParams.hanger_rail_d_500 =
-            sharedParams.hanger_rail_d_500.getObjectByName(
-                "Hanger_Rail_D_500mm"
-            );
-        sharedParams.hanger_model.add(sharedParams.hanger_rail_d_500);
-        let loader = document.querySelector(".Hanger_Rail_D_500mm_loader");
-        await removeLoader(loader);
-    }
-
-    if (!sharedParams.hanger_rail_d_1000) {
-        sharedParams.hanger_rail_d_1000 = await loadGLTFModel(
-            "Hanger_Rail_D_1000mm.glb"
-        );
-        await setupHangerModel(sharedParams.hanger_rail_d_1000);
-        sharedParams.hanger_rail_d_1000 =
-            sharedParams.hanger_rail_d_1000.getObjectByName(
-                "Hanger_Rail_D_1000mm"
-            );
-        sharedParams.hanger_model.add(sharedParams.hanger_rail_d_1000);
-        let loader = document.querySelector(".Hanger_Rail_D_1000mm_loader");
-        await removeLoader(loader);
-    }
-    if (!sharedParams.hanger_golf_club_model) {
-        sharedParams.hanger_golf_club_model = await loadGLTFModel(
-            "hanger_golf_club_model.glb"
-        );
-        await setupHangerGolfClubModel(sharedParams.hanger_golf_club_model);
-        let Golfloader = document.querySelector(
-            ".Hanger_Golf_Club_Driver_loader"
-        );
-        removeLoader(Golfloader);
-        let Golfloader2 = document.querySelector(
-            ".Hanger_Golf_Club_Iron_loader"
-        );
-        removeLoader(Golfloader2);
-    }
-
-    if (!sharedParams.rack_glass_model) {
-        sharedParams.rack_glass_model = await loadGLTFModel(
-            "rack_glass_model.glb"
-        );
-        await setupGlassRackModel(sharedParams.rack_glass_model);
-    }
-    if (!sharedParams.rack_wooden_model) {
-        sharedParams.rack_wooden_model = await loadGLTFModel(
-            "rack_wooden_model.glb"
-        );
-        await setupWoodenRackModel(sharedParams.rack_wooden_model);
     }
 }
 
@@ -899,8 +826,7 @@ export async function updateMaterial(
                 let accordion = customDropdownButton.closest(`.accordion-item`);
                 selectedModel = accordion.getAttribute(`data-model`);
                 type = element.getAttribute("data-type");
-                imageUrl =
-                    type === "texture" ? element.querySelector("img").src : "";
+                imageUrl = type === "texture" ? element.querySelector("img").src : "";
                 displayText = element.querySelector("span").innerText;
                 element.classList.add("selected");
             }
