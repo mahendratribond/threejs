@@ -175,6 +175,8 @@ manager.onError = (url) => {
 };
 
 async function init() {
+    // await downloadGolf();
+    // return
     sharedParams.texture_background = await TextureLoaderJpg.loadAsync(
         "background.png"
     );
@@ -246,7 +248,7 @@ async function init() {
     // await otherModelSetup();
     await showHideNodes();
     // setupMainModel(sharedParams.modelGroup);
-    
+
     // await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
     //     if (allModelNames.includes(modelNode.name)) {
     //         modelNode.traverse(async function (child) {
@@ -269,7 +271,6 @@ async function init() {
 
     sharedParams.labelRenderer = await initLabelRenderer();
     document.body.appendChild(sharedParams.labelRenderer.domElement);
-
     await loadPreviousModels();
     uiManager.setupEventListeners(lights, lightHelpers);
 }
@@ -495,7 +496,8 @@ async function loadAllModels() {
                             break;
                         case "Hanger_Rail_Step.glb":
                             sharedParams.hanger_rail_step = gltf;
-                            sharedParams.hanger_model = sharedParams.hanger_rail_step;
+                            sharedParams.hanger_model =
+                                sharedParams.hanger_rail_step;
                             break;
                         case "Hanger_Rail_Single.glb":
                             sharedParams.hanger_rail_single = gltf;
@@ -527,19 +529,20 @@ async function loadAllModels() {
                                 sharedParams.hanger_rail_d_1000
                             );
                             break;
-                        case "hanger_golf_club_model.glb":
-                            sharedParams.hanger_golf_club_model = gltf;
-                            // await setupHangerGolfClubModel(
-                            //     sharedParams.hanger_golf_club_model,
-                            // );
-                            console.log(sharedParams.hanger_golf_club_model);
-                            // await exportModel(
-                            //     sharedParams.hanger_golf_club_model,
-                            //     modelPath
-                            // ); 
-                            // console.log(sharedParams.hanger_golf_club_model);
-                            // 
-                            
+                        // case "hanger_golf_club_model.glb":
+                        //     sharedParams.hanger_golf_club_model = gltf;
+                        //     // await setupHangerGolfClubModel();
+                        //     // await exportModel(sharedParams.hanger_golf_club_model, modelPath);
+                        //     console.log(sharedParams.hanger_golf_club_model);
+
+                        //     break;
+                        case "hanger_golf_driver_club_model.glb":
+                            sharedParams.hanger_golf_driver_club_model = gltf;
+                            console.log(sharedParams.hanger_golf_driver_club_model);
+                            break;
+                        case "hanger_golf_Iron_club_model.glb":
+                            sharedParams.hanger_golf_Iron_club_model = gltf;
+                            console.log(sharedParams.hanger_golf_Iron_club_model);
                             break;
                         case "rack_glass_model.glb":
                             sharedParams.rack_glass_model = gltf;
@@ -562,7 +565,7 @@ async function loadAllModels() {
                             // params.rodSize = await getNodeSize(
                             //     sharedParams.header_rod_model
                             // );
-                            params.rodSize = {x: 50, y: 50, z: 50};                            
+                            params.rodSize = { x: 50, y: 50, z: 50 };
                             break;
                         case "header_glass_shelf_fixing_model.glb":
                             sharedParams.header_glass_shelf_fixing_model = gltf;
@@ -1269,10 +1272,13 @@ async function captureFixtureImage(
                     if (
                         subChild.parent.name !== "Frame" &&
                         subChild.name !== "Hanger_Stand" &&
+                        subChild.name !== "Hanger_StandX" &&
                         subChild.parent !== null
                     ) {
                         subChild.parent.remove(subChild);
                     } else if (subChild.name !== "Hanger_Stand") {
+                        subChild.visible = false;
+                    } else if (subChild.name !== "Hanger_StandX") {
                         subChild.visible = false;
                     } else {
                         HangerModel = subChild;

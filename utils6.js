@@ -201,15 +201,15 @@ export async function getModelNode(model, prefix) {
 
 export async function updateModelName(model, oldName, newName) {
     let pattern = new RegExp(`^${oldName}\\d{1,2}$`); // Matches names like oldName_500, oldName_600, etc.
-
+    
     model.traverse((child) => {
         if (pattern.test(child.name) || child.name == oldName) {
+            // console.log(pattern.test(child.name), "  -  ", child.name , "  -  ", child.parent.name);
             // If the child name matches the pattern
-            console.log('Updating:', child.name, 'to', newName);
-            child.name = newName; // Update the name directly
+            // console.log('Updating:', child.name, 'to', newName);
+            child.name = newName+"X"; // Update the name directly
         }
     });
-    model.updateMatrixWorld(true);
     return model;
 }
 
@@ -1421,7 +1421,7 @@ function collectNodes(model) {
             case "Clothing":
                 nodeCollections.clothingNodes.push(child);
                 break;
-            case "Hanger_Clubs":
+            case "Hanger_ClubsX":
                 nodeCollections.hangerClubNodes.push(child);
                 break;
             case "Base_Flat":
@@ -1467,8 +1467,9 @@ function collectNodes(model) {
             if (
                 [
                     "Hanger_Stand",
-                    "Hanger_Stand-Arm_Metal",
-                    "Hanger_Stand-Fixture_Material",
+                    "Hanger_StandX",
+                    "Hanger_Stand-Arm_MetalX",
+                    "Hanger_Stand-Fixture_MaterialX",
                 ].includes(child.name)
             ) {
                 nodeCollections.hangerStandNodes.push(child);
@@ -1490,7 +1491,6 @@ export async function showHideNodes() {
     let isSlottedSides = main_model.activeModel?.isSlottedSides || false;
     let isShelf = main_model.activeModel?.isShelf || false;
     let isGlassShelf = main_model.activeModel?.isGlassShelf || false;
-
     // Collect all nodes once
     const nodes = collectNodes(main_model.activeModel);
     console.log("nodes---->", main_model);
@@ -1513,6 +1513,9 @@ export async function showHideNodes() {
         // Update cone nodes
         updateInChunks(nodes.coneNodes, (node) => {
             node.visible = true;
+            if(sharedParams.modelGroup.children.length < 2){
+                node.visible = false;
+            }
             return Promise.resolve();
         }),
 
@@ -1534,11 +1537,19 @@ export async function showHideNodes() {
                     hideLeftRightslotted.visible = true;
                 }
             }
+            if(current_setting.slottedSidesToggle && nodes.leftRightExSlotted.length){
+                node.visible = false;
+            }else{
+                node.visible = true;
+            }
             return Promise.resolve();
         }),
 
         // Update Left/Right Ex Slotted nodes
         updateInChunks(nodes.leftRightExSlotted, (node) => {
+            console.log("here",nodes.leftRightExSlotted);
+            console.log("here");
+            
             if (current_setting.slottedSidesToggle) {
                 for (const hideLeftRight of nodes.leftRightEx) {
                     hideLeftRight.visible = false;
@@ -1550,13 +1561,8 @@ export async function showHideNodes() {
 
         updateInChunks(nodes.rodNodes, (node) => {
             node.visible =
-                (current_setting.topOption == "Shelf" &&
-                    (current_setting.defaultShelfType ==
-                        "Header_Wooden_Shelf" ||
-                        current_setting.defaultShelfType ==
-                            "Header_Glass_Shelf")) ||
-                (current_setting.headerRodToggle &&
-                    current_setting.topOption == "Header");
+                (current_setting.topOption == "Shelf" && (current_setting.defaultShelfType == "Header_Wooden_Shelf" || current_setting.defaultShelfType == "Header_Glass_Shelf")) || 
+                (current_setting.headerRodToggle && current_setting.topOption == "Header");
             return Promise.resolve();
         }),
 
@@ -1565,6 +1571,7 @@ export async function showHideNodes() {
             node.visible =
                 current_setting.topOption == "Header" &&
                 current_setting.defaultHeaderSize == node.name;
+            
             if (params.topOption == "Header") {
                 if (
                     current_setting.headerRodToggle &&
@@ -1579,6 +1586,8 @@ export async function showHideNodes() {
                 }
                 setting[params.selectedGroupName].headerUpDown =
                     setting[params.selectedGroupName].headerRodToggle;
+                console.log(node.name , " - ",setting[params.selectedGroupName]);
+                return
             }
             return Promise.resolve();
         }),
@@ -2183,7 +2192,7 @@ export async function showHideNode1s() {
             if (["Clothing"].includes(child.name)) {
                 child.visible = current_setting.hangerClothesToggle;
             }
-            if (["Hanger_Clubs"].includes(child.name)) {
+            if (["Hanger_ClubsX"].includes(child.name)) {
                 child.visible = current_setting.hangerGolfClubsToggle;
             }
 
@@ -2236,8 +2245,9 @@ export async function showHideNode1s() {
                 child.material &&
                 [
                     "Hanger_Stand",
-                    "Hanger_Stand-Arm_Metal",
-                    "Hanger_Stand-Fixture_Material",
+                    "Hanger_StandX",
+                    "Hanger_Stand-Arm_MetalX",
+                    "Hanger_Stand-Fixture_MaterialX",
                 ].includes(child.name) &&
                 child.material.color
             ) {

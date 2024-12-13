@@ -54,6 +54,8 @@ export let sharedParams = {
     hanger_rail_d_500: null,
     hanger_rail_d_1000: null,
     hanger_golf_club_model: null,
+    hanger_golf_Iron_club_model: null,
+    hanger_golf_driver_club_model: null,
     rack_wooden_model: null,
     rack_glass_model: null,
     arrow_model: null,
@@ -61,7 +63,7 @@ export let sharedParams = {
     support_base_middle: null,
     support_base_side: null,
     //   previousData: null,
-    selectedGroup:null,
+    selectedGroup: null,
 };
 
 export let allGroups = [];
@@ -126,8 +128,9 @@ export let hangerNames = [
 ];
 export let hangerPartNames = [
     "Hanger_Stand",
-    "Hanger_Clubs",
-    "Hanger_Faceplate",
+    "Hanger_StandX",
+    "Hanger_ClubsX",
+    "Hanger_FaceplateX",
     "Clothing",
     "Clothing-Fixture_Material",
     "Clothing-Mat",
@@ -156,7 +159,9 @@ export let modelQueue = [
     "Hanger_Rail_Single.glb",
     "Hanger_Rail_D_500mm.glb",
     "Hanger_Rail_D_1000mm.glb",
-    "hanger_golf_club_model.glb",
+    // "hanger_golf_club_model.glb",
+    "hanger_golf_driver_club_model.glb",
+    "hanger_golf_Iron_club_model.glb",
     "rack_glass_model.glb",
     "rack_wooden_model.glb",
     "arrow_model.glb",

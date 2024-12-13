@@ -635,6 +635,12 @@ export class UIManager {
                     const modelName =
                         openedAccordionItem.getAttribute("data-model");
                     if (modelName) {
+                        const previousModel = sharedParams.modelGroup.getObjectByName(params.selectedGroupName);
+                        for(const hideCone of previousModel.activeModel.children){
+                            if(hideCone.name == "Cone"){
+                                hideCone.visible = false;
+                            }
+                        }
                         params.selectedGroupName = modelName;
                         let main_model = sharedParams.modelGroup.getObjectByName(
                             params.selectedGroupName
@@ -1015,7 +1021,9 @@ export class UIManager {
 
                 let minX = frameBox.min.x + frame.position.x - worldPosition.x;
                 let maxX = frameBox.max.x + frame.position.x - worldPosition.x;
-                let selectedChildNode = sharedParams.selectedNode.getObjectByName("Hanger_Stand");
+                let selectedChildNode =
+                    sharedParams.selectedNode.getObjectByName("Hanger_Stand") ||
+                    sharedParams.selectedNode.getObjectByName("Hanger_StandX");
 
                 // const selectedChildWorldPosition = new THREE.Vector3();
                 // selectedChildNode.getWorldPosition(selectedChildWorldPosition);

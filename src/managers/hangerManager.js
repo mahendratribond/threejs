@@ -33,8 +33,13 @@ export async function addHangers(hangerType, lastside = null, position = null) {
         let hangermodel, hanger;
 
         // const loader = new GLTFLoader();
-        if (golfClubNames.includes(hangerType)) {
-            hangermodel = sharedParams.hanger_golf_club_model;
+        // if (golfClubNames.includes(hangerType)) {
+        //     hangermodel = sharedParams.hanger_golf_club_model;
+        // }
+        if (hangerType == "Hanger_Golf_Club_Iron") {
+            hangermodel = sharedParams.hanger_golf_Iron_club_model;
+        } else if (hangerType == "Hanger_Golf_Club_Driver") {
+            hangermodel = sharedParams.hanger_golf_driver_club_model;
         } else {
             hangermodel = sharedParams.hanger_model;
         }
@@ -322,9 +327,9 @@ export async function setupHangerGolfClubModel() {
             if (
                 child.material &&
                 [
-                    "Hanger_Stand",
-                    "Hanger_Stand-Arm_Metal",
-                    "Hanger_Stand-Arm_Rubber",
+                    "Hanger_StandX",
+                    "Hanger_Stand-Arm_MetalX",
+                    "Hanger_Stand-Arm_RubberX",
                 ].includes(child.name)
             ) {
                 const material = await commonMaterial(
@@ -351,5 +356,8 @@ export async function setupHangerGolfClubModel() {
                 // child.material.needsUpdate = true;
             }
         });
+    }else{
+        console.log("no golf model found");
+        
     }
 }

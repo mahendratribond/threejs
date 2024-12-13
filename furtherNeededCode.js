@@ -1,4 +1,4 @@
-// this code is from main6
+// this code is from hangermanager
 async function exportModel(model, name) {
     model.position.set(0, 0, 0);
     model.updateMatrixWorld();
