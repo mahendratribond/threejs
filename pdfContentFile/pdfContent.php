@@ -284,7 +284,7 @@
                                                             <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
                                                         </div> 
                                                     </td>
-                                                    <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm'; ?></td>
+                                                    <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm'; ?></td>
                                                 </tr>
                                                 <?php
                                             }
@@ -297,7 +297,7 @@
                                                             <p style="padding-top:10px;">ALUMINIUM POWDER COATED</p>
                                                         </div> 
                                                     </td>
-                                                    <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm'; ?></td>
+                                                    <td style="width:50%;"><?php echo round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm'; ?></td>
                                                 </tr>
                                                 <?php
                                             }

@@ -41,7 +41,6 @@ export let sharedParams = {
     texture_background: null,
     border_texture_material: null,
     main_model: null,
-
     header_rod_model: null,
     header_wooden_shelf_model: null,
     header_500_height_model: null,

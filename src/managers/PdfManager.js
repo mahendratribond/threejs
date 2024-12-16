@@ -1,25 +1,15 @@
 import {
     THREE,
-    TransformControls,
-    updateVariable,
-    frameTop1Names,
-    frameMainNames,
-    allModelNames,
     allGroupNames,
     hangerNames,
     rackNames,
-    modelQueue,
-    GLTFExporter,
     params,
     setting,
-    allGroups,
     sharedParams,
 } from "../../config.js";
 import {
-    addHangers,
     cloneWithCustomHangerProperties,
     // setupHangerModel,
-    setupHangerGolfClubModel,
 } from "./HangerManager.js";
 import { savePdfData, traverseAsync,delay } from "../../utils6.js";
 
@@ -295,17 +285,13 @@ async function captureFixtureImage(
     MainmodelName,
     imagesNameArr
 ) {
-    console.log("here 1")
     for (const modelChild of model.children) {
-        console.log("here 2");
         if (!modelChild.visible) continue;
         const CloneModel = modelChild.clone();
         await cloneWithCustomHangerProperties(modelChild, CloneModel);
         const Frame = CloneModel.getObjectByName("Frame");
         for (const child of Frame.children) {
-            console.log("here 3", child);
             if (child.name.startsWith("Hanger_")) {
-                console.log("here 4");
                 let HangerModel;
                 await traverseAsync(child, async (subChild) => {
                     if (
@@ -314,19 +300,16 @@ async function captureFixtureImage(
                         subChild.name !== "Hanger_StandX" &&
                         subChild.parent !== null
                     ) {
-                        console.log("here ", subChild);
                         subChild.parent.remove(subChild);
                     } else if (
                         subChild.name !== "Hanger_Stand" &&
                         subChild.name !== "Hanger_StandX"
                     ) {
-                        console.log("here ", subChild);
                         subChild.visible = false;
                     } else {
                         HangerModel = subChild;
                     }
                 });
-                console.log("here 5", HangerModel);
                 const hangerNames = imagesNameArr
                     .map((url) => url.split("/").pop()) // Get the file name
                     .filter(
@@ -365,7 +348,6 @@ async function captureFixtureImage(
                         center.z + (cameraDistance + 500) // Offset in Z for distance
                     );
                     tempCamera.lookAt(center);
-                    console.log("here again");
                     
                     await renderAndDownload(
                         child.name,

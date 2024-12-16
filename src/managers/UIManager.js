@@ -6,9 +6,7 @@ import {
     hangerNames,
     sharedParams,
     allGroupNames,
-    rackPartNames,
     allModelNames,
-    hangerPartNames,
 } from "../../config.js";
 
 import {
@@ -24,12 +22,9 @@ import {
     checkForCollision,
     findParentNodeByName,
     findParentWithNamesInArr,
-    drawMeasurementBoxesWithLabels,
 } from "../../utils6.js";
 
 import { exportModelForAr } from "./ExportModelManager.js";
-
-import { otherModelSetup, updateMaterial } from "../../main6.js";
 
 import {
     setTopFrameCropedImage,
@@ -37,10 +32,13 @@ import {
 } from "./FrameImagesManager.js";
 
 import { Scene } from "../core/Scene.js";
-import { getCurrentModelSize } from "./MeasurementManager.js";
+import {
+    getCurrentModelSize,
+    drawMeasurementBoxesWithLabels,
+} from "./MeasurementManager.js";
 import { addHangers } from "./HangerManager.js";
-import {creatingPDF} from "./PdfManager.js"
-import {FileManager} from "./FileManager.js"
+import { creatingPDF } from "./PdfManager.js";
+import { FileManager } from "./FileManager.js";
 
 const sceneUI = new Scene();
 export class UIManager {
@@ -64,26 +62,16 @@ export class UIManager {
             headerOptions: document.querySelector(".headerOptions"),
             headerSizeDropdown: document.querySelector(".headerSizeDropdown"),
             headerRodToggle: document.querySelector(".headerRodToggle"),
-            headerRodColorDropdown: document.querySelector(
-                ".headerRodColorDropdown"
-            ),
+            headerRodColorDropdown: document.querySelector(".headerRodColorDropdown"),
             topFrameFileUpload: document.querySelector(".topFrameFileUpload"),
-            headerFrameColorInput: document.querySelector(
-                ".headerFrameColorInput"
-            ),
-            headerFrameColorDropdown: document.querySelector(
-                ".headerFrameColorDropdown"
-            ),
+            headerFrameColorInput: document.querySelector(".headerFrameColorInput"),
+            headerFrameColorDropdown: document.querySelector(".headerFrameColorDropdown"),
             slottedSidesToggle: document.querySelector(".slottedSidesToggle"),
             mainFrameFileUpload: document.querySelector(".mainFrameFileUpload"),
             mainFrameColorInput: document.querySelector(".mainFrameColorInput"),
-            baseSelectorDropdown: document.querySelector(
-                ".baseSelectorDropdown"
-            ),
+            baseSelectorDropdown: document.querySelector(".baseSelectorDropdown"),
             hangerClothesToggle: document.querySelector(".hangerClothesToggle"),
-            hangerGolfClubsToggle: document.querySelector(
-                ".hangerGolfClubsToggle"
-            ),
+            hangerGolfClubsToggle: document.querySelector(".hangerGolfClubsToggle"),
             hangerStandColor: document.querySelector(".hangerStandColor"),
             rackShelfColor: document.querySelector(".rackShelfColor"),
             rackStandColor: document.querySelector(".rackStandColor"),
@@ -115,6 +103,8 @@ export class UIManager {
             registerForm: document.querySelector(".openRegisterForm"),
             LoginForm: document.querySelector(".openLoginForm"),
             loginRegisterClose: document.getElementById("loginRegisterClose"),
+            loginButton: document.getElementById("loginButton"),
+            registerButton: document.getElementById("registerButton"),
         };
 
         this.loadingElements = {
@@ -157,9 +147,7 @@ export class UIManager {
                     setting[params.selectedGroupName].defaultModel =
                         event.target.value;
                     console.log(setting[params.selectedGroupName].defaultModel);
-                    updateActiveModel(
-                        setting[params.selectedGroupName].defaultModel
-                    );
+                    updateActiveModel(setting[params.selectedGroupName].defaultModel);
                     await showHideNodes();
                     await centerMainModel();
                     // await lightSetup();
@@ -199,7 +187,7 @@ export class UIManager {
                         document.querySelector(".headerRodToggle");
                     headerRodToggle.checked =
                         setting[params.selectedGroupName].headerRodToggle;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
                 // You can add similar event handlers for other elements here
@@ -212,7 +200,7 @@ export class UIManager {
                 if (event.target.classList.contains("headerOptions")) {
                     setting[params.selectedGroupName].headerOptions =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -224,7 +212,7 @@ export class UIManager {
                 if (event.target.classList.contains("headerSizeDropdown")) {
                     setting[params.selectedGroupName].defaultHeaderSize =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -236,7 +224,7 @@ export class UIManager {
                 if (event.target.classList.contains("headerRodToggle")) {
                     setting[params.selectedGroupName].headerRodToggle =
                         event.target.checked;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -248,7 +236,7 @@ export class UIManager {
                 if (event.target.classList.contains("headerRodColorDropdown")) {
                     setting[params.selectedGroupName].rodFrameColor =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -260,7 +248,7 @@ export class UIManager {
                 if (event.target.classList.contains("shelfTypeDropdown")) {
                     setting[params.selectedGroupName].defaultShelfType =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -277,7 +265,6 @@ export class UIManager {
                         setting[params.selectedGroupName].slottedSidesToggle
                     );
 
-                    await otherModelSetup();
                     await showHideNodes();
                 }
             });
@@ -474,7 +461,7 @@ export class UIManager {
                 if (event.target.classList.contains("baseSelectorDropdown")) {
                     setting[params.selectedGroupName].selectedBaseFrame =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -486,7 +473,7 @@ export class UIManager {
                 if (event.target.classList.contains("baseColor")) {
                     setting[params.selectedGroupName].baseFrameColor =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -496,7 +483,7 @@ export class UIManager {
             document.addEventListener("click", async function (event) {
                 if (event.target.closest(".addHanger")) {
                     const hangerType = event.target.getAttribute("data-hanger");
-                    await otherModelSetup();
+
                     await addHangers(hangerType);
                 }
             });
@@ -506,7 +493,7 @@ export class UIManager {
             document.addEventListener("click", async function (event) {
                 if (event.target.closest(".addRack")) {
                     const rackType = event.target.getAttribute("data-rack");
-                    await otherModelSetup();
+
                     await addRacks(rackType);
                 }
             });
@@ -519,7 +506,7 @@ export class UIManager {
                 if (event.target.classList.contains("hangerClothesToggle")) {
                     setting[params.selectedGroupName].hangerClothesToggle =
                         event.target.checked;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -532,7 +519,7 @@ export class UIManager {
                 if (event.target.classList.contains("hangerGolfClubsToggle")) {
                     setting[params.selectedGroupName].hangerGolfClubsToggle =
                         event.target.checked;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -545,7 +532,7 @@ export class UIManager {
                 if (event.target.classList.contains("hangerStandColor")) {
                     setting[params.selectedGroupName].defaultHangerStandColor =
                         event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -559,7 +546,7 @@ export class UIManager {
                     setting[
                         params.selectedGroupName
                     ].defaultRackShelfStandColor = event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -573,7 +560,7 @@ export class UIManager {
                     setting[
                         params.selectedGroupName
                     ].defaultRackStandStandColor = event.target.value;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             });
@@ -586,7 +573,7 @@ export class UIManager {
                 "change",
                 async function (event) {
                     params.measurementToggle = event.target.checked;
-                    await otherModelSetup();
+
                     await showHideNodes();
                 }
             );
@@ -643,9 +630,9 @@ export class UIManager {
                         openedAccordionItem.getAttribute("data-model");
                     if (modelName) {
                         const previousModel =
-                            sharedParams.modelGroup.getObjectByName(
-                                params.selectedGroupName
-                            );
+                            sharedParams.modelGroup.getObjectByName(modelName);
+                        // console.log(params.selectedGroupName);
+
                         for (const hideCone of previousModel.activeModel
                             .children) {
                             if (hideCone.name == "Cone") {
@@ -658,7 +645,7 @@ export class UIManager {
                                 params.selectedGroupName
                             );
                         sharedParams.selectedGroup = main_model;
-                        await otherModelSetup();
+
                         await showHideNodes();
                     }
                 }
@@ -724,7 +711,9 @@ export class UIManager {
         }
 
         if (this.elements.savePdfButton) {
-            this.elements.savePdfButton.addEventListener("click",async (event) => {
+            this.elements.savePdfButton.addEventListener(
+                "click",
+                async (event) => {
                     if (
                         !localStorage.getItem("user_id") &&
                         !localStorage.getItem("username")
@@ -748,98 +737,104 @@ export class UIManager {
         }
 
         if (this.elements.saveModelDataButton) {
-            this.elements.saveModelDataButton.addEventListener("click",async function () {
-                if (
-                    !localStorage.getItem("user_id") &&
-                    !localStorage.getItem("username")
-                ) {
-                    document.querySelector(".loginFormDiv").style.display =
-                        "flex";
-                    return;
-                } else {
-                    const modelId =
-                        sharedParams.previousData && sharedParams.previousData.id
-                            ? sharedParams.previousData.id
-                            : 0;
+            this.elements.saveModelDataButton.addEventListener(
+                "click",
+                async function () {
+                    if (
+                        !localStorage.getItem("user_id") &&
+                        !localStorage.getItem("username")
+                    ) {
+                        document.querySelector(".loginFormDiv").style.display =
+                            "flex";
+                        return;
+                    } else {
+                        const modelId =
+                            sharedParams.previousData &&
+                            sharedParams.previousData.id
+                                ? sharedParams.previousData.id
+                                : 0;
 
-                    await traverseAsync(
-                        sharedParams.modelGroup,
-                        async (child) => {
-                            if (
-                                hangerNames.includes(child.name) &&
-                                child.hangerArrayKey &&
-                                child.hangerCount
-                            ) {
-                                params.hangerAdded =
-                                    params.hangerAdded || {};
-                                params.hangerAdded[child.hangerArrayKey] =
-                                    params.hangerAdded[
-                                        child.hangerArrayKey
-                                    ] || {};
-                                params.hangerAdded[child.hangerArrayKey][
+                        await traverseAsync(
+                            sharedParams.modelGroup,
+                            async (child) => {
+                                if (
+                                    hangerNames.includes(child.name) &&
+                                    child.hangerArrayKey &&
                                     child.hangerCount
-                                ] = child.position;
-                            }
-                            if (
-                                rackNames.includes(child.name) &&
-                                child.rackArrayKey &&
-                                child.rackCount
-                            ) {
-                                console.log(
-                                    "params.rackAdded",
-                                    params.rackAdded
-                                );
-                                console.log("child", child);
-                                console.log("child.name", child.name);
-
-                                params.rackAdded = params.rackAdded || {};
-                                params.rackAdded[child.rackArrayKey] =
-                                    params.rackAdded[child.rackArrayKey] ||
-                                    {};
-                                params.rackAdded[child.rackArrayKey][
+                                ) {
+                                    params.hangerAdded =
+                                        params.hangerAdded || {};
+                                    params.hangerAdded[child.hangerArrayKey] =
+                                        params.hangerAdded[
+                                            child.hangerArrayKey
+                                        ] || {};
+                                    params.hangerAdded[child.hangerArrayKey][
+                                        child.hangerCount
+                                    ] = child.position;
+                                }
+                                if (
+                                    rackNames.includes(child.name) &&
+                                    child.rackArrayKey &&
                                     child.rackCount
-                                ] = child.position;
+                                ) {
+                                    console.log(
+                                        "params.rackAdded",
+                                        params.rackAdded
+                                    );
+                                    console.log("child", child);
+                                    console.log("child.name", child.name);
+
+                                    params.rackAdded = params.rackAdded || {};
+                                    params.rackAdded[child.rackArrayKey] =
+                                        params.rackAdded[child.rackArrayKey] ||
+                                        {};
+                                    params.rackAdded[child.rackArrayKey][
+                                        child.rackCount
+                                    ] = child.position;
+                                }
                             }
-                        }
-                    );
-
-                    const dataToSave = {
-                        params: params || null,
-                        setting: setting || null,
-                        group_names: allGroupNames || null,
-                        top_frame_croped_image:
-                            sharedParams.topFrameCropedImage || null,
-                        main_frame_croped_image:
-                            sharedParams.mainFrameCropedImage || null,
-                    };
-
-                    let projectName =
-                        (sharedParams.previousData && sharedParams.previousData.name) || null;
-                    let dataSave;
-                    if (modelId > 0) {
-                        dataSave = true;
-                    }
-                    if (!projectName) {
-                        // Prompt the user to enter a value
-                        projectName = prompt(
-                            "Please enter a project name:"
                         );
-                        if (projectName !== null) {
+
+                        const dataToSave = {
+                            params: params || null,
+                            setting: setting || null,
+                            group_names: allGroupNames || null,
+                            top_frame_croped_image:
+                                sharedParams.topFrameCropedImage || null,
+                            main_frame_croped_image:
+                                sharedParams.mainFrameCropedImage || null,
+                        };
+
+                        let projectName =
+                            (sharedParams.previousData &&
+                                sharedParams.previousData.name) ||
+                            null;
+                        let dataSave;
+                        if (modelId > 0) {
                             dataSave = true;
                         }
-                    }
+                        if (!projectName) {
+                            // Prompt the user to enter a value
+                            projectName = prompt(
+                                "Please enter a project name:"
+                            );
+                            if (projectName !== null) {
+                                dataSave = true;
+                            }
+                        }
 
-                    // console.log('params.hangerAdded', params.hangerAdded);
+                        // console.log('params.hangerAdded', params.hangerAdded);
 
-                    if (dataSave) {
-                        await saveModelData(
-                            projectName,
-                            dataToSave,
-                            modelId
-                        );
+                        if (dataSave) {
+                            await saveModelData(
+                                projectName,
+                                dataToSave,
+                                modelId
+                            );
+                        }
                     }
                 }
-            });
+            );
         }
 
         if (this.elements.closeButtonAR) {
@@ -863,7 +858,7 @@ export class UIManager {
                 }
             });
         }
-        
+
         if (this.elements.formCloseBtn) {
             this.elements.formCloseBtn.addEventListener("click", async () => {
                 formModel.style.display = "none";
@@ -874,7 +869,7 @@ export class UIManager {
                 this.hideLoadingModal();
             });
         }
-        
+
         if (this.elements.submitForm) {
             this.elements.submitForm.addEventListener("click", async () => {
                 this.showLoadingModal("Please wait... the form submitting");
@@ -967,15 +962,11 @@ export class UIManager {
         }
 
         if (this.elements.registerForm) {
-            this.elements.registerForm.addEventListener(
-                "click",
-                async () => {
-                    document.querySelector(".loginFormDiv").style.display =
-                        "none";
-                    document.querySelector(".registerFormDiv").style.display =
-                        "flex";
-                }
-            );
+            this.elements.registerForm.addEventListener("click", async () => {
+                document.querySelector(".loginFormDiv").style.display = "none";
+                document.querySelector(".registerFormDiv").style.display =
+                    "flex";
+            });
         }
         if (this.elements.LoginForm) {
             this.elements.LoginForm.addEventListener("click", async () => {
@@ -1011,6 +1002,40 @@ export class UIManager {
                         "none";
                 }
             );
+        }
+
+        if (this.elements.headerFrameColorInput) {
+            this.elements.headerFrameColorInput.value = getHex(
+                params.topFrameBackgroundColor
+            );
+
+            document.addEventListener("input", async function (event) {
+                if (event.target.classList.contains("headerFrameColorInput")) {
+                    setting[params.selectedGroupName].topFrameBackgroundColor =
+                        event.target.value;
+
+                    await setTopFrameCropedImage(
+                        sharedParams.topFrameCropedImage,
+                        params,
+                        setting
+                    );
+                }
+            });
+        }
+
+        if (this.elements.mainFrameColorInput) {
+            this.elements.mainFrameColorInput.value = getHex(
+                params.mainFrameBackgroundColor
+            );
+            document.addEventListener("input", async function (event) {
+                if (event.target.classList.contains("mainFrameColorInput")) {
+                    setting[params.selectedGroupName].mainFrameBackgroundColor =
+                        event.target.value;
+                    await setMainFrameCropedImage(
+                        sharedParams.mainFrameCropedImage
+                    );
+                }
+            });
         }
 
         // Move Left
@@ -1073,10 +1098,209 @@ export class UIManager {
             }
         });
 
-        document.addEventListener("mousemove",(event) => this.onMouseMove(event),false);
+        this.elements.loginButton.addEventListener("click", () => {
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document
+                .getElementById("loginPassword")
+                .value.trim();
+            const emailError = document.getElementById("loginEmailError");
+            const passwordError = document.getElementById("loginPasswordError");
+            const responseError = document.getElementById("responseErr");
+
+            // Reset error messages
+            emailError.textContent = "";
+            passwordError.textContent = "";
+            responseError.style.display = "none";
+            responseError.textContent = "";
+
+            let hasError = false;
+
+            // Email validation
+            if (!email) {
+                emailError.textContent = "Email is required.";
+                hasError = true;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                emailError.textContent = "Enter a valid email address.";
+                hasError = true;
+            }
+
+            // Password validation
+            if (!password) {
+                passwordError.textContent = "Password is required.";
+                hasError = true;
+            } else if (password.length < 6) {
+                passwordError.textContent =
+                    "Password must be at least 6 characters long.";
+                hasError = true;
+            }
+
+            // Stop the function if there are validation errors
+            if (hasError) return;
+
+            // Prepare form data
+            const form = document.getElementById("Login");
+            const formData = new FormData(form);
+
+            // Send an AJAX request
+            fetch("api.php", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`
+                        );
+                    }
+                    return response.json(); // Parse JSON response
+                })
+                .then((data) => {
+                    if (data.success) {
+                        // Handle successful login
+                        this.createSession(
+                            data.session.user_id,
+                            data.session.username
+                        );
+                        document.querySelector(".loginFormDiv").style.display =
+                            "none";
+                        document.getElementById("myModelsDiv").style.display =
+                            "block";
+                        document.querySelector(".LogoutUser").style.display =
+                            "block";
+                    } else {
+                        // Handle server-side validation errors
+                        responseError.style.display = "block";
+                        responseError.textContent =
+                            data.message || "Login failed.";
+                    }
+                })
+                .catch((error) => {
+                    console.error("Request failed:", error);
+                    responseError.style.display = "block";
+                    responseError.textContent =
+                        "An unexpected error occurred. Please try again later.";
+                });
+        });
+
+        this.elements.registerButton.addEventListener("click", function () {
+            const username = document
+                .getElementById("registerUsername")
+                .value.trim();
+            const email = document.getElementById("registerEmail").value.trim();
+            const password = document
+                .getElementById("registerPassword")
+                .value.trim();
+
+            const usernameError = document.getElementById(
+                "registerUsernameError"
+            );
+            const emailError = document.getElementById("registerEmailError");
+            const passwordError = document.getElementById(
+                "registerPasswordError"
+            );
+
+            // Reset error messages
+            usernameError.textContent = "";
+            emailError.textContent = "";
+            passwordError.textContent = "";
+
+            let hasError = false;
+
+            // Username validation
+            if (!username) {
+                usernameError.textContent = "Username is required.";
+                hasError = true;
+            } else if (username.length < 3 || username.length > 15) {
+                usernameError.textContent =
+                    "Username must be between 3 and 15 characters.";
+                hasError = true;
+            }
+
+            // Email validation
+            if (!email) {
+                emailError.textContent = "Email is required.";
+                hasError = true;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                emailError.textContent = "Enter a valid email address.";
+                hasError = true;
+            }
+
+            // Password validation
+            if (!password) {
+                passwordError.textContent = "Password is required.";
+                hasError = true;
+            } else if (password.length < 6) {
+                passwordError.textContent =
+                    "Password must be at least 6 characters.";
+                hasError = true;
+            }
+
+            // Stop the function if there are validation errors
+            if (hasError) return;
+
+            // Prepare form data
+            const form = document.getElementById("Register");
+            const formData = new FormData(form);
+
+            // Send an AJAX request
+            fetch("api.php", {
+                method: "POST",
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP error! status: ${response.status}`
+                        );
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.success) {
+                        // Handle successful registration
+                        alert(
+                            "Registration successful. Redirecting to login..."
+                        );
+                        document.querySelector(
+                            ".registerFormDiv"
+                        ).style.display = "none";
+                        document.querySelector(".loginFormDiv").style.display =
+                            "flex";
+                    } else {
+                        // Handle server-side errors
+                        if (data.message) {
+                            alert(data.message);
+                        } else {
+                            alert("An error occurred. Please try again.");
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Request failed:", error);
+                    alert(
+                        "An unexpected error occurred. Please try again later."
+                    );
+                });
+        });
+
+        document.addEventListener(
+            "mousemove",
+            (event) => this.onMouseMove(event),
+            false
+        );
         window.addEventListener("resize", (event) => this.onWindowResize());
         document.removeEventListener("click", this.handleClickWrapper);
-        document.addEventListener("click",(this.handleClickWrapper = (event) => this.handleClick(event)));
+        document.addEventListener(
+            "click",
+            (this.handleClickWrapper = (event) => this.handleClick(event))
+        );
+        // Initialize Bootstrap tooltips
+        document.addEventListener("DOMContentLoaded", () => {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
     }
 
     async handleClick(event) {
@@ -1086,6 +1310,45 @@ export class UIManager {
                 .forEach(function (content) {
                     content.style.display = "none";
                 });
+        }
+        if (event.target.closest(".dropdown-button")) {
+            const dropdown = event.target.closest(".custom-dropdown");
+            const dropdownContent = dropdown.querySelector(".dropdown-content");
+
+            // Toggle visibility of the clicked dropdown
+            if (dropdownContent) {
+                const isDropdownVisible =
+                    dropdownContent.style.display === "block";
+                dropdownContent
+                    .querySelectorAll(".custom-dropdown .dropdown-content")
+                    .forEach(function (content) {
+                        content.style.display = "none"; // Close all dropdowns
+                    });
+                dropdownContent.style.display = isDropdownVisible
+                    ? "none"
+                    : "block"; // Toggle the clicked dropdown
+            }
+        }
+
+        // Check if a dropdown item was clicked
+        if (event.target.closest(".dropdown-item")) {
+            const item = event.target.closest(".dropdown-item");
+            const dropdownType = item
+                .closest(".custom-dropdown")
+                .getAttribute("data-type");
+            const value = item.getAttribute("data-value");
+            const accordion = item.closest(".accordion-item");
+            const selectedModel = accordion.getAttribute("data-model");
+            // console.log("selectedModel_pass", selectedModel);
+            // Update material based on the dropdown type and value
+            this.updateMaterial(value, dropdownType, selectedModel);
+
+            // Hide the dropdown after selection
+            const dropdown = item.closest(".custom-dropdown");
+            const dropdownContent = dropdown.querySelector(".dropdown-content");
+            if (dropdownContent) {
+                dropdownContent.style.display = "none";
+            }
         }
         this.onMouseClick();
     }
@@ -1162,22 +1425,22 @@ export class UIManager {
                 hangerNames
             );
             let RackParent = findParentWithNamesInArr(intersectNode, rackNames);
-            if(hangerParent){
+            if (hangerParent) {
                 sharedParams.transformControls.attach(hangerParent);
                 sharedParams.transformControls.setMode("translate"); // Set the mode to 'translate' for moving
-    
+
                 // Configure to show only X-axis control and allow movement only on X-axis
                 sharedParams.transformControls.showX = true; // Show only X-axis arrow
                 sharedParams.transformControls.showY = false; // Hide Y-axis arrow
                 sharedParams.transformControls.showZ = false; // Hide Z-axis arrow
-    
+
                 // Add event listener to enforce boundary check during movement
                 sharedParams.transformControls.addEventListener(
                     "objectChange",
                     this.enforceHangerBounds
                 );
             }
-            if(RackParent){
+            if (RackParent) {
                 sharedParams.transformControls.attach(RackParent);
                 sharedParams.transformControls.setMode("translate"); // Set the mode to 'translate' for moving
                 sharedParams.transformControls.translationSnap = 3.139;
@@ -1193,14 +1456,13 @@ export class UIManager {
             }
             let activeParent = hangerParent ? hangerParent : RackParent;
             sharedParams.selectedNode = activeParent;
-            console.log("activeParent", activeParent);
             activeParent.removeIcon.visible = true;
 
             if (intersectNode.parent.name.includes("removeHanger-")) {
-                console.log(intersectNode.name);
+                sharedParams.transformControls.detach(activeParent);
                 activeParent.parent.remove(activeParent);
             } else if (intersectNode.parent.name.includes("removeRack-")) {
-                console.log(intersectNode.name);
+                sharedParams.transformControls.detach(activeParent);
                 activeParent.parent.remove(activeParent);
             } else {
                 // this.hideRemoveIcons();
@@ -1397,7 +1659,7 @@ export class UIManager {
     }
 
     async hideRemoveIcons() {
-        if (sharedParams.modelGroup) {           
+        if (sharedParams.modelGroup && sharedParams.transformControls) {
             sharedParams.modelGroup.traverse((child) => {
                 if (child.name && child.name.includes("remove")) {
                     child.visible = false; // Hide remove icon
@@ -1462,12 +1724,16 @@ export class UIManager {
 
                 let minX = frameBox.min.x + frame.position.x - worldPosition.x;
                 let maxX = frameBox.max.x + frame.position.x - worldPosition.x;
-                let selectedChildNode = sharedParams.selectedNode.getObjectByName("Hanger_Stand") || sharedParams.selectedNode.getObjectByName("Hanger_StandX");
+                let selectedChildNode =
+                    sharedParams.selectedNode.getObjectByName("Hanger_Stand") ||
+                    sharedParams.selectedNode.getObjectByName("Hanger_StandX");
 
                 // const selectedChildWorldPosition = new THREE.Vector3();
                 // selectedChildNode.getWorldPosition(selectedChildWorldPosition);
 
-                const nodeBoundingBox = new THREE.Box3().setFromObject(selectedChildNode);
+                const nodeBoundingBox = new THREE.Box3().setFromObject(
+                    selectedChildNode
+                );
                 const nodeWidth = nodeBoundingBox.max.x - nodeBoundingBox.min.x;
 
                 // const margin = 20;
@@ -1598,7 +1864,7 @@ export class UIManager {
         await exportModelForAr(sharedParams.modelGroup, modelName);
 
         // Check if the file exists
-        const checkFile = new FileManager(); 
+        const checkFile = new FileManager();
         if (await checkFile.checkFileExists(exportedModelFileUrl)) {
             this.hideLoadingModal();
             await this.showARModel(exportedModelFileUrl);
@@ -1781,5 +2047,91 @@ export class UIManager {
             throw error; // Re-throw the error to handle it at the calling point
         }
     }
-    
+    async updateMaterial(value, dropdownType, selectedModel = "main_model") {
+        let current_setting = setting[params.selectedGroupName];
+
+        // console.log('value', value)
+        let type, imageUrl, displayText;
+
+        // console.log('selectedModel', selectedModel)
+
+        // const customDropdownButton = document.querySelector(`.custom-dropdown[data-type=${dropdownType}]`);
+        const customDropdownButton = document.querySelector(
+            `.accordion-item[data-model=${selectedModel}] .custom-dropdown[data-type=${dropdownType}]`
+        );
+        // console.log('customDropdownButton', customDropdownButton)
+        // Reset selected class
+        // document.querySelectorAll(".dropdown-item").forEach(function (el) {
+        customDropdownButton
+            .querySelectorAll(`.dropdown-item`)
+            .forEach(function (el) {
+                el.classList.remove("selected");
+            });
+
+        // Find the matching element and add the selected class
+        customDropdownButton
+            .querySelectorAll(`.dropdown-item`)
+            .forEach(function (element) {
+                // console.log('element', element.getAttribute("data-value"))
+                if (element.getAttribute("data-value") === value) {
+                    // console.log('yes', value)
+                    let accordion =
+                        customDropdownButton.closest(`.accordion-item`);
+                    selectedModel = accordion.getAttribute(`data-model`);
+                    type = element.getAttribute("data-type");
+                    imageUrl =
+                        type === "texture"
+                            ? element.querySelector("img").src
+                            : "";
+                    displayText = element.querySelector("span").innerText;
+                    element.classList.add("selected");
+                }
+            });
+
+        if (dropdownType === "frame") {
+            setting[params.selectedGroupName].frameBorderColor = value;
+            setting[params.selectedGroupName].frameMaterialType = type;
+        } else if (dropdownType === "shelf") {
+            setting[params.selectedGroupName].defaultShelfColor = value;
+            setting[params.selectedGroupName].shelfMaterialType = type;
+        }
+        await showHideNodes();
+
+        // Update dropdown button with selected image/color and name
+        const dropdownButton = customDropdownButton.querySelector(
+            `.accordion-item[data-model=${selectedModel}] .dropdown-button`
+        );
+        if (dropdownButton) {
+            const selectedImage =
+                dropdownButton.querySelector(".selected-image");
+            const selectedText = dropdownButton.querySelector("span");
+            if (selectedImage) {
+                if (type === "texture") {
+                    selectedImage.src = imageUrl;
+                    selectedImage.style.display = "inline-block"; // Show image
+                } else if (type === "color") {
+                    selectedImage.style.display = "none"; // Hide image for color
+                }
+            }
+
+            if (selectedText && displayText) {
+                selectedText.innerText = displayText;
+            }
+        }
+
+        if (dropdownType === "frame") {
+            // if (type && type == "color" && value && value == "0xffffff") {
+            //   sharedParams.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            // } else {
+            //   sharedParams.renderer.toneMapping = THREE.AgXToneMapping;
+            // }
+            // await lightSetup();
+            await sharedParams.scene.lightSetup(lights, lightHelpers);
+        }
+        // console.log(main_model)
+    }
+    createSession(userId, username) {
+        localStorage.setItem("user_id", userId);
+        localStorage.setItem("username", username);
+    }
 }

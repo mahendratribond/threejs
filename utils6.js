@@ -1,45 +1,35 @@
 import {
-    clothsMaterial,
     commonMaterial,
 } from "./src/managers/MaterialManager.js";
 import { setTextureParams } from "./src/managers/FrameImagesManager.js";
 import {
     THREE,
-    OrbitControls,
-    TransformControls,
     FontLoader,
-    CSS2DObject,
     CSS2DRenderer,
     heightMeasurementNames,
-    baseFrameTextureNames,
     rodFrameTextureNames,
     allFrameBorderNames,
-    allOtherModelNames,
     allGroupModelName,
-    hangerPartNames,
     frameMainNames,
     frameTop1Names,
     baseFrameNames,
     allGroupNames,
-    golfClubNames,
     allModelNames,
-    rackPartNames,
     hangerNames,
     headerNames,
     rackNames,
     params,
-    GLTFExporter,
     setting,
     allGroups,
     sharedParams,
 } from "./config.js";
 import {
-    getModelSize,
-    getHeaderSize,
     computeBoundingBox,
-    calculateBoundingBox,
-    getNodeSize,
-    getCurrentModelSize,
+    drawMeasurementBoxesWithLabels,
+    updateMeasurementGroups,
+    updateLabelOcclusion,
+    getComponentSize,
+    getModelMeasurement,
 } from "./src/managers/MeasurementManager.js";
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
 
@@ -51,64 +41,11 @@ export function getHex(value) {
 export async function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
-// async function exportModel(model, name) {
-//     model.position.set(0, 0, 0);
-//     model.updateMatrixWorld();
-//     const gltfExporter = new GLTFExporter();
-//     const result = await gltfExporter.parseAsync(model, { binary: true });
-//     const blob = new Blob([result], { type: "application/octet-stream" });
-//     const modellink = document.createElement("a");
-//     modellink.href = URL.createObjectURL(blob);
-//     modellink.download = name;
-//     modellink.click();
-// }
 
 export async function getRemoveIcon(removeIconName) {
-    // Create the circle geometry for the remove icon
-    // const removeIconCircleGeometry = new THREE.CircleGeometry(1, 32); // radius 1, 32 segments for smoothness
-    // const removeIconCircleMaterial = new THREE.MeshBasicMaterial({
-    //     color: 0xff0000,
-    //     side: THREE.DoubleSide,
-    // });
-    // const removeIconCircleMesh = new THREE.Mesh(
-    //     removeIconCircleGeometry,
-    //     removeIconCircleMaterial
-    // );
-
-    // // Create the cross lines for the remove icon
-    // const crossMaterial = new THREE.LineBasicMaterial({
-    //     color: 0xffffff,
-    //     linewidth: 2,
-    // });
-
-    // // Cross Line 1 (diagonal from top-left to bottom-right)
-    // const crossGeometry1 = new THREE.BufferGeometry().setFromPoints([
-    //     new THREE.Vector3(-0.7, 0.7, 0), // start point (top-left)
-    //     new THREE.Vector3(0.7, -0.7, 0), // end point (bottom-right)
-    // ]);
-    // const crossLine1 = new THREE.Line(crossGeometry1, crossMaterial);
-
-    // // Cross Line 2 (diagonal from top-right to bottom-left)
-    // const crossGeometry2 = new THREE.BufferGeometry().setFromPoints([
-    //     new THREE.Vector3(0.7, 0.7, 0), // start point (top-right)
-    //     new THREE.Vector3(-0.7, -0.7, 0), // end point (bottom-left)
-    // ]);
-    // const crossLine2 = new THREE.Line(crossGeometry2, crossMaterial);
-
-    // Create a group to hold the circle and cross
-    // const removeIconGroup = new THREE.Group();
-    // removeIconGroup.add(removeIconCircleMesh); // Add the circle
-    // removeIconGroup.add(crossLine1); // Add first cross line
-    // removeIconGroup.add(crossLine2); // Add second cross line
-
-    // Set the group properties
-    // removeIconGroup.scale.set(20, 20, 20); // You can adjust the scale as needed
     let removeIcon = sharedParams.removeIcon.clone();
     removeIcon.name = removeIconName;
     removeIcon.visible = true;
-    console.log("removeIcon",removeIcon);
-    
-    // await exportModel(removeIcon, "removeIcon.glb")
     return removeIcon.children[0];
 }
 
@@ -183,213 +120,6 @@ export function cloneWithCustomProperties(source, target) {
         }
     }
 }
-
-// export async function setupArrowModel() {
-//     if (sharedParams.arrow_model) {
-//         await sharedParams.arrow_model.traverse(async function (child) {
-//             if (child.material) {
-//                 const material = await commonMaterial(parseInt("0x888888", 16));
-//                 child.material = material;
-//                 child.material.needsUpdate = true;
-//             }
-//         });
-
-//         sharedParams.arrow_model = await setPositionCenter(
-//             sharedParams.arrow_model
-//         );
-
-//         await traverseAsync(
-//             sharedParams.modelGroup,
-//             async function (modelNode) {
-//                 if (allModelNames.includes(modelNode.name)) {
-//                     const modelBox = new THREE.Box3().setFromObject(modelNode);
-//                     const cone_model =
-//                         sharedParams.arrow_model.getObjectByName("Cone");
-//                     let cone = cone_model.clone();
-
-//                     cone = await setPositionCenter(cone);
-//                     cone.scale.set(0.1, 0.1, 0.1);
-//                     const coneBox = new THREE.Box3().setFromObject(cone);
-//                     const coneHeight = coneBox.max.y - coneBox.min.y;
-//                     // console.log('arrowHeight', coneHeight)
-//                     // rod.name = rodName;
-//                     // cone.scale.set(0.5, 0.5, 0.5)
-//                     cone.position.set(
-//                         modelNode.position.x, // Adjust based on offset
-//                         modelBox.max.y + coneHeight / 2 + 210,
-//                         // modelBox.min.y - coneHeight / 2 - 10,
-//                         0
-//                     );
-//                     cone.rotation.x = Math.PI;
-//                     cone.visible = false;
-//                     modelNode.attach(cone);
-//                 }
-//             }
-//         );
-//     }
-// }
-
-// export async function createRod(modelNode, modelSize) {
-//     const additionalRods = getRodCount(modelSize);
-//     const header = modelNode.getObjectByName("Header_300");
-
-//     // Ensure both header and frame nodes exist
-//     if (header) {
-//         const headerBox = new THREE.Box3().setFromObject(header);
-//         const headerSize = getNodeSize(header); // Size of the current header
-
-//         let rodY = headerBox.min.y + params.rodSize.y / 2; //(frameSize.y / 2 + rodSize.y / 2);
-//         let lassShelfFixingY = params.glassShelfFixingSize.y / 2; //(frameSize.y / 2 + glassShelfFixingSize.y / 2);
-
-//         // Function to create and position a rod
-//         const createAndPositionRod = async (
-//             xOffset,
-//             rodName,
-//             shelfFixingName
-//         ) => {
-//             let rod = sharedParams.header_rod_model.clone();
-//             rod.name = rodName;
-//             modelNode.add(rod);
-//             rod = await setPositionCenter(rod);
-//             rod.position.set(
-//                 header.position.x + xOffset, // Adjust based on offset
-//                 rod.position.y + rodY,
-//                 rod.position.z
-//             );
-//             rod.visible = false;
-
-//             const rodBox = new THREE.Box3().setFromObject(rod);
-
-//             let shelf_fixing =
-//                 sharedParams.header_glass_shelf_fixing_model.clone();
-//             shelf_fixing.name = shelfFixingName;
-//             modelNode.add(shelf_fixing);
-//             // console.log('shelf_fixing.position', shelf_fixing.position)
-//             shelf_fixing = await setPositionCenter(shelf_fixing);
-//             // console.log('shelf_fixing.position update', shelf_fixing.position)
-//             // shelf_fixing.position.y += headerBox.min.y + rodSize.y + lassShelfFixingY
-//             shelf_fixing.position.set(
-//                 rod.position.x, // Adjust based on offset
-//                 shelf_fixing.position.y +
-//                     headerBox.min.y +
-//                     params.rodSize.y +
-//                     lassShelfFixingY,
-//                 shelf_fixing.position.z
-//             );
-//             shelf_fixing.visible = false;
-//         };
-
-//         let margin = 50;
-
-//         // Place the left and right rods first
-//         await createAndPositionRod(
-//             -headerSize.x / 2 + params.rodSize.x + margin,
-//             "Rod",
-//             "Glass_Shelf_Fixing"
-//         ); // Left Rod
-//         await createAndPositionRod(
-//             headerSize.x / 2 - params.rodSize.x - margin,
-//             "Rod",
-//             "Glass_Shelf_Fixing"
-//         ); // Right Rod
-
-//         // Determine and place additional rods based on modelSize
-//         if (additionalRods > 0) {
-//             const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
-
-//             // Place additional rods
-//             for (let i = 1; i <= additionalRods; i++) {
-//                 let xOffset = -headerSize.x / 2 + i * spacing;
-//                 await createAndPositionRod(
-//                     xOffset,
-//                     "Rod",
-//                     "Glass_Shelf_Fixing"
-//                 );
-//             }
-//         }
-//     }
-
-//     return modelNode;
-// }
-// export async function createSupportBase(modelNode, modelSize) {
-//     const additionalSupportBase = await getSupportBaseCount(modelSize);
-//     const base = modelNode.getObjectByName("Base_Solid");
-//     // Ensure both header and frame nodes exist
-//     if (base) {
-//         const baseBox = new THREE.Box3().setFromObject(modelNode);
-//         const baseSize = getNodeSize(modelNode); // Size of the current base
-//         let positionY;
-
-//         const bbox = new THREE.Box3();
-//         bbox.expandByObject(sharedParams.support_base_side);
-//         const modelWidth = bbox.min.y;
-//         // let baseY = baseBox.min.y + params.rodSize.y / 4; //(frameSize.y / 2 + rodSize.y / 2);
-//         let baseY = baseBox.min.y - modelWidth; //(frameSize.y / 2 + rodSize.y / 2);
-//         // Function to create and position a rod
-//         const createAndPositionBaseSide = async (xOffset, supportBaseName) => {
-//             let supportSide = sharedParams.support_base_side.clone();
-//             supportSide.name = supportBaseName;
-//             modelNode.add(supportSide);
-//             supportSide = await setPositionCenter(supportSide);
-//             supportSide.position.set(
-//                 supportSide.position.x + xOffset, // Adjust based on offset
-//                 supportSide.position.y + baseY + 30,
-//                 supportSide.position.z
-//             );
-//             positionY = supportSide.position.y;
-//             supportSide.visible = false;
-
-//             const rodBox = new THREE.Box3().setFromObject(supportSide);
-//         };
-//         const createAndPositionBaseMiddle = async (
-//             xOffset,
-//             supportBaseName,
-//             positionY
-//         ) => {
-//             let supportSide = sharedParams.support_base_middle.clone();
-//             supportSide.name = supportBaseName;
-//             modelNode.add(supportSide);
-//             supportSide = await setPositionCenter(supportSide);
-//             supportSide.position.set(
-//                 supportSide.position.x + xOffset, // Adjust based on offset
-//                 (supportSide.position.y = positionY),
-//                 supportSide.position.z
-//             );
-//             supportSide.visible = false;
-
-//             const rodBox = new THREE.Box3().setFromObject(supportSide);
-//         };
-
-//         let margin = 30;
-
-//         // Place the left and right rods first
-//         await createAndPositionBaseSide(
-//             -baseSize.x / 2 + margin,
-//             "Base_Support_Sides"
-//         ); // Left Rod
-//         await createAndPositionBaseSide(
-//             baseSize.x / 2 - margin,
-//             "Base_Support_Sides"
-//         ); // Right Rod
-
-//         // Determine and place additional rods based on modelSize
-//         if (additionalSupportBase > 0) {
-//             const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
-
-//             // Place additional rods
-//             for (let i = 1; i <= additionalSupportBase; i++) {
-//                 let xOffset = -baseSize.x / 2 + i * spacing;
-//                 await createAndPositionBaseMiddle(
-//                     xOffset,
-//                     "Base_Support_Sides",
-//                     positionY
-//                 );
-//             }
-//         }
-//     }
-
-//     return modelNode;
-// }
 
 // Traverse main model asynchronously
 export async function traverseAsync(modelNode, callback) {
@@ -1025,6 +755,8 @@ function collectNodes(model) {
                 [
                     "Hanger_Stand",
                     "Hanger_StandX",
+                    "Hanger_Stand-Arm_Metal",
+                    "Hanger_Stand-Fixture_Material",
                     "Hanger_Stand-Arm_MetalX",
                     "Hanger_Stand-Fixture_MaterialX",
                 ].includes(child.name)
@@ -1042,16 +774,12 @@ function collectNodes(model) {
 
 export async function showHideNodes() {
     let current_setting = setting[params.selectedGroupName];
-    console.log("current_setting", current_setting);
-
     let main_model = sharedParams.selectedGroup;
     let isSlottedSides = main_model.activeModel?.isSlottedSides || false;
     let isShelf = main_model.activeModel?.isShelf || false;
     let isGlassShelf = main_model.activeModel?.isGlassShelf || false;
     // Collect all nodes once
     const nodes = collectNodes(main_model.activeModel);
-    console.log("nodes---->", main_model);
-    console.log("nodes---->", nodes);
     for (const hideNode of nodes.nodeToHide) {
         hideNode.visible = false;
     }
@@ -1070,7 +798,11 @@ export async function showHideNodes() {
     // Apply updates based on conditions
     await Promise.all([
         // Update cone nodes
-        updateInChunks(nodes.coneNodes, (node) => {
+        updateInChunks(nodes.coneNodes, (node) => {            
+            for(const hideCornNode of sharedParams.modelGroup.children){
+                let coneNode = hideCornNode.activeModel.getObjectByName("Cone");
+                coneNode.visible = false;
+            }
             node.visible = true;
             if(sharedParams.modelGroup.children.length < 2){
                 node.visible = false;
@@ -1123,12 +855,9 @@ export async function showHideNodes() {
         }),
 
         // Header nodes
-        updateInChunks(nodes.headerNodes, (node) => {
-            node.visible =
-                current_setting.topOption == "Header" &&
-                current_setting.defaultHeaderSize == node.name;
-            
-            if (params.topOption == "Header") {
+        updateInChunks(nodes.headerNodes, (node) => {    
+            node.visible = current_setting.topOption == "Header" && current_setting.defaultHeaderSize == node.name;    
+            if (current_setting.topOption == "Header" && current_setting.defaultHeaderSize == node.name) {
                 if (
                     current_setting.headerRodToggle &&
                     !current_setting.headerUpDown
@@ -1140,8 +869,8 @@ export async function showHideNodes() {
                 ) {
                     node.position.y -= params.rodSize.y;
                 }
-                setting[params.selectedGroupName].headerUpDown =
-                    setting[params.selectedGroupName].headerRodToggle;
+                setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle;
+
             }
             return Promise.resolve();
         }),
@@ -1560,563 +1289,6 @@ export function updateActiveModel(modelName) {
     main_model.activeModel.visible = true;
 }
 
-export async function showHideNode1s() {
-    // console.log(sharedParams.modelGroup);
-    // let currentModelNode = params.selectedGroupName;
-    let current_setting = setting[params.selectedGroupName];
-    let border_texture_material_Clone =
-        sharedParams.border_texture_material.clone();
-    border_texture_material_Clone.name = "border texture material Clone";
-
-    let frame_material = border_texture_material_Clone;
-    if (current_setting.frameMaterialType === "texture") {
-        let frame_texture_border = new THREE.TextureLoader().load(
-            "./assets/images/borders/" + current_setting.frameBorderColor
-        );
-        frame_texture_border = await setTextureParams(frame_texture_border);
-        frame_material.map = frame_texture_border;
-    }
-    if (sharedParams.modelGroup) {
-        // await traverseAsync(sharedParams.modelGroup, async (child) => {
-        //     if (child.name === "Cone") {
-        //         child.visible = false;
-        //     }
-        // });
-
-        // let main_model = sharedParams.modelGroup.getObjectByName(
-        //     params.selectedGroupName
-        // );
-        let main_model = sharedParams.selectedGroup;
-        console.log("main_model-----------", main_model);
-
-        await traverseAsync(main_model, async (child) => {
-            // let currentModelNode = await getMainParentNode(
-            //     child,
-            //     allModelNames,
-            //     false
-            // );
-            let currentModelNode = main_model.activeModel;
-            // console.log('currentModelNode', currentModelNode)
-            // console.log('child', child)
-            // return
-            // console.log('child.name', child.name)
-
-            let isSlottedSides = currentModelNode.isSlottedSides || false;
-            let isShelf = currentModelNode.isShelf || false;
-            let isGlassShelf = currentModelNode.isGlassShelf || false;
-
-            child.updateMatrixWorld();
-            if (child.name === "Cone") {
-                // child.visible =
-                //     (await isActiveGroup(currentModelNode)) &&
-                //     Object.keys(setting).length > 1;
-                child.visible = true;
-            }
-            if (child.name && allModelNames.includes(child.name)) {
-                if (child.name === current_setting.defaultModel) {
-                    child.visible = true; // Show the selected model
-                    main_model.activeModel = child;
-                    allGroups.push(main_model);
-                } else {
-                    child.visible = false; // Hide other models
-                }
-            }
-            if (child.name === "Left_Ex" || child.name === "Right_Ex") {
-                if (isSlottedSides && current_setting.slottedSidesToggle) {
-                    child.visible = false;
-                } else {
-                    child.visible = true;
-                }
-            }
-            if (hangerNames.includes(child.name)) {
-                if (isSlottedSides && current_setting.slottedSidesToggle) {
-                    child.visible = true;
-                } else {
-                    child.visible = true;
-                }
-            }
-            if (
-                child.name === "Left_Ex_Slotted" ||
-                child.name === "Right_Ex_Slotted"
-            ) {
-                if (isSlottedSides && current_setting.slottedSidesToggle) {
-                    child.visible = true;
-                } else {
-                    child.visible = false;
-                }
-            }
-            if (rackNames.includes(child.name)) {
-                let rackArr = child.rackArrayKey;
-                let rackModelName = rackArr.split("-")[1];
-                let rackside = rackArr.split("-")[2];
-                let isSameSide = false;
-                let currentModel = main_model.getObjectByName(rackModelName);
-                let frame = currentModel.getObjectByName("Frame");
-                for (const hangerFrame of frame.children) {
-                    if (
-                        hangerNames.includes(hangerFrame.name) &&
-                        hangerFrame.visible
-                    ) {
-                        let hangerArrKey = hangerFrame.hangerArrayKey;
-                        let hangerModel = hangerArrKey.split("-")[1];
-                        let hangerSide = hangerArrKey.split("-")[2];
-                        if (
-                            rackModelName === hangerModel &&
-                            rackside === hangerSide
-                        ) {
-                            isSameSide = true;
-                        }
-                    }
-                }
-                if (
-                    isSlottedSides &&
-                    current_setting.slottedSidesToggle &&
-                    isSameSide == false
-                ) {
-                    child.visible = true;
-                } else {
-                    child.visible = false;
-                }
-            }
-            if (child.name === "Header_Wooden_Shelf") {
-                child.visible =
-                    current_setting.topOption == "Shelf" &&
-                    isShelf &&
-                    current_setting.defaultShelfType == "Header_Wooden_Shelf";
-            }
-            if (child.name === "Header_Glass_Shelf") {
-                child.visible =
-                    current_setting.topOption == "Shelf" &&
-                    isGlassShelf &&
-                    current_setting.defaultShelfType == "Header_Glass_Shelf";
-            }
-            if (child.name === "Rod") {
-                child.visible =
-                    (current_setting.topOption == "Shelf" &&
-                        ((isShelf &&
-                            current_setting.defaultShelfType ==
-                                "Header_Wooden_Shelf") ||
-                            (isGlassShelf &&
-                                current_setting.defaultShelfType ==
-                                    "Header_Glass_Shelf"))) ||
-                    (current_setting.headerRodToggle &&
-                        current_setting.topOption == "Header");
-            }
-            if (child.name === "Glass_Shelf_Fixing") {
-                child.visible =
-                    current_setting.topOption == "Shelf" &&
-                    isGlassShelf &&
-                    current_setting.defaultShelfType == "Header_Glass_Shelf";
-            }
-
-            if (allFrameBorderNames.includes(child.name)) {
-                if (current_setting.frameMaterialType === "texture") {
-                    child.material = frame_material;
-                    child.material.needsUpdate = true;
-                } else if (current_setting.frameMaterialType === "color") {
-                    // Apply color
-                    const material = await commonMaterial(
-                        parseInt(current_setting.frameBorderColor, 16)
-                    );
-                    // child.material = child.material.clone()
-                    if (child.material) {
-                        child.material.name = "frame_color";
-                    }
-                    child.material = material;
-                    child.material.needsUpdate = true;
-                }
-            }
-
-            if (child.name == "Header_Wooden_Shelf") {
-                // console.log('Header_Wooden_Shelf', dropdownType, child.name)
-                if (current_setting.shelfMaterialType === "texture") {
-                    // Load texture
-                    let texture_border = new THREE.TextureLoader().load(
-                        "./assets/images/borders/" +
-                            current_setting.defaultShelfColor
-                    );
-                    texture_border = await setTextureParams(texture_border);
-                    let material = border_texture_material_Clone;
-                    material.map = texture_border;
-                    child.material = material;
-                    child.material.needsUpdate = true;
-                } else if (current_setting.shelfMaterialType === "color") {
-                    // Apply color
-                    const material = await commonMaterial(
-                        parseInt(current_setting.defaultShelfColor, 16)
-                    );
-                    child.material = material;
-                    child.material.needsUpdate = true;
-                }
-            }
-
-            if (["Clothing"].includes(child.name)) {
-                child.visible = current_setting.hangerClothesToggle;
-            }
-            if (["Hanger_ClubsX"].includes(child.name)) {
-                child.visible = current_setting.hangerGolfClubsToggle;
-            }
-
-            if (headerNames.includes(child.name)) {
-                child.visible =
-                    current_setting.topOption == "Header" &&
-                    current_setting.defaultHeaderSize == child.name;
-            }
-
-            if (baseFrameNames.includes(child.name)) {
-                child.visible =
-                    child.name === current_setting.selectedBaseFrame;
-            }
-
-            if (
-                child.material &&
-                child.material.color &&
-                child.name &&
-                (child.name.startsWith("Base_Option") ||
-                    child.name === "Base_Support_Sides")
-            ) {
-                if (child.name === "Base_Support_Sides") {
-                    await traverseAsync(child, async (subChild) => {
-                        subChild.material = subChild.material.clone();
-                        subChild.material.color.set(
-                            await getHex(current_setting.baseFrameColor)
-                        );
-                        subChild.material.needsUpdate = true;
-                    });
-                }
-                child.material = child.material.clone();
-                child.material.name = "base here";
-                child.material.color.set(
-                    await getHex(current_setting.baseFrameColor)
-                );
-                child.material.needsUpdate = true;
-            }
-            if (
-                child.material &&
-                rodFrameTextureNames.includes(child.name) &&
-                child.material.color
-            ) {
-                child.material = child.material.clone();
-                child.material.color.set(
-                    await getHex(current_setting.rodFrameColor)
-                );
-                child.material.needsUpdate = true;
-            }
-            if (
-                child.material &&
-                [
-                    "Hanger_Stand",
-                    "Hanger_StandX",
-                    "Hanger_Stand-Arm_MetalX",
-                    "Hanger_Stand-Fixture_MaterialX",
-                ].includes(child.name) &&
-                child.material.color
-            ) {
-                child.material = child.material.clone();
-                child.material.color.set(
-                    await getHex(current_setting.defaultHangerStandColor)
-                );
-                child.material.needsUpdate = true;
-            }
-            if (
-                child.material &&
-                ["Rack_Wooden_Shelf"].includes(child.name) &&
-                child.material.color
-            ) {
-                child.material = child.material.clone();
-                child.material.color.set(
-                    await getHex(current_setting.defaultRackShelfStandColor)
-                );
-                child.material.needsUpdate = true;
-            }
-            if (["Rack_Stand_LH", "Rack_Stand_RH"].includes(child.name)) {
-                if (child.material) {
-                    child.material = child.material.clone();
-                    child.material.color.set(
-                        await getHex(current_setting.defaultRackStandStandColor)
-                    );
-                    child.material.needsUpdate = true;
-                } else {
-                    child.traverse(async function (mesh) {
-                        if (mesh.material) {
-                            mesh.material = mesh.material.clone();
-                            mesh.material.color.set(
-                                await getHex(
-                                    current_setting.defaultRackStandStandColor
-                                )
-                            );
-                            mesh.material.needsUpdate = true;
-                        }
-                    });
-                }
-            }
-        });
-
-        if (params.topOption == "Header") {
-            await traverseAsync(main_model, async (modelNode) => {
-                if (allModelNames.includes(modelNode.name)) {
-                    await Promise.all(
-                        headerNames.map(async (headerName) => {
-                            const header =
-                                modelNode.getObjectByName(headerName);
-                            if (header) {
-                                if (
-                                    current_setting.headerRodToggle &&
-                                    !current_setting.headerUpDown
-                                ) {
-                                    header.position.y += params.rodSize.y;
-                                } else if (
-                                    !current_setting.headerRodToggle &&
-                                    current_setting.headerUpDown
-                                ) {
-                                    header.position.y -= params.rodSize.y;
-                                }
-                            }
-                        })
-                    );
-                }
-            });
-
-            setting[params.selectedGroupName].headerUpDown =
-                setting[params.selectedGroupName].headerRodToggle;
-        }
-    }
-
-    // console.log("sharedParams.modelGroup", sharedParams.modelGroup);
-
-    const parentElement = document.querySelector(
-        `div.accordion-item[data-model="${params.selectedGroupName}"]`
-    );
-    if (parentElement) {
-        let frameSize = parentElement.querySelector(".frameSize");
-        if (frameSize) {
-            frameSize.value = current_setting.defaultModel;
-        }
-        let topDropdown = parentElement.querySelector(".topDropdown");
-        if (topDropdown) {
-            topDropdown.value = current_setting.topOption;
-        }
-        let headerOptions = parentElement.querySelector(".headerOptions");
-        if (headerOptions) {
-            headerOptions.value = current_setting.headerOptions;
-        }
-        let headerSizeDropdown = parentElement.querySelector(
-            ".headerSizeDropdown"
-        );
-        if (headerSizeDropdown) {
-            headerSizeDropdown.value = current_setting.defaultHeaderSize;
-        }
-        let headerRodToggle = parentElement.querySelector(".headerRodToggle");
-        if (headerRodToggle) {
-            headerRodToggle.checked = current_setting.headerRodToggle;
-        }
-        let headerRodColorDropdown = parentElement.querySelector(
-            ".headerRodColorDropdown"
-        );
-        if (headerRodColorDropdown) {
-            headerRodColorDropdown.value = current_setting.rodFrameColor;
-        }
-        let shelfTypeDropdown =
-            parentElement.querySelector(".shelfTypeDropdown");
-        if (shelfTypeDropdown) {
-            shelfTypeDropdown.value = current_setting.defaultShelfType;
-        }
-        let slottedSidesToggle = parentElement.querySelector(
-            ".slottedSidesToggle"
-        );
-        if (slottedSidesToggle) {
-            slottedSidesToggle.checked = current_setting.slottedSidesToggle;
-        }
-        let headerFrameColorInput = parentElement.querySelector(
-            ".headerFrameColorInput"
-        );
-        if (headerFrameColorInput) {
-            headerFrameColorInput.value = await getHex(
-                current_setting.topFrameBackgroundColor
-            );
-        }
-        let headerFrameColorDropdown = parentElement.querySelector(
-            ".headerFrameColorDropdown"
-        );
-        if (headerFrameColorDropdown) {
-            headerFrameColorDropdown.value =
-                current_setting.topFrameBackgroundColor;
-        }
-        let mainFrameColorInput = parentElement.querySelector(
-            ".mainFrameColorInput"
-        );
-        if (mainFrameColorInput) {
-            mainFrameColorInput.value = await getHex(
-                current_setting.mainFrameBackgroundColor
-            );
-        }
-        let baseSelectorDropdown = parentElement.querySelector(
-            ".baseSelectorDropdown"
-        );
-        if (baseSelectorDropdown) {
-            baseSelectorDropdown.value = current_setting.selectedBaseFrame;
-        }
-        let baseColor = parentElement.querySelector(".baseColor");
-        if (baseColor) {
-            baseColor.value = current_setting.baseFrameColor;
-        }
-        let hangerClothesToggle = parentElement.querySelector(
-            ".hangerClothesToggle"
-        );
-        if (hangerClothesToggle) {
-            hangerClothesToggle.value = current_setting.hangerClothesToggle;
-        }
-
-        let hangerGolfClubsToggle = parentElement.querySelector(
-            ".hangerGolfClubsToggle"
-        );
-        if (hangerGolfClubsToggle) {
-            hangerGolfClubsToggle.value = current_setting.hangerGolfClubsToggle;
-        }
-        let hangerStandColor = parentElement.querySelector(".hangerStandColor");
-        if (hangerStandColor) {
-            hangerStandColor.value = current_setting.defaultHangerStandColor;
-        }
-        let rackShelfColor = parentElement.querySelector(".rackShelfColor");
-        if (rackShelfColor) {
-            rackShelfColor.value = current_setting.defaultRackShelfStandColor;
-        }
-        let rackStandColor = parentElement.querySelector(".rackStandColor");
-        if (rackStandColor) {
-            rackStandColor.value = current_setting.defaultRackStandStandColor;
-        }
-
-        if (current_setting.topOption == "Shelf") {
-            parentElement
-                .querySelectorAll(".topHeaderOptions")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-            parentElement
-                .querySelectorAll(".topShelfOptions")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-        } else if (current_setting.topOption == "Header") {
-            parentElement
-                .querySelectorAll(".topHeaderOptions")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-            parentElement
-                .querySelectorAll(".topShelfOptions")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        } else {
-            parentElement
-                .querySelectorAll(".topHeaderOptions")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-            parentElement
-                .querySelectorAll(".topShelfOptions")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        }
-
-        if (
-            (current_setting.topOption == "Header" &&
-                current_setting.headerRodToggle) ||
-            (current_setting.topOption == "Shelf" &&
-                (current_setting.defaultShelfType == "Header_Wooden_Shelf" ||
-                    current_setting.defaultShelfType == "Header_Glass_Shelf"))
-        ) {
-            parentElement
-                .querySelectorAll(".headerRodColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-        } else {
-            parentElement
-                .querySelectorAll(".headerRodColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        }
-
-        if (
-            current_setting.topOption == "Shelf" &&
-            current_setting.defaultShelfType == "Header_Wooden_Shelf"
-        ) {
-            parentElement
-                .querySelectorAll(".shelfTypeBox")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-        } else {
-            parentElement
-                .querySelectorAll(".shelfTypeBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        }
-
-        if (
-            current_setting.topOption == "Header" &&
-            current_setting.headerOptions == "SEG"
-        ) {
-            parentElement
-                .querySelectorAll(".headerFrameColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-            parentElement
-                .querySelectorAll(".headerFrameColorInputBox")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-        } else if (
-            current_setting.topOption == "Header" &&
-            current_setting.headerOptions == "ALG"
-        ) {
-            parentElement
-                .querySelectorAll(".headerFrameColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-            parentElement
-                .querySelectorAll(".headerFrameColorInputBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        } else if (
-            current_setting.topOption == "Header" &&
-            current_setting.headerOptions == "ALG3D"
-        ) {
-            parentElement
-                .querySelectorAll(".headerFrameColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-            parentElement
-                .querySelectorAll(".headerFrameColorInputBox")
-                .forEach((element) => {
-                    element.style.display = "block";
-                });
-        } else {
-            parentElement
-                .querySelectorAll(".headerFrameColorDropdownBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-            parentElement
-                .querySelectorAll(".headerFrameColorInputBox")
-                .forEach((element) => {
-                    element.style.display = "none";
-                });
-        }
-    }
-
-    // await drawMeasurementBoxesWithLabels();
-}
-
 // Function to find the next visible child
 export async function isActiveGroup(currentModelName) {
     let isActive = false;
@@ -2134,14 +1306,6 @@ export async function isActiveGroup(currentModelName) {
     }
 
     return isActive;
-}
-
-export async function loaderShowHide(isShow = false) {
-    if (isShow) {
-        document.body.classList.remove("loaded");
-    } else {
-        document.body.classList.add("loaded");
-    }
 }
 
 export async function getMainParentNode(child, nodeNames, isVisible = true) {
@@ -2279,208 +1443,6 @@ export async function checkForCollision(movingModelGroup, moveAmount) {
     return true; // No collision, safe to move
 }
 
-export async function clearMeasurementBoxes() {
-    const objectsToRemove = [];
-
-    // Traverse all the children in the scene
-    sharedParams.scene.traverse(function (child) {
-        if (child.name && child.name.startsWith("Measurement")) {
-            objectsToRemove.push(child);
-        }
-    });
-
-    // Now remove all flagged objects from the scene
-    objectsToRemove.forEach((object) => {
-        if (object.parent) {
-            object.parent.remove(object); // Remove from its parent
-        }
-
-        // Additionally, dispose of geometry and material to free up memory
-        if (object.geometry) object.geometry.dispose();
-        if (object.material) object.material.dispose();
-    });
-
-    // Clean up the list of children in the scene
-    // sharedParams.scene.children = sharedParams.scene.children.filter(child => !child.name.startsWith('Measurement'));
-    // sharedParams.scene.children = sharedParams.scene.children.filter(child => {
-    //     return child.name && !child.name.startsWith('Measurement');
-    // });
-}
-
-export async function computeVisibleNodeBoundingBox(
-    object,
-    mainModelNames,
-    innerModelNames
-) {
-    const bbox = new THREE.Box3();
-
-    // Traverse the object and expand the bounding box for visible nodes
-    object.traverse(async function (child) {
-        if (mainModelNames.includes(child.name) && child.visible) {
-            child.traverse(async function (modelNode) {
-                if (innerModelNames.includes(modelNode.name)) {
-                    let isNodeVisible = modelNode.visible;
-                    // Expand the bounding box only if the node is visible and has visible parents
-                    if (isNodeVisible) {
-                        bbox.expandByObject(modelNode);
-                    }
-                }
-            });
-        }
-    });
-    return bbox;
-}
-
-export async function drawMeasurementBoxesWithLabels() {
-    if (sharedParams.modelGroup) {
-        const bbox = await computeVisibleNodeBoundingBox(
-            sharedParams.modelGroup,
-            allModelNames,
-            heightMeasurementNames
-        );
-        if (bbox) {
-            let multiplier = 1;
-
-            // Clear previous measurement boxes and labels
-            await clearMeasurementBoxes();
-            if (params.measurementToggle) {
-                const min = bbox.min.clone();
-                const max = bbox.max.clone();
-
-                // Material for the measurement boxes
-                const material = new THREE.MeshBasicMaterial({
-                    color: params.measurementLineColor,
-                });
-
-                // Create width measurement group
-                const width = max.x - min.x;
-                const widthGroup = await addMeasurementGroup(
-                    material,
-                    {
-                        width: width,
-                        height: params.measurementLineLength,
-                        depth: params.measurementLineLength,
-                    }, // lineSize
-                    `${width.toFixed(0) * multiplier}mm`, // labelText Width:
-                    new THREE.BoxGeometry(
-                        params.measurementLineLength,
-                        params.measurementLineHeight,
-                        params.measurementLineLength
-                    ), // handleLineGeometry
-                    "MeasurementWidth" // groupNamePrefix
-                );
-                sharedParams.scene.add(widthGroup); // Add the group to the scene
-
-                // Create height measurement group
-                const height = max.y - min.y;
-                const heightGroup = await addMeasurementGroup(
-                    material,
-                    {
-                        width: params.measurementLineLength,
-                        height: height,
-                        depth: params.measurementLineLength,
-                    }, // lineSize
-                    `${height.toFixed(0) * multiplier}mm`, // labelText Height:
-                    new THREE.BoxGeometry(
-                        params.measurementLineLength,
-                        params.measurementLineLength,
-                        params.measurementLineHeight
-                    ), // handleLineGeometry
-                    "MeasurementHeight" // groupNamePrefix
-                );
-                sharedParams.scene.add(heightGroup); // Add the group to the scene
-
-                // Create depth measurement group
-                const depth = max.z - min.z;
-                const depthGroup = await addMeasurementGroup(
-                    material,
-                    {
-                        width: params.measurementLineLength,
-                        height: params.measurementLineLength,
-                        depth: depth,
-                    }, // lineSize
-                    `${depth.toFixed(0) * multiplier}mm`, // labelText Depth:
-                    new THREE.BoxGeometry(
-                        params.measurementLineLength,
-                        params.measurementLineHeight,
-                        params.measurementLineLength
-                    ), // handleLineGeometry
-                    "MeasurementDepth" // groupNamePrefix
-                );
-                sharedParams.scene.add(depthGroup); // Add the group to the scene
-
-                // Update labels to always face the camera
-                sharedParams.scene.onBeforeRender = function () {
-                    sharedParams.scene.traverse((obj) => {
-                        if (obj.name && obj.name.includes("Label")) {
-                            obj.lookAt(sharedParams.camera.position);
-                        }
-                    });
-                };
-            }
-        }
-    }
-}
-
-export async function addMeasurementGroup(
-    material,
-    lineSize,
-    labelText,
-    handleLineGeometry,
-    groupNamePrefix
-) {
-    // Create a group for the measurement
-    const measurementGroup = new THREE.Group();
-    measurementGroup.name = groupNamePrefix;
-    measurementGroup.visible = false;
-
-    // Create measurement box
-    const boxGeometry = new THREE.BoxGeometry(
-        lineSize.width,
-        lineSize.height,
-        lineSize.depth
-    );
-    const box = new THREE.Mesh(boxGeometry, material);
-    box.name = `${groupNamePrefix}Box`;
-    measurementGroup.add(box);
-
-    // Create lines
-    const startLine = new THREE.Mesh(handleLineGeometry, material);
-    const endLine = new THREE.Mesh(handleLineGeometry, material);
-
-    // Set positions for start and end lines
-    startLine.name = `${groupNamePrefix}StartLine`;
-    measurementGroup.add(startLine);
-
-    endLine.name = `${groupNamePrefix}EndLine`;
-    measurementGroup.add(endLine);
-
-    // Create and add label
-    const label = await createLabel(labelText);
-    label.name = `${groupNamePrefix}Label`;
-    measurementGroup.add(label);
-
-    // Return the group so it can be added to the scene or manipulated further
-    return measurementGroup;
-}
-
-export async function createLabel(text) {
-    const labelDiv = document.createElement("div");
-    labelDiv.className = "measurement_label"; // Add CSS class for styling
-    labelDiv.textContent = text;
-    labelDiv.style.backgroundColor = "rgba(0, 0, 0, 1)"; // Similar background style as example
-    labelDiv.style.color = "#ffffff"; // White text color
-    labelDiv.style.padding = "2px 5px"; // Padding similar to example
-    labelDiv.style.borderRadius = "5px"; // borderRadius similar to example
-    labelDiv.style.fontSize = "16px"; // fontSize similar to example
-
-    // Create a CSS2DObject with the labelDiv
-    const label = new CSS2DObject(labelDiv);
-    label.position.set(0, 0, 0); // Adjust position according to your needs
-    // console.log('label', label)
-    return label;
-}
-
 // Initialize the label renderer
 export async function initLabelRenderer() {
     let labelRenderer = new CSS2DRenderer();
@@ -2489,201 +1451,6 @@ export async function initLabelRenderer() {
     labelRenderer.domElement.style.top = "0px";
     labelRenderer.domElement.style.pointerEvents = "none"; // Add this line
     return labelRenderer;
-}
-
-// Initialize the label renderer
-export async function updateLabelOcclusion() {
-    // Perform the raycasting for each measurement group
-    sharedParams.scene.traverse((object) => {
-        if (object instanceof CSS2DObject && object.name.includes("Label")) {
-            // Get the label position
-            const labelPosition = new THREE.Vector3();
-            object.getWorldPosition(labelPosition);
-
-            // Calculate direction from camera to the label
-            sharedParams.direction
-                .subVectors(labelPosition, sharedParams.camera.position)
-                .normalize();
-
-            // Set raycaster from the camera towards the label
-            sharedParams.raycaster.set(
-                sharedParams.camera.position,
-                sharedParams.direction
-            );
-
-            // Perform raycast and check for intersections
-            const intersects = sharedParams.raycaster.intersectObjects(
-                sharedParams.scene.children,
-                true
-            );
-
-            // If there's an object closer to the camera than the label, hide the label
-            if (
-                intersects.length > 0 &&
-                intersects[0].distance <
-                    labelPosition.distanceTo(sharedParams.camera.position)
-            ) {
-                object.renderOrder = -3; // Send behind the other objects
-            } else {
-                object.renderOrder = 1; // Bring in front if no occlusion
-            }
-        }
-    });
-}
-
-export async function updateMeasurementGroups() {
-    if (sharedParams.modelGroup) {
-        const bbox = await computeVisibleNodeBoundingBox(
-            sharedParams.modelGroup,
-            allModelNames,
-            heightMeasurementNames
-        );
-        if (bbox) {
-            const min = bbox.min.clone();
-            const max = bbox.max.clone();
-            const center = bbox.getCenter(new THREE.Vector3());
-
-            // Determine if the camera is on the left or right side of the model
-            const cameraOnLeft = sharedParams.camera.position.x < center.x;
-            const cameraZAdjustment =
-                sharedParams.camera.position.z < center.z ? -70 : 70; // Adjust if camera is in front or behind
-            const lableZAdjustment =
-                sharedParams.camera.position.z < center.z ? -20 : 20; // Adjust if camera is in front or behind
-            const lableYAdjustment = 30; // Adjust if camera is in front or behind
-
-            // Create width measurement group
-            const width = max.x - min.x;
-            await updateMeasurementGroupPosition(
-                "MeasurementWidth",
-                {
-                    x: min.x + width / 2,
-                    y: max.y + params.measurementLineDistance,
-                    z: cameraZAdjustment,
-                }, // linePosition
-                new THREE.Vector3(
-                    min.x + width / 2,
-                    max.y +
-                        1 +
-                        params.measurementLineDistance +
-                        lableYAdjustment,
-                    cameraZAdjustment + lableZAdjustment
-                ), // labelPosition
-                {
-                    x: min.x,
-                    y: max.y + params.measurementLineDistance,
-                    z: cameraZAdjustment,
-                }, // startLinePosition
-                {
-                    x: max.x,
-                    y: max.y + params.measurementLineDistance,
-                    z: cameraZAdjustment,
-                } // endLinePosition
-            );
-
-            // Update height measurement
-            const height = max.y - min.y;
-            const heightXPosition = cameraOnLeft
-                ? max.x + 1 + params.measurementLineDistance // If camera is on the left, height is on the right
-                : min.x - 1 - params.measurementLineDistance; // If camera is on the right, height is on the left
-
-            await updateMeasurementGroupPosition(
-                "MeasurementHeight",
-                {
-                    x: heightXPosition,
-                    y: min.y + height / 2,
-                    z: cameraZAdjustment,
-                }, // linePosition
-                new THREE.Vector3(
-                    heightXPosition,
-                    min.y + height / 2,
-                    cameraZAdjustment + lableZAdjustment
-                ), // labelPosition
-                { x: heightXPosition, y: min.y, z: cameraZAdjustment }, // startLinePosition
-                { x: heightXPosition, y: max.y, z: cameraZAdjustment } // endLinePosition
-            );
-
-            // Update depth measurement
-            const depth = max.z - min.z;
-            const depthXPosition = cameraOnLeft
-                ? min.x - params.measurementLineDistance // If camera is in front, depth is behind
-                : max.x + params.measurementLineDistance; // If camera is behind, depth is in front
-
-            await updateMeasurementGroupPosition(
-                "MeasurementDepth",
-                { x: depthXPosition, y: min.y, z: min.z + depth / 2 }, // linePosition
-                new THREE.Vector3(
-                    depthXPosition,
-                    min.y + lableYAdjustment,
-                    min.z + depth / 2 + lableZAdjustment
-                ), // labelPosition
-                { x: depthXPosition, y: min.y, z: min.z }, // startLinePosition
-                { x: depthXPosition, y: min.y, z: max.z } // endLinePosition
-            );
-        }
-    }
-}
-
-export async function updateMeasurementGroupPosition(
-    groupName,
-    linePosition,
-    labelPosition,
-    startLinePosition,
-    endLinePosition
-) {
-    const measurementGroup = sharedParams.scene.getObjectByName(groupName);
-    if (measurementGroup) {
-        measurementGroup.visible = params.measurementToggle;
-
-        // Update box position
-        const box = measurementGroup.getObjectByName(`${groupName}Box`);
-        if (box) box.position.copy(linePosition);
-
-        // Update start and end line positions
-        const startLine = measurementGroup.getObjectByName(
-            `${groupName}StartLine`
-        );
-        const endLine = measurementGroup.getObjectByName(`${groupName}EndLine`);
-        if (startLine) startLine.position.copy(startLinePosition);
-        if (endLine) endLine.position.copy(endLinePosition);
-
-        // Update label position
-        const label = measurementGroup.getObjectByName(`${groupName}Label`);
-        if (label) label.position.copy(labelPosition);
-    }
-}
-
-export async function generateGlassTexture() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 2;
-    canvas.height = 2;
-
-    const context = canvas.getContext("2d");
-    context.fillStyle = "white";
-    context.fillRect(0, 1, 2, 1);
-
-    return canvas;
-}
-
-export async function generateGlassMaterial() {
-    let texture_glass = sharedParams.texture_background.clone();
-    texture_glass.mapping = THREE.EquirectangularReflectionMapping;
-    const texture = new THREE.CanvasTexture(await generateGlassTexture());
-    const material = new THREE.MeshPhysicalMaterial({
-        color: "#3d7e35",
-        metalness: 0.09,
-        roughness: 0,
-        ior: 2,
-        alphaMap: texture,
-        envMap: texture_glass,
-        envMapIntensity: 1,
-        transmission: 1, // use material.transmission for glass materials
-        specularIntensity: 1,
-        specularColor: "#ffffff",
-        opacity: 0.4,
-        side: THREE.DoubleSide,
-        transparent: true,
-    });
-    return material;
 }
 
 export function findParentNodeByName(node, parentName, isVisible = null) {
@@ -2917,9 +1684,7 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft) {
                 });
 
                 // Set the parent for the new accordion item
-                accordionItem
-                    .querySelector(".accordion-collapse")
-                    .setAttribute("data-bs-parent", "#accordionModel");
+                accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
                 accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
                 await addCloseButton(modelName, accordionItem, mergedArray);
 
@@ -3216,108 +1981,6 @@ export async function getModelData(id) {
         console.error("Fetch error:", error);
         return null; // Return null on error
     }
-}
-
-async function getModelMeasurement(
-    model,
-    heightMeasurementNames,
-    modelMeasurement
-) {
-    const bbox = new THREE.Box3();
-    model.traverse(async function (modelNode) {
-        if (heightMeasurementNames.includes(modelNode.name)) {
-            let isNodeVisible = modelNode.visible;
-            if (isNodeVisible) {
-                bbox.expandByObject(modelNode);
-            }
-        }
-    });
-    if (bbox) {
-        let multiplier = 1;
-        const min = bbox.min.clone();
-        const max = bbox.max.clone();
-        // Create width measurement group
-        const width = max.x - min.x;
-        modelMeasurement["width"] = `${width.toFixed(0) * multiplier}mm`;
-        // Create height measurement group
-        const height = max.y - min.y;
-        modelMeasurement["height"] = `${height.toFixed(0) * multiplier}mm`;
-        // Create depth measurement group
-        const depth = max.z - min.z;
-        modelMeasurement["depth"] = `${depth.toFixed(0) * multiplier}mm`;
-    }
-}
-
-async function getComponentSize(model, modelComponentsData) {
-    // console.log(model);
-
-    const setModelSize = (child, size) => {
-        modelComponentsData[child.name] = size;
-    };
-
-    const isValidChild = (child) => child.parent.visible && child.visible;
-
-    const isHeaderGraphic1Mat = (child) =>
-        child.name === "Header_Graphic1-Mat" &&
-        child.parent.parent.visible &&
-        ["Header_300", "Header_500"].includes(child.parent.parent.name);
-
-    const isHeaderFrame = (child, parentName) =>
-        child.name === "Header_Frame" && child.parent.name === parentName;
-
-    await traverseAsync(model, async (child) => {
-        if (isValidChild(child)) {
-            const modelSize = getNodeSize(child);
-            if (
-                isHeaderFrame(child, "Header_300") ||
-                isHeaderFrame(child, "Header_500")
-            ) {
-                setModelSize(child, modelSize);
-            } else if (isHeaderGraphic1Mat(child)) {
-                setModelSize(child, modelSize);
-            } else if (["Frame", "Cube1-Mat"].includes(child.name)) {
-                if (child.name === "Frame") {
-                    const frameChild = child.clone();
-                    for (let i = frameChild.children.length - 1; i >= 0; i--) {
-                        const modelNode = frameChild.children[i];
-                        if (
-                            modelNode.name &&
-                            modelNode.name.startsWith("Hanger_")
-                        ) {
-                            modelNode.parent.remove(modelNode);
-                        }
-                    }
-                    const bbox = new THREE.Box3();
-                    frameChild.traverse((modelNode) => {
-                        if (modelNode.visible) {
-                            bbox.expandByObject(modelNode);
-                        }
-                    });
-                    const min = bbox.min.clone();
-                    const max = bbox.max.clone();
-                    let modelMeasurement = {};
-                    const width = max.x - min.x;
-                    modelMeasurement["width"] = `${width.toFixed(0) * 1}mm`;
-                    const height = max.y - min.y;
-                    modelMeasurement["height"] = `${height.toFixed(0) * 1}mm`;
-                    const depth = max.z - min.z;
-                    modelMeasurement["depth"] = `${depth.toFixed(0) * 1}mm`;
-                    setModelSize(child, modelMeasurement);
-                } else {
-                    setModelSize(child, modelSize);
-                }
-            } else if (
-                ["Base_Solid", "Base_Support_Sides"].includes(child.name)
-            ) {
-                setModelSize(child, modelSize);
-            } else if (
-                child.parent.name.startsWith("Hanger") &&
-                child.name == "Hanger_Stand"
-            ) {
-                setModelSize(child.parent, modelSize);
-            }
-        }
-    });
 }
 
 export async function savePdfData(dataToSave) {

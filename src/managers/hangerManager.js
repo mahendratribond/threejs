@@ -43,6 +43,7 @@ export async function addHangers(hangerType, lastside = null, position = null) {
         } else {
             hangermodel = sharedParams.hanger_model;
         }
+        
         let selectedGroupName = params.selectedGroupName;
         let defaultModelName = setting[selectedGroupName].defaultModel;
         let selectedGroupModel = sharedParams.modelGroup.getObjectByName(selectedGroupName);

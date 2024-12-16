@@ -156,7 +156,6 @@ export async function setTopFrameCropedImage(topFrameCropedImage) {
       const topFrameBackgroundColor = getHex(
         setting[selectedGroupName].topFrameBackgroundColor
       );
-      console.log("ffff", topFrameBackgroundColor);
       let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
       main_model.traverse(async function (child) {
         if (frameTop1Names.includes(child.name)) {

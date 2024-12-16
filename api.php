@@ -440,6 +440,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Escape and encode the item name to safely include it in the GraphQL query
     $itemName = addslashes($itemName);
 
+
+    // ---------------------------------- CREATING ITEM ----------------------------------------------------
     // GraphQL mutation to create a new item
     $ceateItemMutation = 'mutation {
         create_item (
@@ -474,6 +476,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $responseForItem = json_decode($createItemResponse, true);
     $itemId = $responseForItem['data']['create_item']['id'];
 
+    // ---------------------------------- CREATING ITEM ----------------------------------------------------
+    // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
+
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => 'https://api.monday.com/v2',
@@ -497,7 +502,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // Decode the response to get the columns
     $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
-    // echo "<pre>";print_r($mondayColumns);
+    // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
+    // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
+
     // Create an object to store the column values
     $columnValues = [];
 
@@ -511,6 +518,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             }
         }
     }
+    // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
+    // ---------------------------------- ADDING TO MONDAY BOARD ----------------------------------------------------
     // Convert the column values to JSON format
     $columnValuesJson = json_encode($columnValues, JSON_UNESCAPED_SLASHES);
     // print_r($columnValuesJson);
@@ -552,6 +561,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     sendEmailToUser($_REQUEST);
     echo json_encode($response);
     exit;
+    // ---------------------------------- ADDING TO MONDAY BOARD ----------------------------------------------------
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'setSessionData'){
     $_SESSION['user_id'] = $_REQUEST['userId'];
     $_SESSION['username'] = $_REQUEST['username'];

@@ -1,6 +1,4 @@
-import {
-    commonMaterial,
-} from "./MaterialManager.js";
+import { commonMaterial } from "./MaterialManager.js";
 import {
     THREE,
     rodFrameTextureNames,
@@ -14,14 +12,10 @@ import {
     updateModelName,
     getModelNode,
     traverseAsync,
-    generateGlassMaterial,
     getRodCount,
     getSupportBaseCount,
 } from "../../utils6.js";
-import {
-    getModelSize,
-    getNodeSize,
-} from "./MeasurementManager.js";
+import { getModelSize, getNodeSize } from "./MeasurementManager.js";
 export class ModelManager {
     constructor() {}
 
@@ -164,21 +158,18 @@ export class ModelManager {
             );
         }
 
-        await traverseAsync(
-            sharedParams.modelGroup,
-            async (modelNode) => {
-                if (allModelNames.includes(modelNode.name)) {
-                    modelSize = await getModelSize(modelNode.name);
+        await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
+            if (allModelNames.includes(modelNode.name)) {
+                modelSize = await getModelSize(modelNode.name);
 
-                    if (
-                        sharedParams.header_rod_model &&
-                        sharedParams.header_glass_shelf_fixing_model
-                    ) {
-                        await this.createRod(modelNode, modelSize);
-                    }
+                if (
+                    sharedParams.header_rod_model &&
+                    sharedParams.header_glass_shelf_fixing_model
+                ) {
+                    await this.createRod(modelNode, modelSize);
                 }
             }
-        );
+        });
     }
     async setupSupportBaseModel() {
         let modelSize;
@@ -197,21 +188,18 @@ export class ModelManager {
             );
         }
 
-        await traverseAsync(
-            sharedParams.modelGroup,
-            async (modelNode) => {
-                if (allModelNames.includes(modelNode.name)) {
-                    modelSize = await getModelSize(modelNode.name);
+        await traverseAsync(sharedParams.modelGroup, async (modelNode) => {
+            if (allModelNames.includes(modelNode.name)) {
+                modelSize = await getModelSize(modelNode.name);
 
-                    if (
-                        sharedParams.support_base_middle &&
-                        sharedParams.support_base_side
-                    ) {
-                        await this.createSupportBase(modelNode, modelSize);
-                    }
+                if (
+                    sharedParams.support_base_middle &&
+                    sharedParams.support_base_side
+                ) {
+                    await this.createSupportBase(modelNode, modelSize);
                 }
             }
-        );
+        });
     }
 
     async setupHeader500HeightModel() {
@@ -364,11 +352,9 @@ export class ModelManager {
 
     async setupHeaderGlassShelfModel() {
         if (sharedParams.header_glass_shelf_model) {
-            sharedParams.header_glass_shelf_model.traverse(async function (
-                child
-            ) {
+            sharedParams.header_glass_shelf_model.traverse(async (child) => {
                 if (child.material) {
-                    child.material = await generateGlassMaterial();
+                    child.material = await this.generateGlassMaterial();
                     // child.material = await commonMaterial(0xffffff)
                     child.material.needsUpdate = true;
                 }
@@ -571,7 +557,7 @@ export class ModelManager {
                 "Rack_Stand_RH"
             );
 
-            const glassMaterial = await generateGlassMaterial();
+            const glassMaterial = await this.generateGlassMaterial();
             const defaultMaterial = await commonMaterial(
                 parseInt(params.defaultRackColor, 16)
             );
@@ -600,15 +586,15 @@ export class ModelManager {
     async createRod(modelNode, modelSize) {
         const additionalRods = getRodCount(modelSize);
         const header = modelNode.getObjectByName("Header_300");
-    
+
         // Ensure both header and frame nodes exist
         if (header) {
             const headerBox = new THREE.Box3().setFromObject(header);
             const headerSize = getNodeSize(header); // Size of the current header
-    
+
             let rodY = headerBox.min.y + params.rodSize.y / 2; //(frameSize.y / 2 + rodSize.y / 2);
             let lassShelfFixingY = params.glassShelfFixingSize.y / 2; //(frameSize.y / 2 + glassShelfFixingSize.y / 2);
-    
+
             // Function to create and position a rod
             const createAndPositionRod = async (
                 xOffset,
@@ -625,9 +611,9 @@ export class ModelManager {
                     rod.position.z
                 );
                 rod.visible = false;
-    
+
                 const rodBox = new THREE.Box3().setFromObject(rod);
-    
+
                 let shelf_fixing =
                     sharedParams.header_glass_shelf_fixing_model.clone();
                 shelf_fixing.name = shelfFixingName;
@@ -646,9 +632,9 @@ export class ModelManager {
                 );
                 shelf_fixing.visible = false;
             };
-    
+
             let margin = 50;
-    
+
             // Place the left and right rods first
             await createAndPositionRod(
                 -headerSize.x / 2 + params.rodSize.x + margin,
@@ -660,11 +646,11 @@ export class ModelManager {
                 "Rod",
                 "Glass_Shelf_Fixing"
             ); // Right Rod
-    
+
             // Determine and place additional rods based on modelSize
             if (additionalRods > 0) {
                 const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
-    
+
                 // Place additional rods
                 for (let i = 1; i <= additionalRods; i++) {
                     let xOffset = -headerSize.x / 2 + i * spacing;
@@ -676,7 +662,7 @@ export class ModelManager {
                 }
             }
         }
-    
+
         return modelNode;
     }
     async createSupportBase(modelNode, modelSize) {
@@ -687,14 +673,17 @@ export class ModelManager {
             const baseBox = new THREE.Box3().setFromObject(modelNode);
             const baseSize = getNodeSize(modelNode); // Size of the current base
             let positionY;
-    
+
             const bbox = new THREE.Box3();
             bbox.expandByObject(sharedParams.support_base_side);
             const modelWidth = bbox.min.y;
             // let baseY = baseBox.min.y + params.rodSize.y / 4; //(frameSize.y / 2 + rodSize.y / 2);
             let baseY = baseBox.min.y - modelWidth; //(frameSize.y / 2 + rodSize.y / 2);
             // Function to create and position a rod
-            const createAndPositionBaseSide = async (xOffset, supportBaseName) => {
+            const createAndPositionBaseSide = async (
+                xOffset,
+                supportBaseName
+            ) => {
                 let supportSide = sharedParams.support_base_side.clone();
                 supportSide.name = supportBaseName;
                 modelNode.add(supportSide);
@@ -706,7 +695,7 @@ export class ModelManager {
                 );
                 positionY = supportSide.position.y;
                 supportSide.visible = false;
-    
+
                 const rodBox = new THREE.Box3().setFromObject(supportSide);
             };
             const createAndPositionBaseMiddle = async (
@@ -724,12 +713,12 @@ export class ModelManager {
                     supportSide.position.z
                 );
                 supportSide.visible = false;
-    
+
                 const rodBox = new THREE.Box3().setFromObject(supportSide);
             };
-    
+
             let margin = 30;
-    
+
             // Place the left and right rods first
             await createAndPositionBaseSide(
                 -baseSize.x / 2 + margin,
@@ -739,11 +728,11 @@ export class ModelManager {
                 baseSize.x / 2 - margin,
                 "Base_Support_Sides"
             ); // Right Rod
-    
+
             // Determine and place additional rods based on modelSize
             if (additionalSupportBase > 0) {
                 const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
-    
+
                 // Place additional rods
                 for (let i = 1; i <= additionalSupportBase; i++) {
                     let xOffset = -baseSize.x / 2 + i * spacing;
@@ -755,7 +744,42 @@ export class ModelManager {
                 }
             }
         }
-    
+
         return modelNode;
+    }
+
+    async generateGlassTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 2;
+        canvas.height = 2;
+
+        const context = canvas.getContext("2d");
+        context.fillStyle = "white";
+        context.fillRect(0, 1, 2, 1);
+
+        return canvas;
+    }
+    async generateGlassMaterial() {
+        let texture_glass = sharedParams.texture_background.clone();
+        texture_glass.mapping = THREE.EquirectangularReflectionMapping;
+        const texture = new THREE.CanvasTexture(
+            await this.generateGlassTexture()
+        );
+        const material = new THREE.MeshPhysicalMaterial({
+            color: "#3d7e35",
+            metalness: 0.09,
+            roughness: 0,
+            ior: 2,
+            alphaMap: texture,
+            envMap: texture_glass,
+            envMapIntensity: 1,
+            transmission: 1, // use material.transmission for glass materials
+            specularIntensity: 1,
+            specularColor: "#ffffff",
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            transparent: true,
+        });
+        return material;
     }
 }
