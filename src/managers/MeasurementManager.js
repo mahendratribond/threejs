@@ -4,7 +4,7 @@ export async function getCurrentModelSize(model, node) {
   return getNodeSize(cubeNode);
 }
 
-export async function getNodeSize(cubeNode) {
+export function getNodeSize(cubeNode) {
   if (cubeNode) {
     const boundingBox = new THREE.Box3().setFromObject(cubeNode);
     const size = boundingBox.getSize(new THREE.Vector3());

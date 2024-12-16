@@ -50,7 +50,7 @@ export async function setupHangerModel(model) {
                 // child.material = material
                 // child.material.needsUpdate = true;
                 child.material.color.set(
-                    await getHex(params.defaultClothingColor)
+                    getHex(params.defaultClothingColor)
                 );
                 child.material.needsUpdate = true;
             }

@@ -1,54 +1,5 @@
 // Display loader progress
 import { UIManager } from "./src/managers/UIManager.js";
-const uiManager = new UIManager();
-
-let totalAssets = 5; // Number of primary assets to load
-let assetsLoaded = 0; // Counter for loaded assets
-let lastLoadTime = Date.now(); // Track the time taken between loads
-let simulatedProgress = 0;
-let speedMultiplier = 0.1; // Initial progress increment multiplier
-
-// Function to dynamically adjust the progress increment based on loading speed
-async function adjustSpeedMultiplier(loadTime) {
-    const thresholdSlow = 2000; // Define a threshold for slow network (2 seconds per asset)
-    const thresholdFast = 500; // Define a threshold for fast network (0.5 seconds per asset)
-
-    if (loadTime > thresholdSlow) {
-        speedMultiplier = 0.05; // Slow network, reduce progress speed
-    } else if (loadTime < thresholdFast) {
-        speedMultiplier = 0.2; // Fast network, increase progress speed
-    } else {
-        speedMultiplier = 0.1; // Normal speed
-    }
-}
-
-// Function to gradually increase the progress bar for a smoother experience
-async function simulateProgress() {
-    if (simulatedProgress < 100) {
-        simulatedProgress += speedMultiplier; // Dynamically adjust speed
-        uiManager.loadingElements.progressBarFill.style.width = `${simulatedProgress}%`;
-        uiManager.loadingElements.progressText.innerText = `Loading... ${Math.round(
-            simulatedProgress
-        )}%`;
-        requestAnimationFrame(simulateProgress); // Continue animation until 100%
-    } else {
-        uiManager.loadingElements.loaderElement.style.display = "none";
-    }
-}
-
-await simulateProgress(); // Start smooth progress simulation
-
-async function showTime(test) {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    const seconds = now.getSeconds().toString().padStart(2, "0");
-    const timeString = `${hours}:${minutes}:${seconds}`;
-    console.log("timeString" + test + ":", timeString);
-}
-
-await showTime(0);
-
 import {
     loadGLTFModel,
     manager,
@@ -79,22 +30,12 @@ import {
 } from "./src/managers/HangerManager.js";
 import {
     drawMeasurementBoxesWithLabels,
-    setupHeaderWoodenShelfModel,
-    setupHeaderGlassShelfModel,
-    setupGlassShelfFixingModel,
-    setupHeader500HeightModel,
     updateMeasurementGroups,
-    setupSlottedSidesModel,
-    setupSupportBaseModel,
-    setupWoodenRackModel,
-    updateLabelOcclusion,
-    setupGlassRackModel,
+    updateLabelOcclusion,    
     checkForCollision,
     initLabelRenderer,
     addAnotherModels,
     centerMainModel,
-    setupArrowModel,
-    setupMainModel,
     loaderShowHide,
     traverseAsync,
     saveModelData,
@@ -105,6 +46,7 @@ import {
     getHex,
     delay,
 } from "./utils6.js";
+import { ModelManager } from "./src/managers/ModelManager.js";
 
 import {
     THREE,
@@ -124,9 +66,22 @@ import {
     sharedParams,
 } from "./config.js";
 
-let previousData, main_model;
+let main_model;
 const lights = [];
 const lightHelpers = [];
+const uiManager = new UIManager();
+const modelManager = new ModelManager();
+
+async function showTime(test) {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const seconds = now.getSeconds().toString().padStart(2, "0");
+    const timeString = `${hours}:${minutes}:${seconds}`;
+    console.log("timeString" + test + ":", timeString);
+}
+
+await showTime(0);
 
 // Start simulating progress when the window loads
 window.addEventListener("load", async () => {
@@ -144,29 +99,6 @@ window.addEventListener("load", async () => {
     }
 });
 
-// Set up real loading progress tracking
-manager.onProgress = (url, itemsLoaded, itemsTotal) => {
-    let currentLoadTime = Date.now(); // Capture time after asset load
-    let loadDuration = currentLoadTime - lastLoadTime; // Calculate the duration
-    adjustSpeedMultiplier(loadDuration); // Adjust speed based on load duration
-    lastLoadTime = currentLoadTime;
-
-    assetsLoaded = itemsLoaded;
-    let actualProgress = (assetsLoaded / itemsTotal) * 100;
-    if (simulatedProgress < actualProgress) {
-        simulatedProgress = actualProgress; // Sync simulated progress with real progress
-    }
-
-    if (assetsLoaded === totalAssets) {
-        simulatedProgress = 100; // Ensure we finish at 100%
-    }
-};
-
-// Hide the loader once all items are loaded
-manager.onLoad = () => {
-    console.log("All assets loaded");
-};
-
 // Error handling
 manager.onError = (url) => {
     console.error(`There was an error loading ${url}`);
@@ -175,8 +107,6 @@ manager.onError = (url) => {
 };
 
 async function init() {
-    // await downloadGolf();
-    // return
     sharedParams.texture_background = await TextureLoaderJpg.loadAsync(
         "background.png"
     );
@@ -214,11 +144,8 @@ async function init() {
     sharedParams.modelGroup.add(main_model);
     sharedParams.modelGroup.name = "main_group";
     console.log(sharedParams.modelGroup);
-    setupMainModel(main_model);
+    modelManager.setupMainModel(main_model);
     await loadAllModels();
-    // return
-    // await showHideNodes();
-    // loadHangerModels();
 
     // Transform controls
     sharedParams.transformControls = new TransformControls(
@@ -273,6 +200,8 @@ async function init() {
     document.body.appendChild(sharedParams.labelRenderer.domElement);
     await loadPreviousModels();
     uiManager.setupEventListeners(lights, lightHelpers);
+    uiManager.loadingElements.progressText.innerText = `Loading... 100%`;
+    uiManager.loadingElements.loaderElement.style.display = "none";
 }
 
 async function loadPreviousModels() {
@@ -284,18 +213,18 @@ async function loadPreviousModels() {
     const id = urlParams.get("id");
 
     if (id) {
-        previousData = await getModelData(id);
-        if (previousData && previousData.params) {
+        sharedParams.previousData = await getModelData(id);
+        if (sharedParams.previousData && sharedParams.previousData.params) {
             const loader = new THREE.MaterialLoader();
 
             let newMaterialData = params.lastInnerMaterial;
-            await updateVariable("params", previousData.params);
-            await updateVariable("setting", previousData.setting);
-            let lastGroupNames = previousData.group_names;
+            await updateVariable("params", sharedParams.previousData.params);
+            await updateVariable("setting", sharedParams.previousData.setting);
+            let lastGroupNames = sharedParams.previousData.group_names;
             sharedParams.mainFrameCropedImage =
-                previousData.main_frame_croped_image;
+                sharedParams.previousData.main_frame_croped_image;
             sharedParams.topFrameCropedImage =
-                previousData.top_frame_croped_image;
+                sharedParams.previousData.top_frame_croped_image;
 
             let mainModelIndex = lastGroupNames.indexOf("main_model");
             let retrievedSelectedGroupName = params.selectedGroupName;
@@ -455,41 +384,47 @@ async function exportModel(model, name) {
     modellink.click();
 }
 async function loadAllModels() {
+    let count = 0;
     try {
         // Create an array of promises for all model loads
         const loadPromises = modelQueue.map(async (modelPath) =>
             await loadGLTFModel(modelPath)
                 .then(async (gltf) => {
+                    count += 1
+                    let percent = (count * 100)/ modelQueue.length
+                    uiManager.loadingElements.progressText.innerText = `Loading... ${Math.round(
+                        percent
+                    )}%`;
                     // console.log(`Loaded: ${modelPath}`, gltf);
                     // loadedModels.set(modelPath, gltf);
                     // return gltf;
                     switch (modelPath) {
                         case "Model_1061.glb":
-                            setupMainModel(gltf);
+                            modelManager.setupMainModel(gltf);
                             let model_1061 = gltf.getObjectByName("Model_1061");
                             model_1061.visible = false;
                             main_model.add(model_1061);
                             break;
                         case "Model_1200.glb":
-                            setupMainModel(gltf);
+                            modelManager.setupMainModel(gltf);
                             let Model_1200 = gltf.getObjectByName("Model_1200");
                             Model_1200.visible = false;
                             main_model.add(Model_1200);
                             break;
                         case "Model_1500.glb":
-                            setupMainModel(gltf);
+                            modelManager.setupMainModel(gltf);
                             let Model_1500 = gltf.getObjectByName("Model_1500");
                             Model_1500.visible = false;
                             main_model.add(Model_1500);
                             break;
                         case "Model_2000.glb":
-                            setupMainModel(gltf);
+                            modelManager.setupMainModel(gltf);
                             let Model_2000 = gltf.getObjectByName("Model_2000");
                             Model_2000.visible = false;
                             main_model.add(Model_2000);
                             break;
                         case "Model_3000.glb":
-                            setupMainModel(gltf);
+                            modelManager.setupMainModel(gltf);
                             let Model_3000 = gltf.getObjectByName("Model_3000");
                             Model_3000.visible = false;
                             main_model.add(Model_3000);
@@ -529,74 +464,68 @@ async function loadAllModels() {
                                 sharedParams.hanger_rail_d_1000
                             );
                             break;
-                        // case "hanger_golf_club_model.glb":
-                        //     sharedParams.hanger_golf_club_model = gltf;
-                        //     // await setupHangerGolfClubModel();
-                        //     // await exportModel(sharedParams.hanger_golf_club_model, modelPath);
-                        //     console.log(sharedParams.hanger_golf_club_model);
-
-                        //     break;
                         case "hanger_golf_driver_club_model.glb":
                             sharedParams.hanger_golf_driver_club_model = gltf;
-                            console.log(sharedParams.hanger_golf_driver_club_model);
                             break;
                         case "hanger_golf_Iron_club_model.glb":
                             sharedParams.hanger_golf_Iron_club_model = gltf;
-                            console.log(sharedParams.hanger_golf_Iron_club_model);
                             break;
                         case "rack_glass_model.glb":
                             sharedParams.rack_glass_model = gltf;
-                            await setupGlassRackModel(
+                            await modelManager.setupGlassRackModel(
                                 sharedParams.rack_glass_model
                             );
                             break;
                         case "rack_wooden_model.glb":
                             sharedParams.rack_wooden_model = gltf;
-                            await setupWoodenRackModel(
+                            await modelManager.setupWoodenRackModel(
                                 sharedParams.rack_wooden_model
                             );
                             break;
                         case "arrow_model.glb":
                             sharedParams.arrow_model = gltf;
-                            await setupArrowModel();
+                            await modelManager.setupArrowModel;
                             break;
                         case "header_rod_model.glb":
                             sharedParams.header_rod_model = gltf;
-                            // params.rodSize = await getNodeSize(
-                            //     sharedParams.header_rod_model
-                            // );
+                            params.rodSize = getNodeSize(
+                                sharedParams.header_rod_model
+                            );
                             params.rodSize = { x: 50, y: 50, z: 50 };
                             break;
                         case "header_glass_shelf_fixing_model.glb":
                             sharedParams.header_glass_shelf_fixing_model = gltf;
-                            // params.glassShelfFixingSize = await getNodeSize(
-                            //     sharedParams.header_glass_shelf_fixing_model
-                            // );
-                            await setupGlassShelfFixingModel();
+                            params.glassShelfFixingSize = getNodeSize(
+                                sharedParams.header_glass_shelf_fixing_model
+                            );
+                            await modelManager.setupGlassShelfFixingModel();
                             break;
                         case "header_500_height_model.glb":
                             sharedParams.header_500_height_model = gltf;
-                            await setupHeader500HeightModel();
+                            await modelManager.setupHeader500HeightModel();
                             break;
                         case "header_wooden_shelf_model.glb":
                             sharedParams.header_wooden_shelf_model = gltf;
-                            await setupHeaderWoodenShelfModel();
+                            await modelManager.setupHeaderWoodenShelfModel();
                             break;
                         case "header_glass_shelf_model.glb":
                             sharedParams.header_glass_shelf_model = gltf;
-                            await setupHeaderGlassShelfModel();
+                            await modelManager.setupHeaderGlassShelfModel();
                             break;
                         case "slotted_sides_model.glb":
                             sharedParams.slotted_sides_model = gltf;
-                            await setupSlottedSidesModel();
+                            await modelManager.setupSlottedSidesModel();
                             break;
                         case "support_base_middle.glb":
                             sharedParams.support_base_middle = gltf;
-                            await setupSupportBaseModel();
+                            await modelManager.setupSupportBaseModel();
                             break;
                         case "support_base_sides.glb":
                             sharedParams.support_base_side = gltf;
-                            await setupSupportBaseModel();
+                            await modelManager.setupSupportBaseModel();
+                            break;
+                        case "removeIcon.glb":
+                            sharedParams.removeIcon = gltf;
                             break;
                         default:
                             break;
@@ -651,19 +580,19 @@ async function removeLoader(loader) {
 export async function otherModelSetup() {
     if (!sharedParams.arrow_model) {
         sharedParams.arrow_model = await loadGLTFModel("arrow_model.glb");
-        await setupArrowModel();
+        await setupArrowModel;
     }
     if (!sharedParams.header_rod_model) {
         sharedParams.header_rod_model = await loadGLTFModel(
             "header_rod_model.glb"
         );
-        params.rodSize = await getNodeSize(sharedParams.header_rod_model);
+        params.rodSize = getNodeSize(sharedParams.header_rod_model);
     }
     if (!sharedParams.header_glass_shelf_fixing_model) {
         sharedParams.header_glass_shelf_fixing_model = await loadGLTFModel(
             "header_glass_shelf_fixing_model.glb"
         );
-        params.glassShelfFixingSize = await getNodeSize(
+        params.glassShelfFixingSize = getNodeSize(
             sharedParams.header_glass_shelf_fixing_model
         );
         await setupGlassShelfFixingModel();
@@ -705,7 +634,7 @@ export async function otherModelSetup() {
 }
 
 if (uiManager.elements.headerFrameColorInput) {
-    uiManager.elements.headerFrameColorInput.value = await getHex(
+    uiManager.elements.headerFrameColorInput.value = getHex(
         params.topFrameBackgroundColor
     );
 
@@ -724,7 +653,7 @@ if (uiManager.elements.headerFrameColorInput) {
 }
 
 if (uiManager.elements.mainFrameColorInput) {
-    uiManager.elements.mainFrameColorInput.value = await getHex(
+    uiManager.elements.mainFrameColorInput.value = getHex(
         params.mainFrameBackgroundColor
     );
     document.addEventListener("input", async function (event) {
@@ -876,1125 +805,6 @@ export async function updateMaterial(
     }
     // console.log(main_model)
 }
-
-if (uiManager.elements.saveModelDataButton) {
-    uiManager.elements.saveModelDataButton.addEventListener(
-        "click",
-        async function () {
-            if (
-                !localStorage.getItem("user_id") &&
-                !localStorage.getItem("username")
-            ) {
-                document.querySelector(".loginFormDiv").style.display = "flex";
-                return;
-            } else {
-                const modelId =
-                    previousData && previousData.id ? previousData.id : 0;
-
-                await traverseAsync(sharedParams.modelGroup, async (child) => {
-                    if (
-                        hangerNames.includes(child.name) &&
-                        child.hangerArrayKey &&
-                        child.hangerCount
-                    ) {
-                        params.hangerAdded = params.hangerAdded || {};
-                        params.hangerAdded[child.hangerArrayKey] =
-                            params.hangerAdded[child.hangerArrayKey] || {};
-                        params.hangerAdded[child.hangerArrayKey][
-                            child.hangerCount
-                        ] = child.position;
-                    }
-                    if (
-                        rackNames.includes(child.name) &&
-                        child.rackArrayKey &&
-                        child.rackCount
-                    ) {
-                        console.log("params.rackAdded", params.rackAdded);
-                        console.log("child", child);
-                        console.log("child.name", child.name);
-
-                        params.rackAdded = params.rackAdded || {};
-                        params.rackAdded[child.rackArrayKey] =
-                            params.rackAdded[child.rackArrayKey] || {};
-                        params.rackAdded[child.rackArrayKey][child.rackCount] =
-                            child.position;
-                    }
-                });
-
-                const dataToSave = {
-                    params: params || null,
-                    setting: setting || null,
-                    group_names: allGroupNames || null,
-                    top_frame_croped_image:
-                        sharedParams.topFrameCropedImage || null,
-                    main_frame_croped_image:
-                        sharedParams.mainFrameCropedImage || null,
-                };
-
-                let projectName = (previousData && previousData.name) || null;
-                let dataSave;
-                if (modelId > 0) {
-                    dataSave = true;
-                }
-                if (!projectName) {
-                    // Prompt the user to enter a value
-                    projectName = prompt("Please enter a project name:");
-                    if (projectName !== null) {
-                        dataSave = true;
-                    }
-                }
-
-                // console.log('params.hangerAdded', params.hangerAdded);
-
-                if (dataSave) {
-                    await saveModelData(projectName, dataToSave, modelId);
-                }
-            }
-        }
-    );
-}
-
-async function checkFileExists(url) {
-    let FileFound = false;
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    if (/iPhone|iPad|iPod/.test(userAgent)) {
-        url = `${url}.usdz`;
-    } else {
-        url = `${url}.glb`;
-    }
-    while (!FileFound) {
-        try {
-            const response = await fetch(url, { method: "HEAD" });
-            if (response.ok) return true; // File exists, exit the loop
-        } catch (error) {
-            alert("Checking file existence failed:", error);
-        }
-    }
-    return false; // File not found after max attempts
-}
-function showLoadingModal(message) {
-    document.getElementById("loadingModal").style.display = "flex";
-    document.getElementById("loadingText").innerHTML = message;
-}
-
-function hideLoadingModal() {
-    document.getElementById("loadingModal").style.display = "none";
-}
-
-if (uiManager.elements.closeButtonAR) {
-    uiManager.elements.closeButtonAR.addEventListener("click", () => {
-        let arviewer = document.getElementById("ArView");
-        arviewer.style.display = "none";
-    });
-}
-// ----------------------------------------------------------------------------------------------------------
-async function cloneModelGroup(model) {
-    let cloneModelGroup = model.clone();
-    let CloneArr = [];
-    await traverseAsync(cloneModelGroup, async (node) => {
-        if (node.visible && node.name.startsWith("Hanger_")) {
-            // console.log(node);
-            node.parent.remove(node);
-        }
-    });
-    await traverseAsync(cloneModelGroup, async (node) => {
-        if (node.visible && node.name.startsWith("Model_")) {
-            CloneArr.push(node);
-        }
-    });
-    // Process each node in CloneArr to remove invisible children
-    CloneArr.forEach((node) => {
-        node.children.slice().forEach((childNode) => {
-            if (!childNode.visible) {
-                if (childNode.parent) {
-                    childNode.parent.remove(childNode);
-                } else {
-                    const index = node.children.indexOf(childNode);
-                    if (index !== -1) {
-                        node.children.splice(index, 1);
-                    }
-                }
-            } else if (childNode.name == "Cone") {
-                childNode.parent.remove(childNode);
-            }
-        });
-    });
-    // console.log(CloneArr);
-
-    return CloneArr;
-}
-async function cloneMainModelGroup(model) {
-    let cloneModelGroup = model.clone();
-    let CloneArr = [];
-    // Traverse to find visible models that start with "Model_"
-    await traverseAsync(cloneModelGroup, async (node) => {
-        if (node.visible && node.name.startsWith("Hanger_")) {
-            node.parent.remove(node);
-        }
-    });
-    cloneModelGroup.children.forEach(async (child) => {
-        await child.traverse((node) => {
-            if (node.visible && node.name.startsWith("Model_")) {
-                CloneArr.push(node);
-            }
-        });
-    });
-    // Process each node in CloneArr to remove invisible children and unnecessary nodes
-    CloneArr.forEach((node) => {
-        node.children.slice().forEach((childNode) => {
-            if (!childNode.visible) {
-                // Remove invisible child nodes
-                childNode.parent.remove(childNode);
-            } else if (childNode.name === "Cone") {
-                // Remove nodes named "Cone"
-                childNode.parent.remove(childNode);
-            }
-        });
-    });
-    // Calculate combined bounding box for all models in CloneArr
-    const combinedBox = new THREE.Box3();
-    CloneArr.forEach((node) => {
-        const nodeBox = new THREE.Box3().setFromObject(node);
-        combinedBox.union(nodeBox); // Expand the combined bounding box to include this model's bounding box
-    });
-    return combinedBox;
-}
-
-async function renderAndDownload(
-    viewName,
-    tempCamera,
-    tempRenderer,
-    name,
-    imagesNameArr
-) {
-    // Store original renderer size and camera properties
-    const originalWidth = tempRenderer.domElement.width;
-    const originalHeight = tempRenderer.domElement.height;
-    const originalAspect = tempCamera.aspect;
-    const originalPosition = tempCamera.position.clone();
-    const originalRotation = tempCamera.rotation.clone();
-    const originalQuaternion = tempCamera.quaternion.clone();
-    try {
-        // Set higher resolution (2x or 3x the original resolution)
-        let scaleFactor = 3; // Default scale factor
-
-        if (
-            (viewName === "diagonal" || viewName === "wholeModel") &&
-            originalWidth * 3 > 5000
-        ) {
-            scaleFactor = 2;
-        } else if (
-            viewName === "front" &&
-            (originalWidth >= 3000 || originalWidth * 3 > 5000)
-        ) {
-            scaleFactor = 2;
-        }
-        tempRenderer.setSize(
-            originalWidth * scaleFactor,
-            originalHeight * scaleFactor,
-            true
-        );
-
-        // Update camera aspect and projection matrix
-        tempCamera.aspect =
-            (originalWidth * scaleFactor) / (originalHeight * scaleFactor);
-        tempCamera.updateProjectionMatrix();
-        // Render the scene and capture the screenshot
-        tempRenderer.render(sharedParams.scene, tempCamera);
-        const screenshotData = tempRenderer.domElement.toDataURL("image/png");
-        const unixTime = Math.floor(Date.now() / 1000);
-
-        // Download or save the screenshot
-        await downloadScreenshotwithDiffCanvas(
-            screenshotData,
-            `model-${name}-${viewName}-${unixTime}.png`
-        );
-        imagesNameArr.push(
-            `./screenshots/model-${name}-${viewName}-${unixTime}.png`
-        );
-    } finally {
-        // Restore renderer size
-        tempRenderer.setSize(originalWidth, originalHeight, true);
-
-        // Restore camera properties
-        tempCamera.aspect = originalAspect;
-        tempCamera.position.copy(originalPosition);
-        tempCamera.rotation.copy(originalRotation);
-        tempCamera.quaternion.copy(originalQuaternion);
-        tempCamera.updateProjectionMatrix();
-    }
-}
-
-async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
-    const croppedImage = await removeBlankSpacesFromImage(dataUrl);
-    try {
-        const response = await fetch("api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                image: croppedImage,
-                filename: filename,
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-        } else {
-            console.error("Error saving screenshot:", data.error);
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-}
-
-function removeBlankSpacesFromImage(imageSrc) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = imageSrc;
-        img.onload = function () {
-            // Create a canvas to work with the image
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            // Draw the image onto the canvas
-            ctx.drawImage(img, 0, 0);
-
-            // Get the image data
-            const imageData = ctx.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-            const { data, width, height } = imageData;
-
-            let top = 0,
-                bottom = height,
-                left = 0,
-                right = width;
-
-            // Find the top boundary
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        top = y;
-                        break;
-                    }
-                }
-                if (top !== 0) break;
-            }
-
-            // Find the bottom boundary
-            for (let y = height - 1; y >= 0; y--) {
-                for (let x = 0; x < width; x++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        bottom = y;
-                        break;
-                    }
-                }
-                if (bottom !== height) break;
-            }
-
-            // Find the left boundary
-            for (let x = 0; x < width; x++) {
-                for (let y = 0; y < height; y++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        left = x;
-                        break;
-                    }
-                }
-                if (left !== 0) break;
-            }
-
-            // Find the right boundary
-            for (let x = width - 1; x >= 0; x--) {
-                for (let y = 0; y < height; y++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        right = x;
-                        break;
-                    }
-                }
-                if (right !== width) break;
-            }
-
-            // Crop dimensions
-            const cropWidth = right - left + 1;
-            const cropHeight = bottom - top + 1;
-
-            // Draw the cropped image
-            const croppedCanvas = document.createElement("canvas");
-            const croppedCtx = croppedCanvas.getContext("2d");
-            croppedCanvas.width = cropWidth;
-            croppedCanvas.height = cropHeight;
-
-            croppedCtx.drawImage(
-                canvas,
-                left,
-                top,
-                cropWidth,
-                cropHeight,
-                0,
-                0,
-                cropWidth,
-                cropHeight
-            );
-
-            // Convert cropped canvas to a new image
-            const croppedImage = croppedCanvas.toDataURL();
-            resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
-        };
-
-        img.onerror = reject; // In case of an error, reject the promise
-    });
-}
-
-async function captureFixtureImage(
-    tempCamera,
-    tempRenderer,
-    model,
-    MainmodelName,
-    imagesNameArr
-) {
-    for (const modelChild of model.children) {
-        if (!modelChild.visible) continue;
-        const CloneModel = modelChild.clone();
-        await cloneWithCustomHangerProperties(modelChild, CloneModel);
-        const Frame = CloneModel.getObjectByName("Frame");
-        for (const child of Frame.children) {
-            if (child.name.startsWith("Hanger_")) {
-                let HangerModel;
-                await traverseAsync(child, async (subChild) => {
-                    if (
-                        subChild.parent.name !== "Frame" &&
-                        subChild.name !== "Hanger_Stand" &&
-                        subChild.name !== "Hanger_StandX" &&
-                        subChild.parent !== null
-                    ) {
-                        subChild.parent.remove(subChild);
-                    } else if (subChild.name !== "Hanger_Stand") {
-                        subChild.visible = false;
-                    } else if (subChild.name !== "Hanger_StandX") {
-                        subChild.visible = false;
-                    } else {
-                        HangerModel = subChild;
-                    }
-                });
-                const hangerNames = imagesNameArr
-                    .map((url) => url.split("/").pop()) // Get the file name
-                    .filter(
-                        (name) =>
-                            name.includes("Hanger") &&
-                            name.includes(MainmodelName)
-                    ) // Check for "Hanger" and "MainmodelName"
-                    .map((name) => name.split("-")[2]); // Extract the part starting with "Hanger"
-                if (!hangerNames.includes(child.name) && HangerModel) {
-                    modelChild.visible = false; // hide the model
-                    HangerModel.rotation.y = Math.PI;
-                    HangerModel.name = "hangerForPreview_";
-                    sharedParams.scene.add(HangerModel);
-                    const box = new THREE.Box3().setFromObject(HangerModel);
-                    const size = box.getSize(new THREE.Vector3());
-                    const center = box.getCenter(new THREE.Vector3());
-                    if (child.name === "Hanger_Rail_Step") {
-                        tempRenderer.setSize((size.x + size.z) * 5, size.z * 5);
-                    } else if (child.name === "Hanger_Rail_Single") {
-                        tempRenderer.setSize((size.x + size.z) * 4, size.z * 4);
-                    } else if (child.name === "Hanger_Rail_D_500mm") {
-                        tempRenderer.setSize(size.x * 2, (size.x + size.y) * 2);
-                    } else if (child.name === "Hanger_Rail_D_1000mm") {
-                        tempRenderer.setSize(
-                            size.x * 1.5,
-                            (size.x + size.y) * 2
-                        );
-                    } else {
-                        tempRenderer.setSize((size.x + size.z) * 3, size.z * 3);
-                    }
-                    const maxDim = Math.max(size.x, size.y, size.x);
-                    const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-                    tempCamera.position.set(
-                        center.x + cameraDistance, // Offset in X for diagonal perspective
-                        center.y + 200, // Offset in Y for better centering
-                        center.z + (cameraDistance + 500) // Offset in Z for distance
-                    );
-                    tempCamera.lookAt(center);
-                    await renderAndDownload(
-                        child.name,
-                        tempCamera,
-                        tempRenderer,
-                        MainmodelName,
-                        imagesNameArr
-                    );
-                    sharedParams.scene.remove(HangerModel);
-                    modelChild.visible = true;
-                }
-            }
-        }
-    }
-}
-
-function cloneRenderer() {
-    // Create a new WebGLRenderer with the same parameters as the original
-    const parameters = {
-        // antialias: sharedParams.renderer.antialias,
-        // alpha: sharedParams.renderer.alpha,
-        // precision: sharedParams.renderer.precision,
-        // stencil: sharedParams.renderer.stencil,
-        // preserveDrawingBuffer: sharedParams.renderer.preserveDrawingBuffer,
-        // powerPreference: sharedParams.renderer.powerPreference,
-    };
-
-    const newRenderer = new THREE.WebGLRenderer(parameters);
-
-    // Copy size
-    const size = sharedParams.renderer.getSize(new THREE.Vector2());
-    newRenderer.setSize(size.width, size.height, false);
-
-    // Copy pixel ratio
-    newRenderer.setPixelRatio(sharedParams.renderer.getPixelRatio());
-    newRenderer.toneMapping = THREE.NoToneMapping;
-    return newRenderer;
-}
-
-async function captureModelImages() {
-    let imagesNameArr = [];
-    sharedParams.scene.background = null; // No background color for transparency
-
-    // Store original camera position and rotation
-    const originalPosition = sharedParams.camera.position.clone();
-    const originalRotation = sharedParams.camera.rotation.clone();
-    const originalQuaternion = sharedParams.camera.quaternion.clone();
-
-    // Calculate bounding box for the model group
-    const Outerbox = await cloneMainModelGroup(sharedParams.modelGroup);
-    const outerSize = Outerbox.getSize(new THREE.Vector3());
-    const outerCenter = Outerbox.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(outerSize.x, outerSize.y, outerSize.z);
-    const fov = sharedParams.camera.fov * (Math.PI / 180);
-
-    // Adjusted distance calculation - reduced divisor for closer view
-    const distance = Math.abs(maxDim / Math.sin(fov / 2) / 2.5); // Changed from 1.5 to 3.5 for closer view
-
-    // Optional: Add a slight elevation to the camera
-    const heightOffset = outerSize.y * 0.1; // 10% of model height
-
-    for (const model of sharedParams.modelGroup.children) {
-        let isCorn = false;
-        sharedParams.renderer.setClearColor(0x000000, 0);
-
-        // Hide Cone if present
-        for (const modelChild of model.children) {
-            if (modelChild.visible) {
-                modelChild.traverse((node) => {
-                    if (node.name === "Cone" && node.visible === true) {
-                        isCorn = true;
-                        node.visible = false;
-                    }
-                });
-            }
-        }
-
-        // Hide other models
-        sharedParams.scene.children.forEach((childScene) => {
-            if (childScene.name === "main_group") {
-                childScene.children.forEach((child) => {
-                    if (child.name !== model.name) {
-                        child.visible = false;
-                    }
-                });
-            }
-        });
-
-        // Step 1: Calculate the bounding box for the current model
-        let modelSize = await cloneModelGroup(model);
-        const box = new THREE.Box3().setFromObject(modelSize[0]);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-
-        // Prepare a temporary canvas for rendering
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = size.x;
-        tempCanvas.height = size.y;
-        const tempRenderer = cloneRenderer();
-        tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
-        tempRenderer.setClearColor(0x000000, 0);
-
-        // Set up an orthographic camera based on the bounding box size
-        const frontCamera = new THREE.OrthographicCamera(
-            -size.x / 2,
-            size.x / 2,
-            size.y / 2,
-            -size.y / 2,
-            0.5,
-            10000
-        );
-
-        // Step 2a: Front view - Set the camera position to capture the front of the model
-        frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
-        frontCamera.lookAt(center);
-        await renderAndDownload(
-            "front",
-            frontCamera,
-            tempRenderer,
-            model.name,
-            imagesNameArr
-        );
-
-        // Side view
-        tempCanvas.width = 1602;
-        tempCanvas.height = 2005;
-        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-        const sideCamera = new THREE.OrthographicCamera(
-            -1602,
-            1602,
-            2005,
-            -2005,
-            1,
-            10000
-        );
-        // Position the camera along the positive X-axis for a side view
-        const sideViewDistance = size.x + 1000;
-        sideCamera.position.set(
-            center.x + sideViewDistance,
-            center.y,
-            center.z
-        );
-        sideCamera.lookAt(center);
-
-        // Wait for side view render to complete
-        await renderAndDownload(
-            "side",
-            sideCamera,
-            tempRenderer,
-            model.name,
-            imagesNameArr
-        );
-
-        // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
-        tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-        tempCanvas.height = size.y; // Use both y and z for better height coverage
-        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
-        const diagonalCamera = new THREE.PerspectiveCamera(
-            45,
-            size.x / size.y,
-            100,
-            100000
-        );
-
-        const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-        const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-
-        diagonalCamera.position.set(
-            center.x + cameraDistance, // Offset in X for diagonal perspective
-            center.y, // Offset in Y for better centering
-            center.z + cameraDistance + 500 // Offset in Z for distance
-        );
-
-        diagonalCamera.lookAt(center);
-        await renderAndDownload(
-            "diagonal",
-            diagonalCamera,
-            tempRenderer,
-            model.name,
-            imagesNameArr
-        );
-
-        diagonalCamera.position.set(
-            center.x + cameraDistance, // Offset in X for diagonal perspective
-            center.y + 100, // Offset in Y for better centering
-            center.z + cameraDistance + 500 // Offset in Z for distance
-        );
-
-        await captureFixtureImage(
-            diagonalCamera,
-            tempRenderer,
-            model,
-            model.name,
-            imagesNameArr
-        );
-
-        // Restore visibility
-        sharedParams.scene.children.forEach((childScene) => {
-            if (childScene.name === "main_group") {
-                childScene.children.forEach((child) => {
-                    child.visible = true;
-                });
-            }
-        });
-
-        // Restore Cone visibility
-        if (isCorn) {
-            for (const modelChild of model.children) {
-                modelChild.traverse((node) => {
-                    if (node.name === "Cone") {
-                        node.visible = true;
-                    }
-                });
-            }
-        }
-    }
-
-    for (const modelChild of sharedParams.modelGroup.children) {
-        modelChild.traverse((node) => {
-            if (node.name === "Cone") {
-                node.visible = false;
-            }
-        });
-    }
-
-    const wholeModelDistance = distance + 1000; // Slightly closer for wholeModel view
-    sharedParams.camera.position.set(
-        wholeModelDistance * Math.cos(Math.PI / 4) + 500,
-        heightOffset,
-        wholeModelDistance * Math.cos(Math.PI / 4) + 500
-    );
-    sharedParams.camera.lookAt(outerCenter);
-    await renderAndDownload(
-        "wholeModel",
-        sharedParams.camera,
-        sharedParams.renderer,
-        sharedParams.modelGroup.name,
-        imagesNameArr
-    );
-
-    // Restore original camera position and rotation
-    sharedParams.camera.position.copy(originalPosition);
-    sharedParams.camera.rotation.copy(originalRotation);
-    sharedParams.camera.quaternion.copy(originalQuaternion);
-
-    // Restore scene background
-    sharedParams.scene.backgroundBlurriness = params.blurriness;
-    sharedParams.texture_background.mapping =
-        THREE.EquirectangularReflectionMapping;
-    sharedParams.scene.background = sharedParams.texture_background;
-    sharedParams.scene.environment = sharedParams.texture_background;
-
-    return imagesNameArr;
-}
-
-// if (takeScreenShot) {
-//   takeScreenShot.addEventListener("click", async function () {
-//     await captureModelImages(modelGroup);
-//   });
-// }
-// ----------------------------------------------------------------------------------------------------------
-
-if (uiManager.elements.createQrButton) {
-    uiManager.elements.createQrButton.addEventListener(
-        "click",
-        async function () {
-            showLoadingModal("Please wait... we are creating your QR Code");
-            const unixTimestamp = Math.floor(Date.now() / 1000);
-            const modelName = `main_group_${unixTimestamp}`;
-            const exportedModelFileUrl = `/export_models/${modelName}`;
-            const isQr = true;
-            const closeBtn = document.getElementById("closeBtn");
-            const showQRHere = document.getElementById("showQRHere");
-            closeBtn.addEventListener("click", async function () {
-                showQRHere.style.display = "none";
-            });
-            await exportModelForAr(sharedParams.modelGroup, modelName, isQr);
-            const data = {};
-            data["action"] = "create_qr_code";
-            data["url"] = exportedModelFileUrl;
-
-            const qr_data = JSON.stringify(data);
-            fetch("api.php", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: qr_data,
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
-                        console.log("Qr Code generate successfully!");
-                        document.getElementById("qrImage").src = data.url;
-                        hideLoadingModal();
-                        showQRHere.style.display = "flex";
-                    } else {
-                        console.error("Error saving model data:", data.error);
-                        hideLoadingModal();
-                    }
-                });
-        }
-    );
-}
-
-// ----------------------------------------------------------------------------------------------------------
-async function generateArModel() {
-    const unixTimestamp = Math.floor(Date.now() / 1000);
-    const modelName = `main_group_${unixTimestamp}`;
-    const exportedModelFileUrl = `./export_models/${modelName}`;
-
-    await exportModelForAr(sharedParams.modelGroup, modelName);
-
-    // Check if the file exists
-    if (await checkFileExists(exportedModelFileUrl)) {
-        hideLoadingModal();
-        await showARModel(exportedModelFileUrl);
-        // Configure model viewer attributes
-        // const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        // if (/iPhone|iPad|iPod/.test(userAgent)) {
-        //   let ViewArForIos = document.getElementById("ViewArForIos");
-        //   ViewArForIos.style.display = "block";
-        //   ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-        //   ViewArForIos.click();
-        // } else if (/Android/.test(userAgent)) {
-        //   // Create or update the AR viewer
-        //   const modelViewer = document.getElementById("modelViewer");
-        //   let ArViewer = document.getElementById("ArView");
-        //   ArViewer.style.display = "block";
-        //   modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-        //   modelViewer.setAttribute("ar-modes", "scene-viewer");
-        //   modelViewer.addEventListener("load", () => {
-        //     modelViewer.enterAR();
-        //   });
-        // } else {
-        //   alert("This feature is only supported on iOS and Android devices.");
-        // }
-    } else {
-        console.error("File was not found within the expected time.");
-        hideLoadingModal();
-    }
-}
-async function showARModel(exportedModelFileUrl) {
-    const userAgent = navigator.userAgent;
-
-    // Create loading screen elements
-    const loadingScreen = document.createElement("div");
-    loadingScreen.className = "ar-loading-screen";
-
-    const spinner = document.createElement("div");
-    spinner.className = "ar-loading-spinner";
-
-    const progressBar = document.createElement("div");
-    progressBar.className = "ar-progress-bar";
-
-    const progressFill = document.createElement("div");
-    progressFill.className = "ar-progress-fill";
-
-    const loadingText = document.createElement("div");
-    loadingText.className = "ar-loading-text";
-    loadingText.textContent = "Preparing AR Experience...";
-
-    progressBar.appendChild(progressFill);
-    loadingScreen.appendChild(spinner);
-    loadingScreen.appendChild(progressBar);
-    loadingScreen.appendChild(loadingText);
-    document.body.appendChild(loadingScreen);
-
-    // Function to update progress
-    function updateProgress(percent) {
-        progressFill.style.width = `${percent}%`;
-        loadingText.textContent = `Loading AR Model: ${Math.round(percent)}%`;
-    }
-
-    // Function to remove loading screen
-    function removeLoadingScreen() {
-        loadingScreen.remove();
-    }
-
-    if (/iPhone|iPad|iPod/.test(userAgent)) {
-        // For iOS devices
-        fetch(`${exportedModelFileUrl}.usdz`)
-            .then((response) => {
-                const reader = response.body.getReader();
-                const contentLength = +response.headers.get("Content-Length");
-                let receivedLength = 0;
-
-                return new ReadableStream({
-                    start(controller) {
-                        function push() {
-                            reader.read().then(({ done, value }) => {
-                                if (done) {
-                                    controller.close();
-                                    return;
-                                }
-                                receivedLength += value.length;
-                                const progress =
-                                    (receivedLength / contentLength) * 100;
-                                updateProgress(progress);
-                                controller.enqueue(value);
-                                push();
-                            });
-                        }
-                        push();
-                    },
-                });
-            })
-            .then(() => {
-                let ViewArForIos = document.getElementById("ViewArForIos");
-                ViewArForIos.style.display = "block";
-                ViewArForIos.href = `${exportedModelFileUrl}.usdz`;
-                ViewArForIos.click();
-                removeLoadingScreen();
-            })
-            .catch((error) => {
-                loadingText.textContent =
-                    "Error loading AR model. Please try again.";
-                console.error("Error:", error);
-                setTimeout(removeLoadingScreen, 2000);
-            });
-    } else if (/Android/.test(userAgent)) {
-        // For Android devices
-        const modelViewer = document.getElementById("modelViewer");
-        let ArViewer = document.getElementById("ArView");
-        // Show loading screen
-        ArViewer.style.display = "block";
-
-        fetch(`${exportedModelFileUrl}.glb`)
-            .then((response) => {
-                const reader = response.body.getReader();
-                const contentLength = +response.headers.get("Content-Length");
-                let receivedLength = 0;
-
-                return new ReadableStream({
-                    start(controller) {
-                        function push() {
-                            reader.read().then(({ done, value }) => {
-                                if (done) {
-                                    controller.close();
-                                    return;
-                                }
-                                receivedLength += value.length;
-                                const progress =
-                                    (receivedLength / contentLength) * 100;
-                                updateProgress(progress);
-                                controller.enqueue(value);
-                                push();
-                            });
-                        }
-                        push();
-                    },
-                });
-            })
-            .then(() => {
-                modelViewer.setAttribute("src", `${exportedModelFileUrl}.glb`);
-                modelViewer.setAttribute("ar-modes", "scene-viewer");
-                modelViewer.addEventListener("load", () => {
-                    removeLoadingScreen();
-                    modelViewer.enterAR();
-                });
-            })
-            .catch((error) => {
-                loadingText.textContent =
-                    "Error loading AR model. Please try again.";
-                console.error("Error:", error);
-                setTimeout(removeLoadingScreen, 2000);
-            });
-    } else {
-        removeLoadingScreen();
-        alert("This feature is only supported on iOS and Android devices.");
-    }
-}
-
-if (uiManager.elements.showInAR) {
-    uiManager.elements.showInAR.addEventListener("click", async function () {
-        showLoadingModal("Please wait... we are creating your AR model file");
-        await generateArModel();
-    });
-}
-// ----------------------------------------------------------------------------------------------------------
-async function creatingPDF() {
-    sharedParams.transformControls.detach();
-    await traverseAsync(sharedParams.modelGroup, async (child) => {
-        if (
-            hangerNames.includes(child.name) &&
-            child.hangerArrayKey &&
-            child.hangerCount
-        ) {
-            params.hangerAdded = params.hangerAdded || {};
-            params.hangerAdded[child.hangerArrayKey] =
-                params.hangerAdded[child.hangerArrayKey] || {};
-            params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
-                child.position;
-        }
-        if (
-            rackNames.includes(child.name) &&
-            child.rackArrayKey &&
-            child.rackCount
-        ) {
-            // console.log("params.rackAdded", params.rackAdded);
-            // console.log("child", child);
-            // console.log("child.name", child.name);
-
-            params.rackAdded = params.rackAdded || {};
-            params.rackAdded[child.rackArrayKey] =
-                params.rackAdded[child.rackArrayKey] || {};
-            params.rackAdded[child.rackArrayKey][child.rackCount] =
-                child.position;
-        }
-    });
-    let ModelImageName = await captureModelImages();
-
-    const dataToSave = {
-        params: params || null,
-        setting: setting || null,
-        group_names: allGroupNames || null,
-        top_frame_croped_image: sharedParams.topFrameCropedImage || null,
-        main_frame_croped_image: sharedParams.mainFrameCropedImage || null,
-        ModelImageName: ModelImageName || null,
-    };
-    await delay(1000);
-    await savePdfData(dataToSave, sharedParams.modelGroup);
-}
-
-if (uiManager.elements.savePdfButton) {
-    uiManager.elements.savePdfButton.addEventListener(
-        "click",
-        async (event) => {
-            if (
-                !localStorage.getItem("user_id") &&
-                !localStorage.getItem("username")
-            ) {
-                document.querySelector(".loginFormDiv").style.display = "flex";
-                return;
-            } else {
-                document.getElementById("loadingModal").style.display = "flex";
-                document.getElementById("loadingText").innerHTML =
-                    "Please wait... we are creating your Pdf file";
-                try {
-                    await creatingPDF();
-                } catch (error) {
-                    console.error("Error creating PDF:", error);
-                }
-            }
-        }
-    );
-}
-// ----------------------------------------------------------------------------------------------------------
-if (uiManager.elements.formSubmition) {
-    uiManager.elements.formSubmition.addEventListener("click", function () {
-        if (
-            !localStorage.getItem("user_id") &&
-            !localStorage.getItem("username")
-        ) {
-            document.querySelector(".loginFormDiv").style.display = "flex";
-            return;
-        } else {
-            formModel.style.display = "flex";
-        }
-    });
-}
-if (uiManager.elements.formCloseBtn) {
-    uiManager.elements.formCloseBtn.addEventListener("click", function () {
-        formModel.style.display = "none";
-        const form = document.getElementById("FormSubmitionForMonday");
-        if (form) {
-            form.classList.remove("was-validated");
-        }
-        hideLoadingModal();
-    });
-}
-if (uiManager.elements.submitForm) {
-    uiManager.elements.submitForm.addEventListener("click", function () {
-        showLoadingModal("Please wait... the form submitting");
-        const form = document.getElementById("FormSubmitionForMonday");
-        let hasError = false;
-        const specialCharRegex = /[^a-zA-Z0-9\s]/;
-        // Form fields to validate
-        const fieldsToValidate = [
-            {
-                field: document.getElementById("name"),
-                errorMessage:
-                    "Name cannot contain special characters like - ' \" ? / > <.",
-            },
-            {
-                field: document.getElementById("companyName"),
-                errorMessage:
-                    "Company name cannot contain special characters like - ' \" ? / > <.",
-            },
-        ];
-        // Validate each field
-        fieldsToValidate.forEach(({ field, errorMessage }) => {
-            const invalidFeedback = field.nextElementSibling; // Assuming the invalid-feedback is the next sibling after input
-            const valueText = invalidFeedback.textContent;
-
-            if (specialCharRegex.test(field.value)) {
-                field.classList.add("is-invalid"); // Add is-invalid class
-                invalidFeedback.textContent = errorMessage; // Set the custom error message
-                invalidFeedback.style.display = "block"; // Make sure the error message is visible
-                hasError = true; // Set the error flag
-            } else if (field.value === "") {
-                invalidFeedback.style.display = "block"; // Hide the error message
-            } else {
-                field.classList.remove("is-invalid"); // Remove is-invalid class if valid
-                invalidFeedback.textContent = valueText; // Clear any error message
-                invalidFeedback.style.display = "none"; // Hide the error message
-            }
-        });
-
-        if (form) {
-            if (!form.checkValidity()) {
-                form.classList.add("was-validated");
-            } else if (hasError) {
-                return;
-            } else {
-                const formBase = document.getElementById("formBase");
-                formBase.style.display = "none";
-                // Prevent the default form submission
-                event.preventDefault();
-                // Show the modal
-                const modal = document.getElementById("confirmationModal");
-                modal.style.display = "flex"; // Or use a library method to show
-
-                document.getElementById("confirModelCloseButtton").onclick =
-                    () => {
-                        modal.style.display = "none";
-                        formModel.style.display = "none";
-                        hideLoadingModal();
-                    };
-
-                // Handle modal buttons
-                document.getElementById("yesButton").onclick =
-                    async function () {
-                        modal.style.display = "none"; // Hide modal
-                        formModel.style.display = "none";
-                        try {
-                            await creatingPDF();
-                            await delay(500);
-                            await generateArModel();
-                            await formSubmitionForMonday();
-                        } catch (e) {
-                            console.log("error while submitting Data, ", e);
-                        }
-                    };
-
-                document.getElementById("noButton").onclick =
-                    async function () {
-                        modal.style.display = "none"; // Hide modal
-                        formModel.style.display = "none";
-                        await formSubmitionForMonday();
-                        hideLoadingModal();
-                    };
-            }
-        }
-    });
-}
-
-async function formSubmitionForMonday() {
-    const formForMonday = document.getElementById("FormSubmitionForMonday");
-    const formDataForMonday = new FormData(formForMonday);
-    try {
-        const response = await fetch("api.php", {
-            method: "POST",
-            body: formDataForMonday,
-        });
-        const data = await response.json();
-        hideLoadingModal();
-        return data; // Ensure the resolved data is returned
-    } catch (error) {
-        console.error("Error while submitting form: ", error);
-        throw error; // Re-throw the error to handle it at the calling point
-    }
-}
-
 // ----------------------------------------------------------------------------------------------------------
 // Initialize Bootstrap tooltips
 document.addEventListener("DOMContentLoaded", function () {
@@ -2006,39 +816,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-if (uiManager.elements.registerForm) {
-    uiManager.elements.registerForm.addEventListener("click", async () => {
-        document.querySelector(".loginFormDiv").style.display = "none";
-        document.querySelector(".registerFormDiv").style.display = "flex";
-    });
-}
-if (uiManager.elements.LoginForm) {
-    uiManager.elements.LoginForm.addEventListener("click", async () => {
-        document.querySelector(".registerFormDiv").style.display = "none";
-        document.querySelector(".loginFormDiv").style.display = "flex";
-    });
-}
-
-if (uiManager.elements.loginRegisterClose) {
-    uiManager.elements.loginRegisterClose.addEventListener(
-        "click",
-        async () => {
-            document.getElementById("loginEmail").value = null;
-            document.getElementById("loginPassword").value = null;
-            document.getElementById("loginEmailError").innerHTML = null;
-            document.getElementById("loginPasswordError").innerHTML = null;
-            document.getElementById("responseErr").style.display = "none";
-            document.getElementById("registerUsername").value = null;
-            document.getElementById("registerEmail").value = null;
-            document.getElementById("registerPassword").value = null;
-            document.getElementById("registerUsernameError").innerHTML = null;
-            document.getElementById("registerEmailError").innerHTML = null;
-            document.getElementById("registerPasswordError").innerHTML = null;
-            document.querySelector(".loginFormDiv").style.display = "none";
-            document.querySelector(".registerFormDiv").style.display = "none";
-        }
-    );
-}
 
 document.getElementById("loginButton").addEventListener("click", function () {
     const email = document.getElementById("loginEmail").value.trim();
@@ -2117,9 +894,8 @@ function createSession(userId, username) {
     localStorage.setItem("user_id", userId);
     localStorage.setItem("username", username);
 }
-document
-    .getElementById("registerButton")
-    .addEventListener("click", function () {
+
+document.getElementById("registerButton").addEventListener("click", function () {
         const username = document
             .getElementById("registerUsername")
             .value.trim();

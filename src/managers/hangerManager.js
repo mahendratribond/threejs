@@ -10,9 +10,9 @@ import { commonMaterial } from "./MaterialManager.js";
 import {
     THREE,
     params,
-    golfClubNames,
     setting,
     rackNames,
+    golfClubNames,
     hangerNames, sharedParams,
 } from "../../config.js";
 
@@ -158,6 +158,7 @@ export async function addHangers(hangerType, lastside = null, position = null) {
 
                             removeHangerIcon.visible = false;
                             hanger.add(removeHangerIcon);
+                            hanger.removeIcon = removeHangerIcon;
                             frame.attach(hanger);
 
                             // Update removeHanger to always face the camera

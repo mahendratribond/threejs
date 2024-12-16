@@ -23,11 +23,11 @@ export async function setMainFrameCropedImage(
     main_model.traverse(async function (child) {
       if (frameMainNames.includes(child.name)) {
         child.material = child.material.clone();
-        child.material.color.set(await getHex(params.mainFrameBackgroundColor));
+        child.material.color.set(getHex(params.mainFrameBackgroundColor));
         child.material.needsUpdate = true;
       }
     });
-    const mainFrameBackgroundColor = await getHex(
+    const mainFrameBackgroundColor = getHex(
       setting[selectedGroupName].mainFrameBackgroundColor
     );
     const tempCanvas = document.createElement("canvas");
@@ -72,7 +72,7 @@ export async function setMainFrameCropedImage(
     };
   } else {
     if (sharedParams.modelGroup !== undefined) {
-      const mainFrameBackgroundColor = await getHex(
+      const mainFrameBackgroundColor = getHex(
         setting[selectedGroupName].mainFrameBackgroundColor
       );
       let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
@@ -102,12 +102,12 @@ export async function setTopFrameCropedImage(topFrameCropedImage) {
     main_model.traverse(async function (child) {
       if (frameTop1Names.includes(child.name)) {
         child.material = child.material.clone();
-        child.material.color.set(await getHex(params.topFrameBackgroundColor));
+        child.material.color.set(getHex(params.topFrameBackgroundColor));
         child.material.needsUpdate = true;
       }
     });
 
-    const topFrameBackgroundColor = await getHex(
+    const topFrameBackgroundColor = getHex(
       setting[selectedGroupName].topFrameBackgroundColor
     );
     // console.log("here", topFrameBackgroundColor);
@@ -153,7 +153,7 @@ export async function setTopFrameCropedImage(topFrameCropedImage) {
     };
   } else {
     if (sharedParams.modelGroup !== undefined) {
-      const topFrameBackgroundColor = await getHex(
+      const topFrameBackgroundColor = getHex(
         setting[selectedGroupName].topFrameBackgroundColor
       );
       console.log("ffff", topFrameBackgroundColor);

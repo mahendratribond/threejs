@@ -62,8 +62,9 @@ export let sharedParams = {
     modelGroup: null,
     support_base_middle: null,
     support_base_side: null,
-    //   previousData: null,
+    previousData: null,
     selectedGroup: null,
+    removeIcon: null,
 };
 
 export let allGroups = [];
@@ -173,6 +174,7 @@ export let modelQueue = [
     "slotted_sides_model.glb",
     "support_base_middle.glb",
     "support_base_sides.glb",
+    "removeIcon.glb",
 ];
 
 // Parameters for Three.js configuration

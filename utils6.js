@@ -28,6 +28,7 @@ import {
     headerNames,
     rackNames,
     params,
+    GLTFExporter,
     setting,
     allGroups,
     sharedParams,
@@ -42,7 +43,7 @@ import {
 } from "./src/managers/MeasurementManager.js";
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
 
-export async function getHex(value) {
+export function getHex(value) {
     return value.replace("0x", "#");
 }
 
@@ -50,54 +51,68 @@ export async function getHex(value) {
 export async function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+// async function exportModel(model, name) {
+//     model.position.set(0, 0, 0);
+//     model.updateMatrixWorld();
+//     const gltfExporter = new GLTFExporter();
+//     const result = await gltfExporter.parseAsync(model, { binary: true });
+//     const blob = new Blob([result], { type: "application/octet-stream" });
+//     const modellink = document.createElement("a");
+//     modellink.href = URL.createObjectURL(blob);
+//     modellink.download = name;
+//     modellink.click();
+// }
 
 export async function getRemoveIcon(removeIconName) {
     // Create the circle geometry for the remove icon
-    const removeIconCircleGeometry = new THREE.CircleGeometry(1, 32); // radius 1, 32 segments for smoothness
-    const removeIconCircleMaterial = new THREE.MeshBasicMaterial({
-        color: 0xff0000,
-        side: THREE.DoubleSide,
-    });
-    const removeIconCircleMesh = new THREE.Mesh(
-        removeIconCircleGeometry,
-        removeIconCircleMaterial
-    );
+    // const removeIconCircleGeometry = new THREE.CircleGeometry(1, 32); // radius 1, 32 segments for smoothness
+    // const removeIconCircleMaterial = new THREE.MeshBasicMaterial({
+    //     color: 0xff0000,
+    //     side: THREE.DoubleSide,
+    // });
+    // const removeIconCircleMesh = new THREE.Mesh(
+    //     removeIconCircleGeometry,
+    //     removeIconCircleMaterial
+    // );
 
-    // Create the cross lines for the remove icon
-    const crossMaterial = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        linewidth: 2,
-    });
+    // // Create the cross lines for the remove icon
+    // const crossMaterial = new THREE.LineBasicMaterial({
+    //     color: 0xffffff,
+    //     linewidth: 2,
+    // });
 
-    // Cross Line 1 (diagonal from top-left to bottom-right)
-    const crossGeometry1 = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-0.7, 0.7, 0), // start point (top-left)
-        new THREE.Vector3(0.7, -0.7, 0), // end point (bottom-right)
-    ]);
-    const crossLine1 = new THREE.Line(crossGeometry1, crossMaterial);
+    // // Cross Line 1 (diagonal from top-left to bottom-right)
+    // const crossGeometry1 = new THREE.BufferGeometry().setFromPoints([
+    //     new THREE.Vector3(-0.7, 0.7, 0), // start point (top-left)
+    //     new THREE.Vector3(0.7, -0.7, 0), // end point (bottom-right)
+    // ]);
+    // const crossLine1 = new THREE.Line(crossGeometry1, crossMaterial);
 
-    // Cross Line 2 (diagonal from top-right to bottom-left)
-    const crossGeometry2 = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0.7, 0.7, 0), // start point (top-right)
-        new THREE.Vector3(-0.7, -0.7, 0), // end point (bottom-left)
-    ]);
-    const crossLine2 = new THREE.Line(crossGeometry2, crossMaterial);
+    // // Cross Line 2 (diagonal from top-right to bottom-left)
+    // const crossGeometry2 = new THREE.BufferGeometry().setFromPoints([
+    //     new THREE.Vector3(0.7, 0.7, 0), // start point (top-right)
+    //     new THREE.Vector3(-0.7, -0.7, 0), // end point (bottom-left)
+    // ]);
+    // const crossLine2 = new THREE.Line(crossGeometry2, crossMaterial);
 
     // Create a group to hold the circle and cross
-    const removeIconGroup = new THREE.Group();
-    removeIconGroup.add(removeIconCircleMesh); // Add the circle
-    removeIconGroup.add(crossLine1); // Add first cross line
-    removeIconGroup.add(crossLine2); // Add second cross line
+    // const removeIconGroup = new THREE.Group();
+    // removeIconGroup.add(removeIconCircleMesh); // Add the circle
+    // removeIconGroup.add(crossLine1); // Add first cross line
+    // removeIconGroup.add(crossLine2); // Add second cross line
 
     // Set the group properties
-    removeIconGroup.scale.set(20, 20, 20); // You can adjust the scale as needed
-    removeIconGroup.name = removeIconName;
-    removeIconGroup.visible = true;
-
-    return removeIconGroup;
+    // removeIconGroup.scale.set(20, 20, 20); // You can adjust the scale as needed
+    let removeIcon = sharedParams.removeIcon.clone();
+    removeIcon.name = removeIconName;
+    removeIcon.visible = true;
+    console.log("removeIcon",removeIcon);
+    
+    // await exportModel(removeIcon, "removeIcon.glb")
+    return removeIcon.children[0];
 }
 
-export async function getRodCount(modelSize) {
+export function getRodCount(modelSize) {
     let additionalRods = 0;
     if (modelSize >= 3000) {
         additionalRods = 2; // 4 rods total
@@ -107,7 +122,7 @@ export async function getRodCount(modelSize) {
     return additionalRods;
 }
 
-export async function getSupportBaseCount(modelSize) {
+export function getSupportBaseCount(modelSize) {
     let additionalMiddleBase = 0;
     if (modelSize >= 3000) {
         additionalMiddleBase = 2; // 4 rods total
@@ -117,7 +132,7 @@ export async function getSupportBaseCount(modelSize) {
     return additionalMiddleBase;
 }
 
-export async function setPositionCenter(model) {
+export function setPositionCenter(model) {
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3()); // Get the center of the bounding box
     // model.position.y = -center.y
@@ -127,66 +142,7 @@ export async function setPositionCenter(model) {
     return model;
 }
 
-export async function setupMainModel(main_model) {
-    main_model.traverse(async (modelNode) => {
-        if (modelNode.name && modelNode.name.startsWith("Base_Option")) {
-            // if (modelNode.material && baseFrameTextureNames.includes(modelNode.name)) {
-            // const material = await commonMaterial(
-            //     parseInt(params.baseFrameColor, 16)
-            // );
-            // modelNode.material = material;
-            // modelNode.material.needsUpdate = true;
-            // }
-
-            commonMaterial(parseInt(params.baseFrameColor, 16))
-                .then((material) => {
-                    // This code runs after material is created
-                    modelNode.material = material;
-                    modelNode.material.needsUpdate = true;
-                })
-                .catch((error) => {
-                    console.error("Error creating material:", error);
-                });
-        }
-
-        if (allModelNames.includes(modelNode.name)) {
-            if (modelNode.name === params.defaultModel) {
-                modelNode.visible = true;
-            } else {
-                modelNode.visible = false;
-            }
-
-            let header_300 = modelNode.getObjectByName("Header");
-            if (header_300) {
-                header_300.name = header_300.name + "_" + 300;
-            }
-
-            let shelfModel = modelNode.getObjectByName("Header_Wooden_Shelf");
-            if (shelfModel) {
-                modelNode.isShelf = true;
-            } else {
-                modelNode.isShelf = false;
-            }
-
-            let glassShelfModel =
-                modelNode.getObjectByName("Header_Glass_Shelf");
-            if (glassShelfModel) {
-                modelNode.isGlassShelf = true;
-            } else {
-                modelNode.isGlassShelf = false;
-            }
-
-            let SlottedSideModel = modelNode.getObjectByName("Left_Ex_Slotted");
-            if (SlottedSideModel) {
-                modelNode.isSlottedSides = true;
-            } else {
-                modelNode.isSlottedSides = false;
-            }
-        }
-    });
-}
-
-export async function getModelNode(model, prefix) {
+export function getModelNode(model, prefix) {
     let pattern = new RegExp(`^${prefix}\\d{1,2}$`); // Matches names like Header_500_1, Header_600_2, etc.
 
     if (model && model.children) {
@@ -199,7 +155,7 @@ export async function getModelNode(model, prefix) {
     return null; // Return null if no match is found
 }
 
-export async function updateModelName(model, oldName, newName) {
+export function updateModelName(model, oldName, newName) {
     let pattern = new RegExp(`^${oldName}\\d{1,2}$`); // Matches names like oldName_500, oldName_600, etc.
     
     model.traverse((child) => {
@@ -207,13 +163,13 @@ export async function updateModelName(model, oldName, newName) {
             // console.log(pattern.test(child.name), "  -  ", child.name , "  -  ", child.parent.name);
             // If the child name matches the pattern
             // console.log('Updating:', child.name, 'to', newName);
-            child.name = newName+"X"; // Update the name directly
+            child.name = newName; // Update the name directly
         }
     });
     return model;
 }
 
-export async function cloneWithCustomProperties(source, target) {
+export function cloneWithCustomProperties(source, target) {
     for (let model of allModelNames) {
         let sourceModel = source.getObjectByName(model);
         let targetModel = target.getObjectByName(model);
@@ -228,611 +184,212 @@ export async function cloneWithCustomProperties(source, target) {
     }
 }
 
-export async function setupArrowModel() {
-    if (sharedParams.arrow_model) {
-        await sharedParams.arrow_model.traverse(async function (child) {
-            if (child.material) {
-                const material = await commonMaterial(parseInt("0x888888", 16));
-                child.material = material;
-                child.material.needsUpdate = true;
-            }
-        });
+// export async function setupArrowModel() {
+//     if (sharedParams.arrow_model) {
+//         await sharedParams.arrow_model.traverse(async function (child) {
+//             if (child.material) {
+//                 const material = await commonMaterial(parseInt("0x888888", 16));
+//                 child.material = material;
+//                 child.material.needsUpdate = true;
+//             }
+//         });
 
-        sharedParams.arrow_model = await setPositionCenter(
-            sharedParams.arrow_model
-        );
+//         sharedParams.arrow_model = await setPositionCenter(
+//             sharedParams.arrow_model
+//         );
 
-        await traverseAsync(
-            sharedParams.modelGroup,
-            async function (modelNode) {
-                if (allModelNames.includes(modelNode.name)) {
-                    const modelBox = new THREE.Box3().setFromObject(modelNode);
-                    const cone_model =
-                        sharedParams.arrow_model.getObjectByName("Cone");
-                    let cone = cone_model.clone();
+//         await traverseAsync(
+//             sharedParams.modelGroup,
+//             async function (modelNode) {
+//                 if (allModelNames.includes(modelNode.name)) {
+//                     const modelBox = new THREE.Box3().setFromObject(modelNode);
+//                     const cone_model =
+//                         sharedParams.arrow_model.getObjectByName("Cone");
+//                     let cone = cone_model.clone();
 
-                    cone = await setPositionCenter(cone);
-                    cone.scale.set(0.1, 0.1, 0.1);
-                    const coneBox = new THREE.Box3().setFromObject(cone);
-                    const coneHeight = coneBox.max.y - coneBox.min.y;
-                    // console.log('arrowHeight', coneHeight)
-                    // rod.name = rodName;
-                    // cone.scale.set(0.5, 0.5, 0.5)
-                    cone.position.set(
-                        modelNode.position.x, // Adjust based on offset
-                        modelBox.max.y + coneHeight / 2 + 210,
-                        // modelBox.min.y - coneHeight / 2 - 10,
-                        0
-                    );
-                    cone.rotation.x = Math.PI;
-                    cone.visible = false;
-                    modelNode.attach(cone);
-                }
-            }
-        );
-    }
-}
+//                     cone = await setPositionCenter(cone);
+//                     cone.scale.set(0.1, 0.1, 0.1);
+//                     const coneBox = new THREE.Box3().setFromObject(cone);
+//                     const coneHeight = coneBox.max.y - coneBox.min.y;
+//                     // console.log('arrowHeight', coneHeight)
+//                     // rod.name = rodName;
+//                     // cone.scale.set(0.5, 0.5, 0.5)
+//                     cone.position.set(
+//                         modelNode.position.x, // Adjust based on offset
+//                         modelBox.max.y + coneHeight / 2 + 210,
+//                         // modelBox.min.y - coneHeight / 2 - 10,
+//                         0
+//                     );
+//                     cone.rotation.x = Math.PI;
+//                     cone.visible = false;
+//                     modelNode.attach(cone);
+//                 }
+//             }
+//         );
+//     }
+// }
 
-export async function createRod(modelNode, modelSize) {
-    const additionalRods = await getRodCount(modelSize);
-    const header = modelNode.getObjectByName("Header_300");
+// export async function createRod(modelNode, modelSize) {
+//     const additionalRods = getRodCount(modelSize);
+//     const header = modelNode.getObjectByName("Header_300");
 
-    // Ensure both header and frame nodes exist
-    if (header) {
-        const headerBox = new THREE.Box3().setFromObject(header);
-        const headerSize = await getNodeSize(header); // Size of the current header
+//     // Ensure both header and frame nodes exist
+//     if (header) {
+//         const headerBox = new THREE.Box3().setFromObject(header);
+//         const headerSize = getNodeSize(header); // Size of the current header
 
-        let rodY = headerBox.min.y + params.rodSize.y / 2; //(frameSize.y / 2 + rodSize.y / 2);
-        let lassShelfFixingY = params.glassShelfFixingSize.y / 2; //(frameSize.y / 2 + glassShelfFixingSize.y / 2);
+//         let rodY = headerBox.min.y + params.rodSize.y / 2; //(frameSize.y / 2 + rodSize.y / 2);
+//         let lassShelfFixingY = params.glassShelfFixingSize.y / 2; //(frameSize.y / 2 + glassShelfFixingSize.y / 2);
 
-        // Function to create and position a rod
-        const createAndPositionRod = async (
-            xOffset,
-            rodName,
-            shelfFixingName
-        ) => {
-            let rod = sharedParams.header_rod_model.clone();
-            rod.name = rodName;
-            modelNode.add(rod);
-            rod = await setPositionCenter(rod);
-            rod.position.set(
-                header.position.x + xOffset, // Adjust based on offset
-                rod.position.y + rodY,
-                rod.position.z
-            );
-            rod.visible = false;
+//         // Function to create and position a rod
+//         const createAndPositionRod = async (
+//             xOffset,
+//             rodName,
+//             shelfFixingName
+//         ) => {
+//             let rod = sharedParams.header_rod_model.clone();
+//             rod.name = rodName;
+//             modelNode.add(rod);
+//             rod = await setPositionCenter(rod);
+//             rod.position.set(
+//                 header.position.x + xOffset, // Adjust based on offset
+//                 rod.position.y + rodY,
+//                 rod.position.z
+//             );
+//             rod.visible = false;
 
-            const rodBox = new THREE.Box3().setFromObject(rod);
+//             const rodBox = new THREE.Box3().setFromObject(rod);
 
-            let shelf_fixing =
-                sharedParams.header_glass_shelf_fixing_model.clone();
-            shelf_fixing.name = shelfFixingName;
-            modelNode.add(shelf_fixing);
-            // console.log('shelf_fixing.position', shelf_fixing.position)
-            shelf_fixing = await setPositionCenter(shelf_fixing);
-            // console.log('shelf_fixing.position update', shelf_fixing.position)
-            // shelf_fixing.position.y += headerBox.min.y + rodSize.y + lassShelfFixingY
-            shelf_fixing.position.set(
-                rod.position.x, // Adjust based on offset
-                shelf_fixing.position.y +
-                    headerBox.min.y +
-                    params.rodSize.y +
-                    lassShelfFixingY,
-                shelf_fixing.position.z
-            );
-            shelf_fixing.visible = false;
-        };
+//             let shelf_fixing =
+//                 sharedParams.header_glass_shelf_fixing_model.clone();
+//             shelf_fixing.name = shelfFixingName;
+//             modelNode.add(shelf_fixing);
+//             // console.log('shelf_fixing.position', shelf_fixing.position)
+//             shelf_fixing = await setPositionCenter(shelf_fixing);
+//             // console.log('shelf_fixing.position update', shelf_fixing.position)
+//             // shelf_fixing.position.y += headerBox.min.y + rodSize.y + lassShelfFixingY
+//             shelf_fixing.position.set(
+//                 rod.position.x, // Adjust based on offset
+//                 shelf_fixing.position.y +
+//                     headerBox.min.y +
+//                     params.rodSize.y +
+//                     lassShelfFixingY,
+//                 shelf_fixing.position.z
+//             );
+//             shelf_fixing.visible = false;
+//         };
 
-        let margin = 50;
+//         let margin = 50;
 
-        // Place the left and right rods first
-        await createAndPositionRod(
-            -headerSize.x / 2 + params.rodSize.x + margin,
-            "Rod",
-            "Glass_Shelf_Fixing"
-        ); // Left Rod
-        await createAndPositionRod(
-            headerSize.x / 2 - params.rodSize.x - margin,
-            "Rod",
-            "Glass_Shelf_Fixing"
-        ); // Right Rod
+//         // Place the left and right rods first
+//         await createAndPositionRod(
+//             -headerSize.x / 2 + params.rodSize.x + margin,
+//             "Rod",
+//             "Glass_Shelf_Fixing"
+//         ); // Left Rod
+//         await createAndPositionRod(
+//             headerSize.x / 2 - params.rodSize.x - margin,
+//             "Rod",
+//             "Glass_Shelf_Fixing"
+//         ); // Right Rod
 
-        // Determine and place additional rods based on modelSize
-        if (additionalRods > 0) {
-            const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
+//         // Determine and place additional rods based on modelSize
+//         if (additionalRods > 0) {
+//             const spacing = headerSize.x / (additionalRods + 1); // Calculate spacing between rods
 
-            // Place additional rods
-            for (let i = 1; i <= additionalRods; i++) {
-                let xOffset = -headerSize.x / 2 + i * spacing;
-                await createAndPositionRod(
-                    xOffset,
-                    "Rod",
-                    "Glass_Shelf_Fixing"
-                );
-            }
-        }
-    }
+//             // Place additional rods
+//             for (let i = 1; i <= additionalRods; i++) {
+//                 let xOffset = -headerSize.x / 2 + i * spacing;
+//                 await createAndPositionRod(
+//                     xOffset,
+//                     "Rod",
+//                     "Glass_Shelf_Fixing"
+//                 );
+//             }
+//         }
+//     }
 
-    return modelNode;
-}
-export async function createSupportBase(modelNode, modelSize) {
-    const additionalSupportBase = await getSupportBaseCount(modelSize);
-    const base = modelNode.getObjectByName("Base_Solid");
-    // Ensure both header and frame nodes exist
-    if (base) {
-        const baseBox = new THREE.Box3().setFromObject(modelNode);
-        const baseSize = await getNodeSize(modelNode); // Size of the current base
-        let positionY;
+//     return modelNode;
+// }
+// export async function createSupportBase(modelNode, modelSize) {
+//     const additionalSupportBase = await getSupportBaseCount(modelSize);
+//     const base = modelNode.getObjectByName("Base_Solid");
+//     // Ensure both header and frame nodes exist
+//     if (base) {
+//         const baseBox = new THREE.Box3().setFromObject(modelNode);
+//         const baseSize = getNodeSize(modelNode); // Size of the current base
+//         let positionY;
 
-        const bbox = new THREE.Box3();
-        bbox.expandByObject(sharedParams.support_base_side);
-        const modelWidth = bbox.min.y;
-        // let baseY = baseBox.min.y + params.rodSize.y / 4; //(frameSize.y / 2 + rodSize.y / 2);
-        let baseY = baseBox.min.y - modelWidth; //(frameSize.y / 2 + rodSize.y / 2);
-        // Function to create and position a rod
-        const createAndPositionBaseSide = async (xOffset, supportBaseName) => {
-            let supportSide = sharedParams.support_base_side.clone();
-            supportSide.name = supportBaseName;
-            modelNode.add(supportSide);
-            supportSide = await setPositionCenter(supportSide);
-            supportSide.position.set(
-                supportSide.position.x + xOffset, // Adjust based on offset
-                supportSide.position.y + baseY + 30,
-                supportSide.position.z
-            );
-            positionY = supportSide.position.y;
-            supportSide.visible = false;
+//         const bbox = new THREE.Box3();
+//         bbox.expandByObject(sharedParams.support_base_side);
+//         const modelWidth = bbox.min.y;
+//         // let baseY = baseBox.min.y + params.rodSize.y / 4; //(frameSize.y / 2 + rodSize.y / 2);
+//         let baseY = baseBox.min.y - modelWidth; //(frameSize.y / 2 + rodSize.y / 2);
+//         // Function to create and position a rod
+//         const createAndPositionBaseSide = async (xOffset, supportBaseName) => {
+//             let supportSide = sharedParams.support_base_side.clone();
+//             supportSide.name = supportBaseName;
+//             modelNode.add(supportSide);
+//             supportSide = await setPositionCenter(supportSide);
+//             supportSide.position.set(
+//                 supportSide.position.x + xOffset, // Adjust based on offset
+//                 supportSide.position.y + baseY + 30,
+//                 supportSide.position.z
+//             );
+//             positionY = supportSide.position.y;
+//             supportSide.visible = false;
 
-            const rodBox = new THREE.Box3().setFromObject(supportSide);
-        };
-        const createAndPositionBaseMiddle = async (
-            xOffset,
-            supportBaseName,
-            positionY
-        ) => {
-            let supportSide = sharedParams.support_base_middle.clone();
-            supportSide.name = supportBaseName;
-            modelNode.add(supportSide);
-            supportSide = await setPositionCenter(supportSide);
-            supportSide.position.set(
-                supportSide.position.x + xOffset, // Adjust based on offset
-                (supportSide.position.y = positionY),
-                supportSide.position.z
-            );
-            supportSide.visible = false;
+//             const rodBox = new THREE.Box3().setFromObject(supportSide);
+//         };
+//         const createAndPositionBaseMiddle = async (
+//             xOffset,
+//             supportBaseName,
+//             positionY
+//         ) => {
+//             let supportSide = sharedParams.support_base_middle.clone();
+//             supportSide.name = supportBaseName;
+//             modelNode.add(supportSide);
+//             supportSide = await setPositionCenter(supportSide);
+//             supportSide.position.set(
+//                 supportSide.position.x + xOffset, // Adjust based on offset
+//                 (supportSide.position.y = positionY),
+//                 supportSide.position.z
+//             );
+//             supportSide.visible = false;
 
-            const rodBox = new THREE.Box3().setFromObject(supportSide);
-        };
+//             const rodBox = new THREE.Box3().setFromObject(supportSide);
+//         };
 
-        let margin = 30;
+//         let margin = 30;
 
-        // Place the left and right rods first
-        await createAndPositionBaseSide(
-            -baseSize.x / 2 + margin,
-            "Base_Support_Sides"
-        ); // Left Rod
-        await createAndPositionBaseSide(
-            baseSize.x / 2 - margin,
-            "Base_Support_Sides"
-        ); // Right Rod
+//         // Place the left and right rods first
+//         await createAndPositionBaseSide(
+//             -baseSize.x / 2 + margin,
+//             "Base_Support_Sides"
+//         ); // Left Rod
+//         await createAndPositionBaseSide(
+//             baseSize.x / 2 - margin,
+//             "Base_Support_Sides"
+//         ); // Right Rod
 
-        // Determine and place additional rods based on modelSize
-        if (additionalSupportBase > 0) {
-            const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
+//         // Determine and place additional rods based on modelSize
+//         if (additionalSupportBase > 0) {
+//             const spacing = baseSize.x / (additionalSupportBase + 1); // Calculate spacing between rods
 
-            // Place additional rods
-            for (let i = 1; i <= additionalSupportBase; i++) {
-                let xOffset = -baseSize.x / 2 + i * spacing;
-                await createAndPositionBaseMiddle(
-                    xOffset,
-                    "Base_Support_Sides",
-                    positionY
-                );
-            }
-        }
-    }
+//             // Place additional rods
+//             for (let i = 1; i <= additionalSupportBase; i++) {
+//                 let xOffset = -baseSize.x / 2 + i * spacing;
+//                 await createAndPositionBaseMiddle(
+//                     xOffset,
+//                     "Base_Support_Sides",
+//                     positionY
+//                 );
+//             }
+//         }
+//     }
 
-    return modelNode;
-}
-
-export async function setupGlassShelfFixingModel() {
-    let modelSize;
-    if (sharedParams.header_glass_shelf_fixing_model) {
-        sharedParams.header_glass_shelf_fixing_model = await updateModelName(
-            sharedParams.header_glass_shelf_fixing_model,
-            "__Glass_Shelf_Fixing",
-            "Glass_Shelf_Fixing"
-        );
-    }
-    if (sharedParams.header_rod_model) {
-        await traverseAsync(
-            sharedParams.header_rod_model,
-            async function (child) {
-                if (
-                    child.material &&
-                    rodFrameTextureNames.includes(child.name)
-                ) {
-                    const material = await commonMaterial(
-                        parseInt(params.rodFrameColor, 16)
-                    );
-                    child.material = material;
-                    child.material.needsUpdate = true;
-                }
-            }
-        );
-    }
-
-    await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            modelSize = await getModelSize(modelNode.name);
-
-            if (
-                sharedParams.header_rod_model &&
-                sharedParams.header_glass_shelf_fixing_model
-            ) {
-                await createRod(modelNode, modelSize);
-            }
-        }
-    });
-}
-export async function setupSupportBaseModel() {
-    let modelSize;
-    if (sharedParams.support_base_middle) {
-        sharedParams.support_base_middle = await updateModelName(
-            sharedParams.support_base_middle,
-            "base_3_middle",
-            "Base_Support_Sides"
-        );
-    }
-    if (sharedParams.support_base_side) {
-        sharedParams.support_base_side = await updateModelName(
-            sharedParams.support_base_side,
-            "base_3_sides",
-            "Base_Support_Sides"
-        );
-    }
-
-    await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            modelSize = await getModelSize(modelNode.name);
-
-            if (
-                sharedParams.support_base_middle &&
-                sharedParams.support_base_side
-            ) {
-                await createSupportBase(modelNode, modelSize);
-            }
-        }
-    });
-}
-
-export async function setupHeader500HeightModel() {
-    let header;
-    if (sharedParams.header_500_height_model) {
-        await traverseAsync(
-            sharedParams.modelGroup,
-            async function (modelNode) {
-                if (allModelNames.includes(modelNode.name)) {
-                    let frame = modelNode.getObjectByName("Frame");
-                    const frameBox = new THREE.Box3().setFromObject(frame);
-
-                    let header_300 = modelNode.getObjectByName("Header_300");
-                    let header_500_model =
-                        sharedParams.header_500_height_model.getObjectByName(
-                            modelNode.name
-                        );
-                    const header500ModelSize = await getNodeSize(
-                        header_500_model
-                    );
-                    const header300ModelSize = await getNodeSize(header_300);
-
-                    if (header_300 && header_500_model) {
-                        header = await getModelNode(header_500_model, "Header");
-                        if (!header) {
-                            header = await getModelNode(
-                                header_500_model,
-                                "Header_"
-                            );
-                        }
-                        if (header) {
-                            header = await updateModelName(
-                                header,
-                                "Header_Frame_",
-                                "Header_Frame"
-                            );
-
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1",
-                                "Header_Graphic1"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1_",
-                                "Header_Graphic1"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1-Mat",
-                                "Header_Graphic1-Mat"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1-Mat_",
-                                "Header_Graphic1-Mat"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1-Fabric_Colour",
-                                "Header_Graphic1-Fabric_Colour"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic1-Fabric_Colour_",
-                                "Header_Graphic1-Fabric_Colour"
-                            );
-
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2",
-                                "Header_Graphic2"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2_",
-                                "Header_Graphic2"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2-Mat",
-                                "Header_Graphic2-Mat"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2-Mat_",
-                                "Header_Graphic2-Mat"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2-Fabric_Colour",
-                                "Header_Graphic2-Fabric_Colour"
-                            );
-                            header = await updateModelName(
-                                header,
-                                "Header_Graphic2-Fabric_Colour_",
-                                "Header_Graphic2-Fabric_Colour"
-                            );
-
-                            header.name = "Header_500";
-                            header.visible = false;
-                            header.position.y =
-                                frameBox.max.y + header500ModelSize.y / 2;
-                            modelNode.attach(header);
-                        }
-                    }
-                }
-            }
-        );
-    }
-}
-
-export async function setupHeaderWoodenShelfModel() {
-    await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            if (sharedParams.header_wooden_shelf_model) {
-                let model =
-                    sharedParams.header_wooden_shelf_model.getObjectByName(
-                        modelNode.name
-                    );
-                if (model) {
-                    const modelSize = await getNodeSize(model);
-                    const frame = modelNode.getObjectByName("Frame");
-                    const frameBox = new THREE.Box3().setFromObject(frame);
-
-                    if (frame) {
-                        let positionY = frameBox.max.y;
-                        if (params.rodSize) {
-                            positionY += params.rodSize.y;
-                        }
-                        positionY += modelSize.y / 2;
-                        model.name = "Header_Wooden_Shelf";
-                        model.visible = false;
-                        model.position.y = positionY;
-                        modelNode.attach(model);
-                    }
-                }
-            }
-        }
-    });
-}
-
-export async function setupHeaderGlassShelfModel() {
-    if (sharedParams.header_glass_shelf_model) {
-        sharedParams.header_glass_shelf_model.traverse(async function (child) {
-            if (child.material) {
-                child.material = await generateGlassMaterial();
-                // child.material = await commonMaterial(0xffffff)
-                child.material.needsUpdate = true;
-            }
-        });
-    }
-
-    await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            if (sharedParams.header_glass_shelf_model) {
-                let model =
-                    sharedParams.header_glass_shelf_model.getObjectByName(
-                        modelNode.name
-                    );
-                if (model) {
-                    const modelSize = await getNodeSize(model);
-                    const frame = modelNode.getObjectByName("Frame");
-                    const frameBox = new THREE.Box3().setFromObject(frame);
-
-                    if (frame) {
-                        // console.log('frame', frame)
-                        let positionY = frameBox.max.y;
-                        if (params.rodSize) {
-                            positionY += params.rodSize.y;
-                        }
-                        if (params.glassShelfFixingSize) {
-                            positionY += params.glassShelfFixingSize.y;
-                        }
-                        positionY -= modelSize.y / 2 + 0.5;
-                        model.name = "Header_Glass_Shelf";
-                        model.visible = false;
-                        model.position.y = positionY;
-                        modelNode.attach(model);
-                    }
-                }
-            }
-        }
-    });
-}
-
-export async function setupSlottedSidesModel() {
-    let slotted_left_side, slotted_right_side, frame;
-    if (sharedParams.slotted_sides_model) {
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Left_Ex_Slotted_",
-            "Left_Ex_Slotted"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Left_Ex_Slotted",
-            "Left_Ex_Slotted"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Left_Ex_Slotted-Inside_Profile_",
-            "Left_Ex_Slotted-Inside_Profile"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Left_Ex_Slotted-Frame_",
-            "Left_Ex_Slotted-Frame"
-        );
-
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Right_Ex_Slotted_",
-            "Right_Ex_Slotted"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Right_Ex_Slotted",
-            "Right_Ex_Slotted"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Right_Ex_Slotted-Inside_Profile_",
-            "Left_Ex_Slotted-Inside_Profile"
-        );
-        sharedParams.slotted_sides_model = await updateModelName(
-            sharedParams.slotted_sides_model,
-            "Right_Ex_Slotted-Frame_",
-            "Left_Ex_Slotted-Frame"
-        );
-    }
-
-    await traverseAsync(sharedParams.modelGroup, async function (modelNode) {
-        if (allModelNames.includes(modelNode.name)) {
-            frame = modelNode.getObjectByName("Frame");
-
-            if (sharedParams.slotted_sides_model) {
-                let slotted_sides_ = sharedParams.slotted_sides_model.clone();
-                let slotted_sides = slotted_sides_.getObjectByName(
-                    modelNode.name
-                );
-                if (slotted_sides) {
-                    slotted_left_side =
-                        slotted_sides.getObjectByName("Left_Ex_Slotted");
-                    if (slotted_left_side) {
-                        let leftSide = frame.getObjectByName("Left_Ex");
-                        let leftSideWorldPosition = new THREE.Vector3();
-                        leftSide.getWorldPosition(leftSideWorldPosition);
-                        slotted_left_side.visible = false;
-                        frame.attach(slotted_left_side);
-                        slotted_left_side.position.y = leftSide.position.y;
-                    }
-
-                    slotted_right_side =
-                        slotted_sides.getObjectByName("Right_Ex_Slotted");
-                    if (slotted_right_side) {
-                        let rightSide = frame.getObjectByName("Right_Ex");
-                        let rightSideWorldPosition = new THREE.Vector3();
-                        rightSide.getWorldPosition(rightSideWorldPosition);
-                        slotted_right_side.visible = false;
-                        frame.attach(slotted_right_side);
-                        slotted_right_side.position.y = rightSide.position.y;
-                    }
-                }
-            }
-
-            // console.log('frame', frame)
-        }
-    });
-}
-
-export async function setupWoodenRackModel(model) {
-    if (model) {
-        model = await updateModelName(
-            model,
-            "Rack_Wooden_Shelf_",
-            "Rack_Wooden_Shelf"
-        );
-        model = await updateModelName(model, "Rack_Stand_LH_", "Rack_Stand_LH");
-        model = await updateModelName(model, "Rack_Stand_LH", "Rack_Stand_LH");
-        model = await updateModelName(model, "Rack_Stand_RH_", "Rack_Stand_RH");
-        model = await updateModelName(model, "Rack_Stand_RH", "Rack_Stand_RH");
-        model.traverse(async function (child) {
-            if (child.material && rackPartNames.includes(child.name)) {
-                const material = await commonMaterial(
-                    parseInt(params.defaultRackColor, 16)
-                );
-                child.material = material;
-                child.material.needsUpdate = true;
-            }
-        });
-    }
-}
-
-export async function setupGlassRackModel(model) {
-    if (model) {
-        model = await updateModelName(
-            model,
-            "Rack_Glass_Shelf_",
-            "Rack_Glass_Shelf"
-        );
-        model = await updateModelName(model, "Rack_Stand_LH_", "Rack_Stand_LH");
-        model = await updateModelName(model, "Rack_Stand_RH_", "Rack_Stand_RH");
-
-        const glassMaterial = await generateGlassMaterial();
-        const defaultMaterial = await commonMaterial(
-            parseInt(params.defaultRackColor, 16)
-        );
-
-        model.traverse(async function (child) {
-            if (rackPartNames.includes(child.name)) {
-                let material =
-                    child.name === "Rack_Glass_Shelf"
-                        ? glassMaterial
-                        : defaultMaterial;
-
-                // Assign material to the child
-                child.material = material;
-                child.material.needsUpdate = true;
-
-                // If the child has nested meshes, apply the same material
-                child.traverse(function (mesh) {
-                    mesh.material = material;
-                    mesh.material.needsUpdate = true;
-                });
-            }
-        });
-    }
-}
+//     return modelNode;
+// }
 
 // Traverse main model asynchronously
 export async function traverseAsync(modelNode, callback) {
@@ -1507,6 +1064,8 @@ export async function showHideNodes() {
             await new Promise((resolve) => setTimeout(resolve, 0));
         }
     }
+    await updateMeasurementGroups();
+    await updateLabelOcclusion();
 
     // Apply updates based on conditions
     await Promise.all([
@@ -1546,10 +1105,7 @@ export async function showHideNodes() {
         }),
 
         // Update Left/Right Ex Slotted nodes
-        updateInChunks(nodes.leftRightExSlotted, (node) => {
-            console.log("here",nodes.leftRightExSlotted);
-            console.log("here");
-            
+        updateInChunks(nodes.leftRightExSlotted, (node) => {    
             if (current_setting.slottedSidesToggle) {
                 for (const hideLeftRight of nodes.leftRightEx) {
                     hideLeftRight.visible = false;
@@ -1561,7 +1117,7 @@ export async function showHideNodes() {
 
         updateInChunks(nodes.rodNodes, (node) => {
             node.visible =
-                (current_setting.topOption == "Shelf" && (current_setting.defaultShelfType == "Header_Wooden_Shelf" || current_setting.defaultShelfType == "Header_Glass_Shelf")) || 
+                (current_setting.topOption == "Shelf" && (current_setting.defaultShelfType == "Header_Wooden_Shelf" || current_setting.defaultShelfType == "Header_Glass_Shelf")) && nodes.headerShelfGlass.length > 0 || 
                 (current_setting.headerRodToggle && current_setting.topOption == "Header");
             return Promise.resolve();
         }),
@@ -1586,8 +1142,6 @@ export async function showHideNodes() {
                 }
                 setting[params.selectedGroupName].headerUpDown =
                     setting[params.selectedGroupName].headerRodToggle;
-                console.log(node.name , " - ",setting[params.selectedGroupName]);
-                return
             }
             return Promise.resolve();
         }),
@@ -1663,7 +1217,7 @@ export async function showHideNodes() {
         updateInChunks(nodes.baseMaterialNodes, async (node) => {
             node.material = node.material.clone();
             node.material.color.set(
-                await getHex(current_setting.baseFrameColor)
+                getHex(current_setting.baseFrameColor)
             );
             node.material.needsUpdate = true;
         }),
@@ -1701,7 +1255,7 @@ export async function showHideNodes() {
         updateInChunks(nodes.rackWoodenNodes, async (node) => {
             node.material = node.material.clone();
             node.material.color.set(
-                await getHex(current_setting.defaultRackShelfStandColor)
+                getHex(current_setting.defaultRackShelfStandColor)
             );
             node.material.needsUpdate = true;
         }),
@@ -1711,7 +1265,7 @@ export async function showHideNodes() {
             if (node.material) {
                 node.material = node.material.clone();
                 node.material.color.set(
-                    await getHex(current_setting.defaultRackStandStandColor)
+                    getHex(current_setting.defaultRackStandStandColor)
                 );
                 node.material.needsUpdate = true;
             } else {
@@ -1719,7 +1273,7 @@ export async function showHideNodes() {
                     if (mesh.material) {
                         mesh.material = mesh.material.clone();
                         mesh.material.color.set(
-                            await getHex(
+                            getHex(
                                 current_setting.defaultRackStandStandColor
                             )
                         );
@@ -1733,7 +1287,7 @@ export async function showHideNodes() {
         updateInChunks(nodes.hangerStandNodes, async (node) => {
             node.material = node.material.clone();
             node.material.color.set(
-                await getHex(current_setting.defaultHangerStandColor)
+                getHex(current_setting.defaultHangerStandColor)
             );
             node.material.needsUpdate = true;
         }),
@@ -1754,9 +1308,15 @@ export async function showHideNodes() {
         updateInChunks(nodes.rodFrameNodes, async (node) => {
             node.material = node.material.clone();
             node.material.color.set(
-                await getHex(current_setting.rodFrameColor)
+                getHex(current_setting.rodFrameColor)
             );
             node.material.needsUpdate = true;
+        }),
+
+         // Glass Shelf Fixing nodes
+        updateInChunks(nodes.glassShelfFixing, node => {
+            node.visible = current_setting.topOption == "Shelf" && current_setting.defaultShelfType == "Header_Glass_Shelf"  && nodes.headerShelfGlass.length > 0;
+            return Promise.resolve();
         }),
 
         // Add all your other conditions here following the same pattern
@@ -1764,6 +1324,7 @@ export async function showHideNodes() {
 
     // Update UI elements at the end
     updateUIElements(current_setting);
+    await drawMeasurementBoxesWithLabels();
 }
 
 // Helper function for UI updates (keep your existing UI update code)
@@ -1811,7 +1372,7 @@ async function updateUIElements(current_setting) {
         ".headerFrameColorInput"
     );
     if (headerFrameColorInput) {
-        headerFrameColorInput.value = await getHex(
+        headerFrameColorInput.value = getHex(
             current_setting.topFrameBackgroundColor
         );
     }
@@ -1826,7 +1387,7 @@ async function updateUIElements(current_setting) {
         ".mainFrameColorInput"
     );
     if (mainFrameColorInput) {
-        mainFrameColorInput.value = await getHex(
+        mainFrameColorInput.value = getHex(
             current_setting.mainFrameBackgroundColor
         );
     }
@@ -3153,6 +2714,20 @@ export function findParentNodeByName(node, parentName, isVisible = null) {
     return null;
 }
 
+export function findParentWithNamesInArr(node, nameArray) {
+    let current = node;
+    
+    while (current.parent) {
+        // Check if parent's name exists in the array
+        if (current.parent.name && nameArray.includes(current.parent.name)) {
+            return current.parent;
+        }
+        current = current.parent;
+    }
+    
+    return null;
+}
+
 export async function addCloseButton(modelName, accordionItem, mergedArray) {
     const closeButtonDiv = document.createElement("div");
     closeButtonDiv.classList.add("control-group");
@@ -3557,7 +3132,8 @@ export async function addRacks(rackType, lastside = null, position = null) {
                     );
                     removeRackIcon.visible = false;
                     rack.add(removeRackIcon);
-
+                    rack.removeIcon = removeRackIcon;
+                    
                     if (position) {
                         rack.position.y = position.y;
                     }
@@ -3691,7 +3267,7 @@ async function getComponentSize(model, modelComponentsData) {
 
     await traverseAsync(model, async (child) => {
         if (isValidChild(child)) {
-            const modelSize = await getNodeSize(child);
+            const modelSize = getNodeSize(child);
             if (
                 isHeaderFrame(child, "Header_300") ||
                 isHeaderFrame(child, "Header_500")
