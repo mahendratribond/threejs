@@ -1,17 +1,20 @@
 import {
     THREE,
-    allGroupNames,
-    hangerNames,
-    rackNames,
     params,
     setting,
+    rackNames,
+    hangerNames,
     sharedParams,
+    allGroupNames,
+    allModelNames,
+    heightMeasurementNames,
 } from "../../config.js";
 import {
     cloneWithCustomHangerProperties,
     // setupHangerModel,
 } from "./HangerManager.js";
-import { savePdfData, traverseAsync,delay } from "../../utils6.js";
+import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
+import { traverseAsync, delay } from "../../utils6.js";
 
 async function cloneModelGroup(model) {
     let cloneModelGroup = model.clone();
@@ -645,4 +648,63 @@ export async function creatingPDF() {
     };
     await delay(1000);
     await savePdfData(dataToSave, sharedParams.modelGroup);
+}
+
+export async function savePdfData(dataToSave) {
+    const loadingModal = document.getElementById("loadingModal");
+    let modelMeasurementData = {};
+    try {
+        await traverseAsync(sharedParams.modelGroup, async (child) => {
+            if (allModelNames.includes(child.name) && child.visible) {
+                let modelMeasurement = {};
+                await getModelMeasurement(
+                    child,
+                    heightMeasurementNames,
+                    modelMeasurement
+                );
+                let modelComponentsData = {};
+                modelComponentsData["modelMeasure"] = modelMeasurement;
+                await getComponentSize(child, modelComponentsData);
+
+                if (!modelMeasurementData[child.parent.name]) {
+                    modelMeasurementData[child.parent.name] = {};
+                }
+
+                modelMeasurementData[child.parent.name][child.name] =
+                    modelComponentsData;
+            }
+        });
+    } catch (error) {
+        console.log(error);
+    }
+
+    const username = localStorage.getItem("username");
+    const unixTimestamp = Math.floor(Date.now() / 1000);
+    const fileName = `${username}_${unixTimestamp}.pdf`;
+    dataToSave["ModelData"] = modelMeasurementData;
+    dataToSave["action"] = "save_Pdf_data";
+    dataToSave["fileName"] = fileName;
+
+    const pdf_data = JSON.stringify(dataToSave);
+    fetch("api.php", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: pdf_data,
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                console.log("Pdf saved successfully!");
+                loadingModal.style.display = "none";
+                const pdfDownoad = document.createElement("a");
+                pdfDownoad.href = data.url;
+                pdfDownoad.download = fileName;
+                pdfDownoad.click();
+            } else {
+                console.error("Error saving model data:", data.error);
+            }
+        })
+        .catch((error) => console.error("Fetch error:", error));
 }

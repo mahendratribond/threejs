@@ -1,4 +1,8 @@
-import { THREE,params,sharedParams } from "../../config.js";
+import {
+    THREE,
+    params,
+    sharedParams,
+} from "../../config.js";
 import {getModelSize} from "../managers/MeasurementManager.js";
 // core/Scene.js
 export class Scene extends THREE.Scene {

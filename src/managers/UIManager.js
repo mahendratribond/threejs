@@ -1,9 +1,11 @@
 import {
     THREE,
     params,
+    lights,
     setting,
     rackNames,
     hangerNames,
+    lightHelpers,
     sharedParams,
     allGroupNames,
     allModelNames,
@@ -15,7 +17,6 @@ import {
     addRacks,
     showHideNodes,
     traverseAsync,
-    saveModelData,
     centerMainModel,
     addAnotherModels,
     updateActiveModel,
@@ -23,6 +24,9 @@ import {
     findParentNodeByName,
     findParentWithNamesInArr,
 } from "../../utils6.js";
+import {
+    saveModelData,
+} from "./DBManager.js"
 
 import { exportModelForAr } from "./ExportModelManager.js";
 
@@ -62,16 +66,26 @@ export class UIManager {
             headerOptions: document.querySelector(".headerOptions"),
             headerSizeDropdown: document.querySelector(".headerSizeDropdown"),
             headerRodToggle: document.querySelector(".headerRodToggle"),
-            headerRodColorDropdown: document.querySelector(".headerRodColorDropdown"),
+            headerRodColorDropdown: document.querySelector(
+                ".headerRodColorDropdown"
+            ),
             topFrameFileUpload: document.querySelector(".topFrameFileUpload"),
-            headerFrameColorInput: document.querySelector(".headerFrameColorInput"),
-            headerFrameColorDropdown: document.querySelector(".headerFrameColorDropdown"),
+            headerFrameColorInput: document.querySelector(
+                ".headerFrameColorInput"
+            ),
+            headerFrameColorDropdown: document.querySelector(
+                ".headerFrameColorDropdown"
+            ),
             slottedSidesToggle: document.querySelector(".slottedSidesToggle"),
             mainFrameFileUpload: document.querySelector(".mainFrameFileUpload"),
             mainFrameColorInput: document.querySelector(".mainFrameColorInput"),
-            baseSelectorDropdown: document.querySelector(".baseSelectorDropdown"),
+            baseSelectorDropdown: document.querySelector(
+                ".baseSelectorDropdown"
+            ),
             hangerClothesToggle: document.querySelector(".hangerClothesToggle"),
-            hangerGolfClubsToggle: document.querySelector(".hangerGolfClubsToggle"),
+            hangerGolfClubsToggle: document.querySelector(
+                ".hangerGolfClubsToggle"
+            ),
             hangerStandColor: document.querySelector(".hangerStandColor"),
             rackShelfColor: document.querySelector(".rackShelfColor"),
             rackStandColor: document.querySelector(".rackStandColor"),
@@ -147,7 +161,9 @@ export class UIManager {
                     setting[params.selectedGroupName].defaultModel =
                         event.target.value;
                     console.log(setting[params.selectedGroupName].defaultModel);
-                    updateActiveModel(setting[params.selectedGroupName].defaultModel);
+                    updateActiveModel(
+                        setting[params.selectedGroupName].defaultModel
+                    );
                     await showHideNodes();
                     await centerMainModel();
                     // await lightSetup();
@@ -1296,8 +1312,12 @@ export class UIManager {
         );
         // Initialize Bootstrap tooltips
         document.addEventListener("DOMContentLoaded", () => {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            var tooltipTriggerList = [].slice.call(
+                document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            );
+            var tooltipList = tooltipTriggerList.map(function (
+                tooltipTriggerEl
+            ) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
@@ -2126,12 +2146,342 @@ export class UIManager {
             //   sharedParams.renderer.toneMapping = THREE.AgXToneMapping;
             // }
             // await lightSetup();
-            await sharedParams.scene.lightSetup(lights, lightHelpers);
+            await sceneUI.lightSetup(lights, lightHelpers);
         }
         // console.log(main_model)
     }
     createSession(userId, username) {
         localStorage.setItem("user_id", userId);
         localStorage.setItem("username", username);
+    }
+
+    // Helper function for UI updates (keep your existing UI update code)
+    updateUIElements(current_setting) {
+        const parentElement = document.querySelector(
+            `div.accordion-item[data-model="${params.selectedGroupName}"]`
+        );
+        if (!parentElement) return;
+
+        let frameSize = parentElement.querySelector(".frameSize");
+        if (frameSize) {
+            frameSize.value = current_setting.defaultModel;
+        }
+        let topDropdown = parentElement.querySelector(".topDropdown");
+        if (topDropdown) {
+            topDropdown.value = current_setting.topOption;
+        }
+        let headerOptions = parentElement.querySelector(".headerOptions");
+        if (headerOptions) {
+            headerOptions.value = current_setting.headerOptions;
+        }
+        let headerSizeDropdown = parentElement.querySelector(
+            ".headerSizeDropdown"
+        );
+        if (headerSizeDropdown) {
+            headerSizeDropdown.value = current_setting.defaultHeaderSize;
+        }
+        let headerRodToggle = parentElement.querySelector(".headerRodToggle");
+        if (headerRodToggle) {
+            headerRodToggle.checked = current_setting.headerRodToggle;
+        }
+        let headerRodColorDropdown = parentElement.querySelector(
+            ".headerRodColorDropdown"
+        );
+        if (headerRodColorDropdown) {
+            headerRodColorDropdown.value = current_setting.rodFrameColor;
+        }
+        let shelfTypeDropdown =
+            parentElement.querySelector(".shelfTypeDropdown");
+        if (shelfTypeDropdown) {
+            shelfTypeDropdown.value = current_setting.defaultShelfType;
+        }
+        let slottedSidesToggle = parentElement.querySelector(
+            ".slottedSidesToggle"
+        );
+        if (slottedSidesToggle) {
+            slottedSidesToggle.checked = current_setting.slottedSidesToggle;
+        }
+        let headerFrameColorInput = parentElement.querySelector(
+            ".headerFrameColorInput"
+        );
+        if (headerFrameColorInput) {
+            headerFrameColorInput.value = getHex(
+                current_setting.topFrameBackgroundColor
+            );
+        }
+        let headerFrameColorDropdown = parentElement.querySelector(
+            ".headerFrameColorDropdown"
+        );
+        if (headerFrameColorDropdown) {
+            headerFrameColorDropdown.value =
+                current_setting.topFrameBackgroundColor;
+        }
+        let mainFrameColorInput = parentElement.querySelector(
+            ".mainFrameColorInput"
+        );
+        if (mainFrameColorInput) {
+            mainFrameColorInput.value = getHex(
+                current_setting.mainFrameBackgroundColor
+            );
+        }
+        let baseSelectorDropdown = parentElement.querySelector(
+            ".baseSelectorDropdown"
+        );
+        if (baseSelectorDropdown) {
+            baseSelectorDropdown.value = current_setting.selectedBaseFrame;
+        }
+        let baseColor = parentElement.querySelector(".baseColor");
+        if (baseColor) {
+            baseColor.value = current_setting.baseFrameColor;
+        }
+        let hangerClothesToggle = parentElement.querySelector(
+            ".hangerClothesToggle"
+        );
+        if (hangerClothesToggle) {
+            hangerClothesToggle.value = current_setting.hangerClothesToggle;
+        }
+
+        let hangerGolfClubsToggle = parentElement.querySelector(
+            ".hangerGolfClubsToggle"
+        );
+        if (hangerGolfClubsToggle) {
+            hangerGolfClubsToggle.value = current_setting.hangerGolfClubsToggle;
+        }
+        let hangerStandColor = parentElement.querySelector(".hangerStandColor");
+        if (hangerStandColor) {
+            hangerStandColor.value = current_setting.defaultHangerStandColor;
+        }
+        let rackShelfColor = parentElement.querySelector(".rackShelfColor");
+        if (rackShelfColor) {
+            rackShelfColor.value = current_setting.defaultRackShelfStandColor;
+        }
+        let rackStandColor = parentElement.querySelector(".rackStandColor");
+        if (rackStandColor) {
+            rackStandColor.value = current_setting.defaultRackStandStandColor;
+        }
+
+        if (current_setting.topOption == "Shelf") {
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+        } else if (current_setting.topOption == "Header") {
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        } else {
+            parentElement
+                .querySelectorAll(".topHeaderOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".topShelfOptions")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        }
+
+        if (
+            (current_setting.topOption == "Header" &&
+                current_setting.headerRodToggle) ||
+            (current_setting.topOption == "Shelf" &&
+                (current_setting.defaultShelfType == "Header_Wooden_Shelf" ||
+                    current_setting.defaultShelfType == "Header_Glass_Shelf"))
+        ) {
+            parentElement
+                .querySelectorAll(".headerRodColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+        } else {
+            parentElement
+                .querySelectorAll(".headerRodColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        }
+
+        if (
+            current_setting.topOption == "Shelf" &&
+            current_setting.defaultShelfType == "Header_Wooden_Shelf"
+        ) {
+            parentElement
+                .querySelectorAll(".shelfTypeBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+        } else {
+            parentElement
+                .querySelectorAll(".shelfTypeBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        }
+
+        if (
+            current_setting.topOption == "Header" &&
+            current_setting.headerOptions == "SEG"
+        ) {
+            parentElement
+                .querySelectorAll(".headerFrameColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".headerFrameColorInputBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+        } else if (
+            current_setting.topOption == "Header" &&
+            current_setting.headerOptions == "ALG"
+        ) {
+            parentElement
+                .querySelectorAll(".headerFrameColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+            parentElement
+                .querySelectorAll(".headerFrameColorInputBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        } else if (
+            current_setting.topOption == "Header" &&
+            current_setting.headerOptions == "ALG3D"
+        ) {
+            parentElement
+                .querySelectorAll(".headerFrameColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".headerFrameColorInputBox")
+                .forEach((element) => {
+                    element.style.display = "block";
+                });
+        } else {
+            parentElement
+                .querySelectorAll(".headerFrameColorDropdownBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+            parentElement
+                .querySelectorAll(".headerFrameColorInputBox")
+                .forEach((element) => {
+                    element.style.display = "none";
+                });
+        }
+    }
+
+    async addCloseButton(modelName, accordionItem, mergedArray) {
+        const closeButtonDiv = document.createElement("div");
+        closeButtonDiv.classList.add("control-group");
+        const closeButton = document.createElement("button");
+        closeButton.classList.add(
+            "btn",
+            "btn-danger",
+            "btn-sm",
+            "model-close-button"
+        );
+        closeButton.type = "button";
+        closeButton.innerHTML = "Delete";
+        closeButtonDiv.appendChild(closeButton);
+
+        // Append the close button to the accordion header
+        const accordionHeader = accordionItem.querySelector(".accordion-body");
+        accordionHeader.appendChild(closeButtonDiv);
+
+        // You can add the event listener for closing functionality here
+        closeButton.addEventListener("click", async () => {
+            const confirmDelete = confirm("Do you want to delete the model?");
+            if (confirmDelete) {
+                const modelToRemove =
+                    sharedParams.modelGroup.getObjectByName(modelName);
+                if (modelToRemove) {
+                    sharedParams.modelGroup.remove(modelToRemove);
+                }
+                const index = mergedArray.indexOf(modelName);
+                if (index > -1) {
+                    mergedArray.splice(index, 1); // Removes 1 element at the specified index
+                }
+                accordionItem.remove();
+            }
+            await centerMainModel();
+        });
+    }
+
+    async cloneAccordionItem(modelName) {
+        // Find the original accordion item
+        const originalAccordionItem = document.querySelector(
+            '.accordion-item[data-model="main_model"]'
+        );
+
+        // Check if the original accordion item exists
+        if (!originalAccordionItem) {
+            console.error("Original accordion item not found");
+            return null;
+        }
+
+        // Clone the accordion item
+        const newAccordionItem = originalAccordionItem.cloneNode(true);
+
+        // // Find the div containing the 'frameSize' dropdown
+        // var frameSizeDiv = newAccordionItem.querySelector('select.frameSize');
+
+        // // Check if the dropdown exists and remove its parent div
+        // if (frameSizeDiv) {
+        //     frameSizeDiv.closest('.control-group').remove();
+        // }
+
+        // Modify the data-model attribute and the text content
+        let displayName = modelName
+            .replace("Other_", "") // Remove "Other_"
+            .replace(/_/g, " ") // Replace underscores with spaces
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+        newAccordionItem.setAttribute("data-model", modelName);
+        newAccordionItem.querySelector(".accordion-header button").textContent =
+            displayName; // Change the title
+
+        // Set the new ID and aria-controls to ensure uniqueness
+        const newId = `collapse${modelName}`;
+        newAccordionItem
+            .querySelector(".accordion-collapse")
+            .setAttribute("id", newId);
+        newAccordionItem
+            .querySelector(".accordion-header button")
+            .setAttribute("data-bs-target", `#${newId}`);
+        newAccordionItem
+            .querySelector(".accordion-collapse")
+            .classList.remove("show"); // Make it collapsed
+        // Find all elements with a 'data-src' attribute
+        newAccordionItem
+            .querySelectorAll("[data-src]")
+            .forEach(function (element) {
+                // Get the value of the 'data-src' attribute
+                const dataSrcValue = element.getAttribute("data-src");
+
+                // Set it as the 'src' attribute
+                element.setAttribute("src", dataSrcValue);
+
+                // Optionally, remove the 'data-src' attribute
+                element.removeAttribute("data-src");
+            });
+        // Return the new accordion item
+        return newAccordionItem;
     }
 }

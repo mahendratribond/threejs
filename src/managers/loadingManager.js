@@ -14,10 +14,12 @@ import {
     addAnotherModels,
     centerMainModel,
     showHideNodes,
-    getModelData,
     addRacks,
     delay,
 } from "../../utils6.js";
+import {
+    getModelData,
+} from "./DBManager.js"
 import { addHangers } from "./HangerManager.js";
 import { addNewMaterials, restoreMaterials } from "./MaterialManager.js";
 import {

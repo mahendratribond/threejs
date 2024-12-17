@@ -16,11 +16,9 @@ import {
     calculateBoundingBox,
     updateMeasurementGroups,
     updateLabelOcclusion,
-} from "./src/managers/MeasurementManager.js";
-import {
     initLabelRenderer,
-    showHideNodes,
-} from "./utils6.js";
+} from "./src/managers/MeasurementManager.js";
+import { showHideNodes, centerMainModel } from "./utils6.js";
 import { ModelManager } from "./src/managers/ModelManager.js";
 
 import {
@@ -29,10 +27,10 @@ import {
     params,
     allGroups,
     sharedParams,
+    lights,
+    lightHelpers,
 } from "./config.js";
 
-const lights = [];
-const lightHelpers = [];
 const uiManager = new UIManager();
 const modelManager = new ModelManager();
 

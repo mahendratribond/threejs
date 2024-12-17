@@ -67,6 +67,8 @@ export let sharedParams = {
 };
 
 export let allGroups = [];
+export const lights = [];
+export const lightHelpers = [];
 
 export let allGroupNames = ["main_model"];
 export let allModelNames = [

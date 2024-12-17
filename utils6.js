@@ -1,12 +1,9 @@
-import {
-    commonMaterial,
-} from "./src/managers/MaterialManager.js";
+import { UIManager } from "./src/managers/UIManager.js";
+import {commonMaterial} from "./src/managers/MaterialManager.js";
 import { setTextureParams } from "./src/managers/FrameImagesManager.js";
 import {
     THREE,
     FontLoader,
-    CSS2DRenderer,
-    heightMeasurementNames,
     rodFrameTextureNames,
     allFrameBorderNames,
     allGroupModelName,
@@ -28,9 +25,8 @@ import {
     drawMeasurementBoxesWithLabels,
     updateMeasurementGroups,
     updateLabelOcclusion,
-    getComponentSize,
-    getModelMeasurement,
 } from "./src/managers/MeasurementManager.js";
+
 const fontLoader = new FontLoader().setPath("./three/examples/fonts/");
 
 export function getHex(value) {
@@ -773,11 +769,9 @@ function collectNodes(model) {
 }
 
 export async function showHideNodes() {
-    let current_setting = setting[params.selectedGroupName];
+    const uiManager = new UIManager();
+    let current_setting = setting[sharedParams.selectedGroup.name];
     let main_model = sharedParams.selectedGroup;
-    let isSlottedSides = main_model.activeModel?.isSlottedSides || false;
-    let isShelf = main_model.activeModel?.isShelf || false;
-    let isGlassShelf = main_model.activeModel?.isGlassShelf || false;
     // Collect all nodes once
     const nodes = collectNodes(main_model.activeModel);
     for (const hideNode of nodes.nodeToHide) {
@@ -798,13 +792,13 @@ export async function showHideNodes() {
     // Apply updates based on conditions
     await Promise.all([
         // Update cone nodes
-        updateInChunks(nodes.coneNodes, (node) => {            
-            for(const hideCornNode of sharedParams.modelGroup.children){
+        updateInChunks(nodes.coneNodes, (node) => {
+            for (const hideCornNode of sharedParams.modelGroup.children) {
                 let coneNode = hideCornNode.activeModel.getObjectByName("Cone");
                 coneNode.visible = false;
             }
             node.visible = true;
-            if(sharedParams.modelGroup.children.length < 2){
+            if (sharedParams.modelGroup.children.length < 2) {
                 node.visible = false;
             }
             return Promise.resolve();
@@ -828,16 +822,19 @@ export async function showHideNodes() {
                     hideLeftRightslotted.visible = true;
                 }
             }
-            if(current_setting.slottedSidesToggle && nodes.leftRightExSlotted.length){
+            if (
+                current_setting.slottedSidesToggle &&
+                nodes.leftRightExSlotted.length
+            ) {
                 node.visible = false;
-            }else{
+            } else {
                 node.visible = true;
             }
             return Promise.resolve();
         }),
 
         // Update Left/Right Ex Slotted nodes
-        updateInChunks(nodes.leftRightExSlotted, (node) => {    
+        updateInChunks(nodes.leftRightExSlotted, (node) => {
             if (current_setting.slottedSidesToggle) {
                 for (const hideLeftRight of nodes.leftRightEx) {
                     hideLeftRight.visible = false;
@@ -849,15 +846,26 @@ export async function showHideNodes() {
 
         updateInChunks(nodes.rodNodes, (node) => {
             node.visible =
-                (current_setting.topOption == "Shelf" && (current_setting.defaultShelfType == "Header_Wooden_Shelf" || current_setting.defaultShelfType == "Header_Glass_Shelf")) && nodes.headerShelfGlass.length > 0 || 
-                (current_setting.headerRodToggle && current_setting.topOption == "Header");
+                (current_setting.topOption == "Shelf" &&
+                    (current_setting.defaultShelfType ==
+                        "Header_Wooden_Shelf" ||
+                        current_setting.defaultShelfType ==
+                            "Header_Glass_Shelf") &&
+                    nodes.headerShelfGlass.length > 0) ||
+                (current_setting.headerRodToggle &&
+                    current_setting.topOption == "Header");
             return Promise.resolve();
         }),
 
         // Header nodes
-        updateInChunks(nodes.headerNodes, (node) => {    
-            node.visible = current_setting.topOption == "Header" && current_setting.defaultHeaderSize == node.name;    
-            if (current_setting.topOption == "Header" && current_setting.defaultHeaderSize == node.name) {
+        updateInChunks(nodes.headerNodes, (node) => {
+            node.visible =
+                current_setting.topOption == "Header" &&
+                current_setting.defaultHeaderSize == node.name;
+            if (
+                current_setting.topOption == "Header" &&
+                current_setting.defaultHeaderSize == node.name
+            ) {
                 if (
                     current_setting.headerRodToggle &&
                     !current_setting.headerUpDown
@@ -869,8 +877,8 @@ export async function showHideNodes() {
                 ) {
                     node.position.y -= params.rodSize.y;
                 }
-                setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle;
-
+                setting[params.selectedGroupName].headerUpDown =
+                    setting[params.selectedGroupName].headerRodToggle;
             }
             return Promise.resolve();
         }),
@@ -914,6 +922,7 @@ export async function showHideNodes() {
             }
             node.material.needsUpdate = true;
         }),
+
         updateInChunks(nodes.headerShelfWooden, async (node) => {
             // console.log('Header_Wooden_Shelf', dropdownType, child.name)
             if (current_setting.shelfMaterialType === "texture") {
@@ -945,9 +954,7 @@ export async function showHideNodes() {
 
         updateInChunks(nodes.baseMaterialNodes, async (node) => {
             node.material = node.material.clone();
-            node.material.color.set(
-                getHex(current_setting.baseFrameColor)
-            );
+            node.material.color.set(getHex(current_setting.baseFrameColor));
             node.material.needsUpdate = true;
         }),
 
@@ -1002,9 +1009,7 @@ export async function showHideNodes() {
                     if (mesh.material) {
                         mesh.material = mesh.material.clone();
                         mesh.material.color.set(
-                            getHex(
-                                current_setting.defaultRackStandStandColor
-                            )
+                            getHex(current_setting.defaultRackStandStandColor)
                         );
                         mesh.material.needsUpdate = true;
                     }
@@ -1036,15 +1041,16 @@ export async function showHideNodes() {
         // Rod frame nodes
         updateInChunks(nodes.rodFrameNodes, async (node) => {
             node.material = node.material.clone();
-            node.material.color.set(
-                getHex(current_setting.rodFrameColor)
-            );
+            node.material.color.set(getHex(current_setting.rodFrameColor));
             node.material.needsUpdate = true;
         }),
 
-         // Glass Shelf Fixing nodes
-        updateInChunks(nodes.glassShelfFixing, node => {
-            node.visible = current_setting.topOption == "Shelf" && current_setting.defaultShelfType == "Header_Glass_Shelf"  && nodes.headerShelfGlass.length > 0;
+        // Glass Shelf Fixing nodes
+        updateInChunks(nodes.glassShelfFixing, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Glass_Shelf" &&
+                nodes.headerShelfGlass.length > 0;
             return Promise.resolve();
         }),
 
@@ -1052,232 +1058,8 @@ export async function showHideNodes() {
     ]);
 
     // Update UI elements at the end
-    updateUIElements(current_setting);
+    uiManager.updateUIElements(current_setting);
     await drawMeasurementBoxesWithLabels();
-}
-
-// Helper function for UI updates (keep your existing UI update code)
-async function updateUIElements(current_setting) {
-    const parentElement = document.querySelector(
-        `div.accordion-item[data-model="${params.selectedGroupName}"]`
-    );
-    if (!parentElement) return;
-
-    let frameSize = parentElement.querySelector(".frameSize");
-    if (frameSize) {
-        frameSize.value = current_setting.defaultModel;
-    }
-    let topDropdown = parentElement.querySelector(".topDropdown");
-    if (topDropdown) {
-        topDropdown.value = current_setting.topOption;
-    }
-    let headerOptions = parentElement.querySelector(".headerOptions");
-    if (headerOptions) {
-        headerOptions.value = current_setting.headerOptions;
-    }
-    let headerSizeDropdown = parentElement.querySelector(".headerSizeDropdown");
-    if (headerSizeDropdown) {
-        headerSizeDropdown.value = current_setting.defaultHeaderSize;
-    }
-    let headerRodToggle = parentElement.querySelector(".headerRodToggle");
-    if (headerRodToggle) {
-        headerRodToggle.checked = current_setting.headerRodToggle;
-    }
-    let headerRodColorDropdown = parentElement.querySelector(
-        ".headerRodColorDropdown"
-    );
-    if (headerRodColorDropdown) {
-        headerRodColorDropdown.value = current_setting.rodFrameColor;
-    }
-    let shelfTypeDropdown = parentElement.querySelector(".shelfTypeDropdown");
-    if (shelfTypeDropdown) {
-        shelfTypeDropdown.value = current_setting.defaultShelfType;
-    }
-    let slottedSidesToggle = parentElement.querySelector(".slottedSidesToggle");
-    if (slottedSidesToggle) {
-        slottedSidesToggle.checked = current_setting.slottedSidesToggle;
-    }
-    let headerFrameColorInput = parentElement.querySelector(
-        ".headerFrameColorInput"
-    );
-    if (headerFrameColorInput) {
-        headerFrameColorInput.value = getHex(
-            current_setting.topFrameBackgroundColor
-        );
-    }
-    let headerFrameColorDropdown = parentElement.querySelector(
-        ".headerFrameColorDropdown"
-    );
-    if (headerFrameColorDropdown) {
-        headerFrameColorDropdown.value =
-            current_setting.topFrameBackgroundColor;
-    }
-    let mainFrameColorInput = parentElement.querySelector(
-        ".mainFrameColorInput"
-    );
-    if (mainFrameColorInput) {
-        mainFrameColorInput.value = getHex(
-            current_setting.mainFrameBackgroundColor
-        );
-    }
-    let baseSelectorDropdown = parentElement.querySelector(
-        ".baseSelectorDropdown"
-    );
-    if (baseSelectorDropdown) {
-        baseSelectorDropdown.value = current_setting.selectedBaseFrame;
-    }
-    let baseColor = parentElement.querySelector(".baseColor");
-    if (baseColor) {
-        baseColor.value = current_setting.baseFrameColor;
-    }
-    let hangerClothesToggle = parentElement.querySelector(
-        ".hangerClothesToggle"
-    );
-    if (hangerClothesToggle) {
-        hangerClothesToggle.value = current_setting.hangerClothesToggle;
-    }
-
-    let hangerGolfClubsToggle = parentElement.querySelector(
-        ".hangerGolfClubsToggle"
-    );
-    if (hangerGolfClubsToggle) {
-        hangerGolfClubsToggle.value = current_setting.hangerGolfClubsToggle;
-    }
-    let hangerStandColor = parentElement.querySelector(".hangerStandColor");
-    if (hangerStandColor) {
-        hangerStandColor.value = current_setting.defaultHangerStandColor;
-    }
-    let rackShelfColor = parentElement.querySelector(".rackShelfColor");
-    if (rackShelfColor) {
-        rackShelfColor.value = current_setting.defaultRackShelfStandColor;
-    }
-    let rackStandColor = parentElement.querySelector(".rackStandColor");
-    if (rackStandColor) {
-        rackStandColor.value = current_setting.defaultRackStandStandColor;
-    }
-
-    if (current_setting.topOption == "Shelf") {
-        parentElement
-            .querySelectorAll(".topHeaderOptions")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-        parentElement
-            .querySelectorAll(".topShelfOptions")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-    } else if (current_setting.topOption == "Header") {
-        parentElement
-            .querySelectorAll(".topHeaderOptions")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-        parentElement
-            .querySelectorAll(".topShelfOptions")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-    } else {
-        parentElement
-            .querySelectorAll(".topHeaderOptions")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-        parentElement
-            .querySelectorAll(".topShelfOptions")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-    }
-
-    if (
-        (current_setting.topOption == "Header" &&
-            current_setting.headerRodToggle) ||
-        (current_setting.topOption == "Shelf" &&
-            (current_setting.defaultShelfType == "Header_Wooden_Shelf" ||
-                current_setting.defaultShelfType == "Header_Glass_Shelf"))
-    ) {
-        parentElement
-            .querySelectorAll(".headerRodColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-    } else {
-        parentElement
-            .querySelectorAll(".headerRodColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-    }
-
-    if (
-        current_setting.topOption == "Shelf" &&
-        current_setting.defaultShelfType == "Header_Wooden_Shelf"
-    ) {
-        parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-            element.style.display = "block";
-        });
-    } else {
-        parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-            element.style.display = "none";
-        });
-    }
-
-    if (
-        current_setting.topOption == "Header" &&
-        current_setting.headerOptions == "SEG"
-    ) {
-        parentElement
-            .querySelectorAll(".headerFrameColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-        parentElement
-            .querySelectorAll(".headerFrameColorInputBox")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-    } else if (
-        current_setting.topOption == "Header" &&
-        current_setting.headerOptions == "ALG"
-    ) {
-        parentElement
-            .querySelectorAll(".headerFrameColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-        parentElement
-            .querySelectorAll(".headerFrameColorInputBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-    } else if (
-        current_setting.topOption == "Header" &&
-        current_setting.headerOptions == "ALG3D"
-    ) {
-        parentElement
-            .querySelectorAll(".headerFrameColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-        parentElement
-            .querySelectorAll(".headerFrameColorInputBox")
-            .forEach((element) => {
-                element.style.display = "block";
-            });
-    } else {
-        parentElement
-            .querySelectorAll(".headerFrameColorDropdownBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-        parentElement
-            .querySelectorAll(".headerFrameColorInputBox")
-            .forEach((element) => {
-                element.style.display = "none";
-            });
-    }
 }
 
 export function updateActiveModel(modelName) {
@@ -1443,16 +1225,6 @@ export async function checkForCollision(movingModelGroup, moveAmount) {
     return true; // No collision, safe to move
 }
 
-// Initialize the label renderer
-export async function initLabelRenderer() {
-    let labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(window.innerWidth, window.innerHeight);
-    labelRenderer.domElement.style.position = "absolute";
-    labelRenderer.domElement.style.top = "0px";
-    labelRenderer.domElement.style.pointerEvents = "none"; // Add this line
-    return labelRenderer;
-}
-
 export function findParentNodeByName(node, parentName, isVisible = null) {
     // Base case: If the current node has no parent, return null
     if (!node || !node.parent) return null;
@@ -1495,42 +1267,6 @@ export function findParentWithNamesInArr(node, nameArray) {
     return null;
 }
 
-export async function addCloseButton(modelName, accordionItem, mergedArray) {
-    const closeButtonDiv = document.createElement("div");
-    closeButtonDiv.classList.add("control-group");
-    const closeButton = document.createElement("button");
-    closeButton.classList.add(
-        "btn",
-        "btn-danger",
-        "btn-sm",
-        "model-close-button"
-    );
-    closeButton.type = "button";
-    closeButton.innerHTML = "Delete";
-    closeButtonDiv.appendChild(closeButton);
-
-    // Append the close button to the accordion header
-    const accordionHeader = accordionItem.querySelector(".accordion-body");
-    accordionHeader.appendChild(closeButtonDiv);
-
-    // You can add the event listener for closing functionality here
-    closeButton.addEventListener("click", async () => {
-        const confirmDelete = confirm("Do you want to delete the model?");
-        if (confirmDelete) {
-            const modelToRemove =
-                sharedParams.modelGroup.getObjectByName(modelName);
-            if (modelToRemove) {
-                sharedParams.modelGroup.remove(modelToRemove);
-            }
-            const index = mergedArray.indexOf(modelName);
-            if (index > -1) {
-                mergedArray.splice(index, 1); // Removes 1 element at the specified index
-            }
-            accordionItem.remove();
-        }
-        await centerMainModel();
-    });
-}
 
 export async function addAnotherModels(
     allGroupNames,
@@ -1543,7 +1279,7 @@ export async function addAnotherModels(
         // console.log('defaultModel', defaultModel);
 
         const newModel = defaultModel.clone();
-        await cloneWithCustomProperties(defaultModel, newModel);
+        cloneWithCustomProperties(defaultModel, newModel);
 
         const nodesToRemove = [];
         await traverseAsync(newModel, async (child) => {
@@ -1654,6 +1390,7 @@ export async function addAnotherModels(
 
 // Function to dynamically generate and append cards for visible models
 export async function addAnotherModelView(mergedArray, cameraOnLeft) {
+    const uiManager = new UIManager();
     const rightControls = document.querySelector(".model_items");
 
     // Loop through the mergedArray and append cards for visible models
@@ -1665,7 +1402,7 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft) {
             )
         ) {
             // Clone the accordion item
-            const accordionItem = await cloneAccordionItem(modelName);
+            const accordionItem = await uiManager.cloneAccordionItem(modelName);
 
             if (accordionItem) {
                 // Ensure accordionItem is valid
@@ -1686,7 +1423,7 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft) {
                 // Set the parent for the new accordion item
                 accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
                 accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
-                await addCloseButton(modelName, accordionItem, mergedArray);
+                await uiManager.addCloseButton(modelName, accordionItem, mergedArray);
 
                 // Append the new accordion item to the container
                 // accordionContainer.appendChild(accordionItem);
@@ -1728,64 +1465,6 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft) {
             moveLeftRightModel.style.display = "none"; // Initially hide the move buttons
         }
     }
-}
-
-export async function cloneAccordionItem(modelName) {
-    // Find the original accordion item
-    const originalAccordionItem = document.querySelector(
-        '.accordion-item[data-model="main_model"]'
-    );
-
-    // Check if the original accordion item exists
-    if (!originalAccordionItem) {
-        console.error("Original accordion item not found");
-        return null;
-    }
-
-    // Clone the accordion item
-    const newAccordionItem = originalAccordionItem.cloneNode(true);
-
-    // // Find the div containing the 'frameSize' dropdown
-    // var frameSizeDiv = newAccordionItem.querySelector('select.frameSize');
-
-    // // Check if the dropdown exists and remove its parent div
-    // if (frameSizeDiv) {
-    //     frameSizeDiv.closest('.control-group').remove();
-    // }
-
-    // Modify the data-model attribute and the text content
-    let displayName = modelName
-        .replace("Other_", "") // Remove "Other_"
-        .replace(/_/g, " ") // Replace underscores with spaces
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-    newAccordionItem.setAttribute("data-model", modelName);
-    newAccordionItem.querySelector(".accordion-header button").textContent =
-        displayName; // Change the title
-
-    // Set the new ID and aria-controls to ensure uniqueness
-    const newId = `collapse${modelName}`;
-    newAccordionItem
-        .querySelector(".accordion-collapse")
-        .setAttribute("id", newId);
-    newAccordionItem
-        .querySelector(".accordion-header button")
-        .setAttribute("data-bs-target", `#${newId}`);
-    newAccordionItem
-        .querySelector(".accordion-collapse")
-        .classList.remove("show"); // Make it collapsed
-    // Find all elements with a 'data-src' attribute
-    newAccordionItem.querySelectorAll("[data-src]").forEach(function (element) {
-        // Get the value of the 'data-src' attribute
-        const dataSrcValue = element.getAttribute("data-src");
-
-        // Set it as the 'src' attribute
-        element.setAttribute("src", dataSrcValue);
-
-        // Optionally, remove the 'data-src' attribute
-        element.removeAttribute("data-src");
-    });
-    // Return the new accordion item
-    return newAccordionItem;
 }
 
 export async function addRacks(rackType, lastside = null, position = null) {
@@ -1927,118 +1606,5 @@ export async function addRacks(rackType, lastside = null, position = null) {
             }
         }
     }
-}
-
-export async function saveModelData(name, dataToSave, modelId = 0) {
-    // const model_data = dataToSave;
-    dataToSave["action"] = "save_model_data";
-    dataToSave["id"] = modelId || 0;
-    dataToSave["name"] = name;
-
-    const model_data = JSON.stringify(dataToSave);
-    // console.log('model_data', model_data);
-
-    fetch("api.php", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: model_data,
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                alert("Model data saved successfully!");
-            } else {
-                alert("Error saving model data:", data.error);
-            }
-        })
-        .catch((error) => console.error("Fetch error:", error));
-}
-
-export async function getModelData(id) {
-    try {
-        // Send model state to the backend
-        const response = await fetch("api.php", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ action: "get_model_data", id: id }), // Ensure data is stringified
-        });
-
-        const data = await response.json(); // Wait for the JSON response
-
-        if (data.success) {
-            console.log("Model fetch successfully!");
-            return data.data; // Return the fetched data
-        } else {
-            console.error("No data found:");
-            window.location.href = "test6.html";
-            return null; // Return null if no data is found
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
-        return null; // Return null on error
-    }
-}
-
-export async function savePdfData(dataToSave) {
-    const loadingModal = document.getElementById("loadingModal");
-    let modelMeasurementData = {};
-    try {
-        await traverseAsync(sharedParams.modelGroup, async (child) => {
-            if (allModelNames.includes(child.name) && child.visible) {
-                let modelMeasurement = {};
-                await getModelMeasurement(
-                    child,
-                    heightMeasurementNames,
-                    modelMeasurement
-                );
-                let modelComponentsData = {};
-                modelComponentsData["modelMeasure"] = modelMeasurement;
-                await getComponentSize(child, modelComponentsData);
-
-                if (!modelMeasurementData[child.parent.name]) {
-                    modelMeasurementData[child.parent.name] = {};
-                }
-
-                modelMeasurementData[child.parent.name][child.name] =
-                    modelComponentsData;
-            }
-        });
-    } catch (error) {
-        console.log(error);
-    }
-
-    const username = localStorage.getItem("username");
-    const unixTimestamp = Math.floor(Date.now() / 1000);
-    const fileName = `${username}_${unixTimestamp}.pdf`;
-    dataToSave["ModelData"] = modelMeasurementData;
-    dataToSave["action"] = "save_Pdf_data";
-    dataToSave["fileName"] = fileName;
-
-    const pdf_data = JSON.stringify(dataToSave);
-    fetch("api.php", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: pdf_data,
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                console.log("Pdf saved successfully!");
-                loadingModal.style.display = "none";
-                const pdfDownoad = document.createElement("a");
-                pdfDownoad.href = data.url;
-                pdfDownoad.download = fileName;
-                pdfDownoad.click();
-            } else {
-                console.error("Error saving model data:", data.error);
-            }
-        })
-        .catch((error) => console.error("Fetch error:", error));
 }
 // --------------------------------export models--------------------------------------------

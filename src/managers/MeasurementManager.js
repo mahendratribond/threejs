@@ -3,9 +3,11 @@ import {
     params,
     CSS2DObject,
     sharedParams,
+    CSS2DRenderer,
     allModelNames,
     heightMeasurementNames,
 } from "../../config.js";
+import {traverseAsync} from "../../utils6.js"
 export async function getCurrentModelSize(model, node) {
     const cubeNode = model.getObjectByName(node);
     return getNodeSize(cubeNode);
@@ -540,4 +542,13 @@ export async function getComponentSize(model, modelComponentsData) {
             }
         }
     });
+}
+
+export async function initLabelRenderer() {
+    let labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = "absolute";
+    labelRenderer.domElement.style.top = "0px";
+    labelRenderer.domElement.style.pointerEvents = "none"; // Add this line
+    return labelRenderer;
 }
