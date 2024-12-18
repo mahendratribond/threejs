@@ -1,5 +1,5 @@
 import { UIManager } from "./src/managers/UIManager.js";
-import {commonMaterial} from "./src/managers/MaterialManager.js";
+import { commonMaterial } from "./src/managers/MaterialManager.js";
 import { setTextureParams } from "./src/managers/FrameImagesManager.js";
 import {
     THREE,
@@ -90,7 +90,7 @@ export function getModelNode(model, prefix) {
 
 export function updateModelName(model, oldName, newName) {
     let pattern = new RegExp(`^${oldName}\\d{1,2}$`); // Matches names like oldName_500, oldName_600, etc.
-    
+
     model.traverse((child) => {
         if (pattern.test(child.name) || child.name == oldName) {
             // console.log(pattern.test(child.name), "  -  ", child.name , "  -  ", child.parent.name);
@@ -732,7 +732,7 @@ function collectNodes(model) {
             nodeCollections.frameBorderNodes.push(child);
         }
         if (rodFrameTextureNames.includes(child.name)) {
-            if (child.type === "Mesh"){
+            if (child.type === "Mesh") {
                 nodeCollections.rodFrameNodes.push(child);
             }
         }
@@ -774,6 +774,7 @@ export async function showHideNodes() {
     let main_model = sharedParams.selectedGroup;
     // Collect all nodes once
     const nodes = collectNodes(main_model.activeModel);
+    console.log(sharedParams.modelGroup);
     for (const hideNode of nodes.nodeToHide) {
         hideNode.visible = false;
     }
@@ -859,13 +860,12 @@ export async function showHideNodes() {
 
         // Header nodes
         updateInChunks(nodes.headerNodes, (node) => {
+            console.log(current_setting);
+
             node.visible =
                 current_setting.topOption == "Header" &&
                 current_setting.defaultHeaderSize == node.name;
-            if (
-                current_setting.topOption == "Header" &&
-                current_setting.defaultHeaderSize == node.name
-            ) {
+            if (current_setting.topOption == "Header") {
                 if (
                     current_setting.headerRodToggle &&
                     !current_setting.headerUpDown
@@ -877,11 +877,41 @@ export async function showHideNodes() {
                 ) {
                     node.position.y -= params.rodSize.y;
                 }
-                setting[params.selectedGroupName].headerUpDown =
-                    setting[params.selectedGroupName].headerRodToggle;
             }
             return Promise.resolve();
         }),
+
+        updateInChunks(main_model.children, (childNode) => {
+            if (current_setting.defaultModel !== childNode.name) {
+                if (
+                    current_setting.headerRodToggle &&
+                    !current_setting.headerUpDown
+                ) {
+                    let header300 = childNode.getObjectByName("Header_300");
+                    if (header300) {
+                        header300.position.y += params.rodSize.y;
+                    }
+                    let header500 = childNode.getObjectByName("Header_500");
+                    if (header500) {
+                        header500.position.y += params.rodSize.y;
+                    }
+                } else if (
+                    !current_setting.headerRodToggle &&
+                    current_setting.headerUpDown
+                ) {
+                    let header300 = childNode.getObjectByName("Header_300");
+                    if (header300) {
+                        header300.position.y -= params.rodSize.y;
+                    }
+                    let header500 = childNode.getObjectByName("Header_500");
+                    if (header500) {
+                        header500.position.y -= params.rodSize.y;
+                    }
+                }
+            }
+        }),
+
+        (setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle),
 
         // Header Wooden Shelf nodes
         updateInChunks(nodes.headerShelfWooden, (node) => {
@@ -1255,7 +1285,7 @@ export function findParentNodeByName(node, parentName, isVisible = null) {
 
 export function findParentWithNamesInArr(node, nameArray) {
     let current = node;
-    
+
     while (current.parent) {
         // Check if parent's name exists in the array
         if (current.parent.name && nameArray.includes(current.parent.name)) {
@@ -1263,10 +1293,9 @@ export function findParentWithNamesInArr(node, nameArray) {
         }
         current = current.parent;
     }
-    
+
     return null;
 }
-
 
 export async function addAnotherModels(
     allGroupNames,
@@ -1421,9 +1450,15 @@ export async function addAnotherModelView(mergedArray, cameraOnLeft) {
                 });
 
                 // Set the parent for the new accordion item
-                accordionItem.querySelector(".accordion-collapse").setAttribute("data-bs-parent", "#accordionModel");
+                accordionItem
+                    .querySelector(".accordion-collapse")
+                    .setAttribute("data-bs-parent", "#accordionModel");
                 accordionItem.setAttribute("data-model", modelName); // Ensure the data-model attribute is set
-                await uiManager.addCloseButton(modelName, accordionItem, mergedArray);
+                await uiManager.addCloseButton(
+                    modelName,
+                    accordionItem,
+                    mergedArray
+                );
 
                 // Append the new accordion item to the container
                 // accordionContainer.appendChild(accordionItem);
@@ -1577,7 +1612,7 @@ export async function addRacks(rackType, lastside = null, position = null) {
                     removeRackIcon.visible = false;
                     rack.add(removeRackIcon);
                     rack.removeIcon = removeRackIcon;
-                    
+
                     if (position) {
                         rack.position.y = position.y;
                     }

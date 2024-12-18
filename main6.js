@@ -140,7 +140,7 @@ async function init() {
     uiManager.setupEventListeners(lights, lightHelpers);
     uiManager.loadingElements.progressText.innerText = `Loading... 100%`;
     uiManager.loadingElements.loaderElement.style.display = "none";
-    await loadPreviousModels();
+    await loadPreviousModels();    
 }
 
 async function render() {

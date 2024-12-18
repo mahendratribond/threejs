@@ -9,6 +9,7 @@ import {
     sharedParams,
     allGroupNames,
     allModelNames,
+    heightMeasurementNames,
 } from "../../config.js";
 
 import {
@@ -41,8 +42,11 @@ import {
     drawMeasurementBoxesWithLabels,
 } from "./MeasurementManager.js";
 import { addHangers } from "./HangerManager.js";
-import { creatingPDF } from "./PdfManager.js";
+import {
+    creatingPDF,
+} from "./PdfManager.js";
 import { FileManager } from "./FileManager.js";
+import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
 
 const sceneUI = new Scene();
 export class UIManager {
@@ -2052,16 +2056,75 @@ export class UIManager {
     }
 
     async formSubmitionForMonday() {
+        await traverseAsync(sharedParams.modelGroup, async (child) => {
+            if (
+                hangerNames.includes(child.name) &&
+                child.hangerArrayKey &&
+                child.hangerCount
+            ) {
+                params.hangerAdded = params.hangerAdded || {};
+                params.hangerAdded[child.hangerArrayKey] =
+                    params.hangerAdded[child.hangerArrayKey] || {};
+                params.hangerAdded[child.hangerArrayKey][child.hangerCount] =
+                    child.position;
+            }
+            if (
+                rackNames.includes(child.name) &&
+                child.rackArrayKey &&
+                child.rackCount
+            ) {
+
+                params.rackAdded = params.rackAdded || {};
+                params.rackAdded[child.rackArrayKey] =
+                    params.rackAdded[child.rackArrayKey] || {};
+                params.rackAdded[child.rackArrayKey][child.rackCount] =
+                    child.position;
+            }
+        });
+        let modelMeasurementData = {};
+        try {
+            await traverseAsync(sharedParams.modelGroup, async (child) => {
+                if (allModelNames.includes(child.name) && child.visible) {
+                    let modelMeasurement = {};
+                    await getModelMeasurement(
+                        child,
+                        heightMeasurementNames,
+                        modelMeasurement
+                    );
+                    let modelComponentsData = {};
+                    modelComponentsData["modelMeasure"] = modelMeasurement;
+                    await getComponentSize(child, modelComponentsData);
+                    if (!modelMeasurementData[child.parent.name]) {
+                        modelMeasurementData[child.parent.name] = {};
+                    }
+                    modelMeasurementData[child.parent.name][child.name] =
+                        modelComponentsData;
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
+        const dataToSave = {
+            params: params || null,
+            setting: setting || null,
+            group_names: allGroupNames || null,
+            top_frame_croped_image: sharedParams.topFrameCropedImage || null,
+            main_frame_croped_image: sharedParams.mainFrameCropedImage || null,
+            ModelData: modelMeasurementData || null,
+        };
         const formForMonday = document.getElementById("FormSubmitionForMonday");
         const formDataForMonday = new FormData(formForMonday);
+        formDataForMonday.append("mondayData", JSON.stringify(dataToSave));
         try {
             const response = await fetch("api.php", {
                 method: "POST",
                 body: formDataForMonday,
             });
             const data = await response.json();
-            this.hideLoadingModal();
-            return data; // Ensure the resolved data is returned
+            if(data.status === "success") {
+                this.hideLoadingModal();
+                return data; // Ensure the resolved data is returned
+            }
         } catch (error) {
             console.error("Error while submitting form: ", error);
             throw error; // Re-throw the error to handle it at the calling point

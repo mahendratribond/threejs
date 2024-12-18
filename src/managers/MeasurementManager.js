@@ -539,6 +539,18 @@ export async function getComponentSize(model, modelComponentsData) {
                 (child.name == "Hanger_Stand" || child.name == "Hanger_StandX")
             ) {
                 setModelSize(child.parent, modelSize);
+            } else if (child.name == "Rod") {
+                setModelSize(child, modelSize);
+            } else if (child.name == "Glass_Shelf_Fixing") {
+                setModelSize(child, modelSize);
+            } else if (child.name == "RackWoodenShelf") {
+                setModelSize(child, modelSize);
+            } else if (child.name == "RackGlassShelf") {
+                setModelSize(child, modelSize);
+            } else if (child.name == "Header_Wooden_Shelf") {
+                setModelSize(child, modelSize);
+            } else if (child.name == "Header_Glass_Shelf") {
+                setModelSize(child, modelSize);
             }
         }
     });

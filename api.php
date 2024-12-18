@@ -432,15 +432,86 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     }
 
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
+    $data = json_decode($_REQUEST['mondayData'], true);
+    // echo "<pre>";
+    // foreach ($data['group_names'] as $index => $groupName) {
+    //     foreach ($data['setting'] as $key => $value) { 
+    //         if($key == $groupName){ 
+    //             $ModelMeasureArr = [];
+    //             $HangerArr = [];
+    //             $RackArr = [];
+    //             $headerImage = [];
+    //             $frameImage = [];
+    //             if (isset($data['params']) && isset($data['params']['rackAdded'])) {
+    //                 foreach($data['params']['rackAdded'] as $rackKey => $rackVal){
+    //                     $rackPartkey = explode('-',$rackKey);
+    //                     if ($rackPartkey[0] == $groupName) {
+    //                         if (!in_array($rackPartkey[3], $RackArr)) { // Check for duplicates
+    //                             $RackArr[] = $rackPartkey[3];
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             if (isset($data['params']) && isset($data['params']['hangerAdded'])) {
+    //                 foreach($data['params']['hangerAdded'] as $hangerKey => $hangerVal){
+    //                     $hangerPartkey = explode('-',$hangerKey);
+    //                     if ($hangerPartkey[0] == $groupName) {
+    //                         if (!in_array($hangerPartkey[3], $HangerArr)) { // Check for duplicates
+    //                             $HangerArr[] = $hangerPartkey[3];
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             if (isset($data['top_frame_croped_image'])) {
+    //                 foreach($data['top_frame_croped_image'] as $headKey => $headVal){
+    //                     if($headKey == $groupName) {
+    //                         foreach ($headVal as $subHeadkey => $subHeadvalue) {
+    //                             if($subHeadkey == $value['defaultModel']){
+    //                                 foreach ($subHeadvalue as $Imagekey => $Imagevalue) {
+    //                                     $headerImage['headerImage'] = __DIR__.'/'.$Imagevalue;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             if (isset($data['main_frame_croped_image'])) {
+    //                 foreach($data['main_frame_croped_image'] as $frameKey => $frameVal){
+    //                     if($frameKey == $groupName) {
+    //                         foreach ($frameVal as $subframekey => $subframevalue) {
+    //                             if($subframekey == $value['defaultModel']){
+    //                                 foreach ($subframevalue as $Imagekey => $Imagevalue) {
+    //                                     $frameImage['frameImage'] = __DIR__.'/'.$Imagevalue;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //             foreach ($data['ModelData'] as $modelKey => $ModelMeasureValue) {
+    //                 if($modelKey == $key){
+    //                     foreach ($ModelMeasureValue as $submodelkey => $subModelMeasureData) {
+    //                         foreach($subModelMeasureData as $measureKey => $ModelMeasure){
+    //                             $ModelMeasureArr[$measureKey] = $ModelMeasure;
+    //                         }
+    //                     }
+    //                 }
+    //             } 
+
+    //             print_r($HangerArr);
+    //             print_r($RackArr);
+    //             print_r($ModelMeasureArr);
+    //         }
+    //     }
+    // }
+    // die;
     $formData = $_REQUEST;
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wOTZaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.2_FqtE-X7ptRGVXKmtlNP77LJUjivi-Y33q6lNn8OxE";
-    $boardId = 1942435428;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0OTAwMzY5MiwiYWFpIjoxMSwidWlkIjo2OTcxMjQwMSwiaWFkIjoiMjAyNC0xMi0xN1QwOTo0ODo1OS41MjdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY5OTQ1MDIsInJnbiI6ImFwc2UyIn0.LCR6zgDGK5sxh_tM9vsZa51g2utgduvwDxjjf0yv71I";
+    $boardId = 1948140868;
     $itemName = $_SESSION['username'];
 
     // Escape and encode the item name to safely include it in the GraphQL query
     $itemName = addslashes($itemName);
-
-
     // ---------------------------------- CREATING ITEM ----------------------------------------------------
     // GraphQL mutation to create a new item
     $ceateItemMutation = 'mutation {
@@ -471,13 +542,636 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     ));
 
     // Execute the request and get the response
-    $createItemResponse = curl_exec($curl);
+    $response = curl_exec($curl);
     curl_close($curl);
-    $responseForItem = json_decode($createItemResponse, true);
+    $responseForItem = json_decode($response, true);
     $itemId = $responseForItem['data']['create_item']['id'];
 
     // ---------------------------------- CREATING ITEM ----------------------------------------------------
+    // ---------------------------------- CREATING SUBITEM AND UPDATE VALUE ----------------------------------------------------
+    foreach ($data['group_names'] as $index => $groupName) {
+        foreach ($data['setting'] as $key => $value) { 
+            if($key == $groupName){ 
+                $ModelMeasureArr = [];
+                $HangerArr = [];
+                $RackArr = [];
+                $headerImage = [];
+                $frameImage = [];
+                if (isset($data['params']) && isset($data['params']['rackAdded'])) {
+                    foreach($data['params']['rackAdded'] as $rackKey => $rackVal){
+                        $rackPartkey = explode('-',$rackKey);
+                        if ($rackPartkey[0] == $groupName) {
+                            if (!in_array($rackPartkey[3], $RackArr)) { // Check for duplicates
+                                $RackArr[] = $rackPartkey[3];
+                            }
+                        }
+                    }
+                }
+                if (isset($data['params']) && isset($data['params']['hangerAdded'])) {
+                    foreach($data['params']['hangerAdded'] as $hangerKey => $hangerVal){
+                        $hangerPartkey = explode('-',$hangerKey);
+                        if ($hangerPartkey[0] == $groupName) {
+                            if (!in_array($hangerPartkey[3], $HangerArr)) { // Check for duplicates
+                                $HangerArr[] = $hangerPartkey[3];
+                            }
+                        }
+                    }
+                }
+                if (isset($data['top_frame_croped_image'])) {
+                    foreach($data['top_frame_croped_image'] as $headKey => $headVal){
+                        if($headKey == $groupName) {
+                            foreach ($headVal as $subHeadkey => $subHeadvalue) {
+                                if($subHeadkey == $value['defaultModel']){
+                                    foreach ($subHeadvalue as $Imagekey => $Imagevalue) {
+                                        $headerImage['headerImage'] = 'http://localhost/three-model/'.$Imagevalue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (isset($data['main_frame_croped_image'])) {
+                    foreach($data['main_frame_croped_image'] as $frameKey => $frameVal){
+                        if($frameKey == $groupName) {
+                            foreach ($frameVal as $subframekey => $subframevalue) {
+                                if($subframekey == $value['defaultModel']){
+                                    $frameImage['frameImage'] = 'http://localhost/three-model/'.$subframevalue;
+                                }
+                            }
+                        }
+                    }
+                }
+                foreach ($data['ModelData'] as $modelKey => $ModelMeasureValue) {
+                    if($modelKey == $key){
+                        foreach ($ModelMeasureValue as $submodelkey => $subModelMeasureData) {
+                            foreach($subModelMeasureData as $measureKey => $ModelMeasure){
+                                $ModelMeasureArr[$measureKey] = $ModelMeasure;
+                            }
+                        }
+                    }
+                } 
+
+                $ceateSubItemMutation = 'mutation { 
+                    create_subitem (
+                        parent_item_id: "' . $itemId . '", 
+                        item_name: "' . $groupName . '" 
+                    ) { 
+                        id 
+                    } 
+                }';
+
+                // Initialize cURL
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $ceateSubItemMutation]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                // Execute the request and get the response
+                $response = curl_exec($curl);
+                curl_close($curl);
+                if($response === false) {
+                    echo "cURL Error: " . curl_error($curl);
+                } else {
+                    $responseForSubItem = json_decode($response, true);
+                    if (isset($responseForSubItem['errors'])) {
+                        print_r($responseForSubItem['errors']);
+                    }
+                    curl_close($curl);
+                }
+                $subItemId = $responseForSubItem['data']['create_subitem']['id'];
+                // echo "<pre>";print_r($subItemId);die;
+                // ---------------------------------- GETTING  SUBITEM BOARD ID ----------------------------------------------------
+                $getSubItemBoardId = 'query {
+                    boards(ids: ' . $boardId . ') {
+                        id
+                        name
+                        columns {
+                            id
+                            title
+                            type
+                            settings_str
+                        }
+                    }
+                }';
+
+                // Initialize cURL
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $getSubItemBoardId]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                // Execute the request and get the response
+                $response = curl_exec($curl);
+                curl_close($curl);
+
+                // Decode the response
+                $responseData = json_decode($response, true);
+                // Find the Subitem Column
+                // echo "<pre>"; print_r($responseData);
+                $subitemBoardId = null;
+                if (isset($responseData['data']['boards'][0]['columns'])) {
+                    foreach ($responseData['data']['boards'][0]['columns'] as $column) {
+                        if ($column['type'] === 'subtasks' && isset($column['settings_str'])) {
+                            $settings = json_decode($column['settings_str'], true);
+                            if (isset($settings['boardIds'])) {
+                                $subitemBoardId = $settings['boardIds'][0];
+                                break;
+                            }
+                        }
+                    }
+                }
+                // ---------------------------------- GETTING  SUBITEM BOARD ID ----------------------------------------------------
+
+                // ---------------------------------- CREATING SUBITEM COLUMN ----------------------------------------------------
+                $columnData = [
+                    "header Type" => "text",
+                    "header Size" => "text",
+                    "Header Shelf Type" => "text",
+                    "Header Shelf size" => "text",
+                    "Header Glass Shelf Fixing" => "text",
+                    "isRod Active" => "text",
+                    "Rod Size" => "text",
+                    "Rod Color" => "text",
+                    "Frame Type" => "text",
+                    "Frame Size" => "text",
+                    "Frame Border Color" => "text",
+                    "Frame Material Type" => "text",
+                    "isSlotted Active" => "text",
+                    "Rack Wooden Shelf" => "text",
+                    "Rack Wooden Shelf Size" => "text",
+                    "Rack Glass Shelf" => "text",
+                    "Rack Glass Shelf Size" => "text",
+                    "Rack Color" => "text",
+                    "Rack Stand Color" => "text",
+                    "Base Type" => "text",
+                    "Base Size" => "text",
+                    "Header Image" => "link",
+                    "Frame Image" => "link",   
+                    "Hanger Rail Step" => "text",
+                    "Hanger Rail Step Size" => "text",
+                    "Hanger Rail Single" => "text",
+                    "Hanger Rail Single Size" => "text",
+                    "Hanger Rail D 500" => "text",
+                    "Hanger Rail D 500 Size" => "text",
+                    "Hanger Rail D 1000" => "text",
+                    "Hanger Rail D 1000 Size" => "text",
+                    "Hanger Golf Driver" => "text",
+                    "Hanger Golf Driver Size" => "text",
+                    "Hanger Golf Iron" => "text",
+                    "Hanger Golf Iron Size" => "text",             
+                ];
+
+                // Retrieve Existing Columns
+                $existingColumns = getExistingColumns($apiToken, $subitemBoardId);
+                // Create Missing Columns
+                $mutations = [];
+                foreach ($columnData as $columnName => $columnType) {
+                    if (!in_array($columnName, $existingColumns)) {
+                        $mutations = 'mutation {
+                            create_column (
+                                board_id: ' . $subitemBoardId . ',
+                                title: "' . addslashes($columnName) . '",
+                                column_type: ' . $columnType . '
+                            ) {
+                                id
+                            }
+                    }';
+                    // Perform the API request to Monday.com
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://api.monday.com/v2',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode(['query' => $mutations]),
+                        CURLOPT_HTTPHEADER => array(
+                            'Authorization: Bearer ' . $apiToken,
+                            'Content-Type: application/json',
+                        ),
+                    ));
+    
+                    $response = curl_exec($curl);
+                    curl_close($curl);
+                    sleep(2);
+                    }
+                }
+
+                
+                // // Retrieve Existing Columns
+                // $existingColumns = getExistingColumns($apiToken, $subitemBoardId);
+                // // Create Missing Columns
+                // foreach ($columnData as $columnName => $columnType) {
+                //     if (!in_array($columnName, $existingColumns)) {
+                //         $success = createColumn($apiToken, $subitemBoardId, $columnName, $columnType);
+                //          // Add the column title as text value
+                //         if ($success) {
+                //         } else {
+                //             echo "Failed to create column '$columnName'.\n";
+                //         }
+                //     }
+                // }
+                // echo "<pre>"; print_r($responseForSubItem);die;
+                // ---------------------------------- CREATING SUBITEM COLUMN ----------------------------------------------------
+                $getSubItemColumns = '
+                    {
+                    boards(ids: '.$subitemBoardId.') {
+                        columns {
+                        id
+                        title
+                        }
+                    }
+                }';
+
+                // Initialize cURL
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $getSubItemColumns]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                // Execute the request and get the response
+                $response = curl_exec($curl);
+                if($response === false) {
+                    echo "cURL Error: " . curl_error($curl);
+                } else {
+                    $subItemColumnsFetch = json_decode($response, true);
+                    if (isset($subItemColumnsFetch['errors'])) {
+                        print_r($subItemColumnsFetch['errors']);
+                    }
+                    curl_close($curl);
+                }
+
+                $query = '
+                    {
+                    items(ids: '. $subItemId .') {
+                        column_values {
+                        id
+                        text
+                        value
+                        }
+                    }
+                }';
+                // Initialize cURL
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $query]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                // Execute the request and get the response
+                $response = curl_exec($curl);
+                if($response === false) {
+                    echo "cURL Error: " . curl_error($curl);
+                } else {
+                    $currentColumnValues = json_decode($response, true);
+                    if (isset($currentColumnValues['errors'])) {
+                        print_r($currentColumnValues['errors']);
+                    }
+                    curl_close($curl);
+                }
+
+
+                $baseSize = 'null'; 
+                if (!empty($ModelMeasureArr['Base_Solid'])) {
+                    $baseSize = round($ModelMeasureArr['Base_Solid']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['z']) . 'mm';
+                } elseif (!empty($ModelMeasureArr['Base_Support_Sides'])) {
+                    $baseSize = round($ModelMeasureArr['Base_Support_Sides']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['z']) . 'mm';
+                }
+                $subItemColumnValues = [
+                    "header Type" => $value['topOption'],    
+                    "header Size" => $value['topOption'] == "Header" ? $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : "null",
+                    "Header Shelf Type" => $value['topOption'] == "Shelf" ? $value['defaultShelfType'] : "null",
+                    "Header Shelf size" => $value['topOption'] == "Shelf" ? round($ModelMeasureArr[$value['defaultShelfType']]['x']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['y']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['z']).'mm' : "null" ,
+                    "Header Glass Shelf Fixing" => $value['topOption'] == "Shelf" && $value['defaultShelfType'] == "Header_Glass_Shelf" ? round($ModelMeasureArr['Glass_Shelf_Fixing']['x']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['y']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['z']).'mm' : "null" ,
+                    "isRod Active" => $value['headerRodToggle'] ? "Yes" : "No", 
+                    "Rod Size" => $value['headerRodToggle'] == true && isset($ModelMeasureArr['Rod']) ? round($ModelMeasureArr['Rod']['x']).'mm x '.round($ModelMeasureArr['Rod']['y']).'mm x '.round($ModelMeasureArr['Rod']['z']).'mm' : "null" ,
+                    "Rod Color" => $value['headerRodToggle'] == true ? $value['rodFrameColor'] : "null",
+                    "Frame Type" => $value['defaultModel'],
+                    "Frame Size" => $ModelMeasureArr['Frame']['width'].' x '.$ModelMeasureArr['Frame']['height'].' x '.$ModelMeasureArr['Frame']['depth'],
+                    "Frame Border Color" => $value['frameBorderColor'],
+                    "Frame Material Type" => $value['frameMaterialType'],
+                    "isSlotted Active" => $value['slottedSidesToggle'] ? "Yes" : "No",
+                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ?  "Yes" : "No",
+                    "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "null",
+                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ?  "Yes" : "No",
+                    "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "null",
+                    "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "null",
+                    "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "null",
+                    "Base Type" => isset($ModelMeasureArr['Base_Solid']) ? "Base_Solid" : "Base_Support_Sides" ,
+                    "Base Size" => $baseSize,
+                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "null",
+                    "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "null",
+                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "null",
+                    "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "null",
+                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "null",
+                    "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "null",
+                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "null",
+                    "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "null",
+                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "null",
+                    "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "null",
+                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "null",
+                    "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "null",
+                    "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "null",
+                    "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "null",
+                ];
+
+                // Initialize a mapping of current column titles to their values
+                $headerImageId = "";
+                $frameImageId = "";
+                $columnsToUpdate = [];
+                foreach ($subItemColumnValues as $columnTitle => $columnValue) {
+                    // Step 1: Find the corresponding column ID from $subItemColumnsFetch
+                    $columnId = null;
+                    foreach ($subItemColumnsFetch['data']['boards'][0]['columns'] as $column) {
+                        if (strtolower($column['title']) == strtolower($columnTitle)) {
+                            if($column['title'] == "Header Image"){
+                                $headerImageId = $column['id'];
+                                break;  // Stop once we find the matching title
+                            }else if($column['title'] == "Frame Image"){
+                                $frameImageId = $column['id'];
+                                break;  // Stop once we find the matching title
+                            }else{
+                                $columnId = $column['id'];
+                                break;  // Stop once we find the matching title
+                            }
+                        }
+                    }
+
+                    // Step 2: If the column ID is found, update the value in $currentColumnValues
+                    if ($columnId) {
+                        foreach ($currentColumnValues['data']['items'][0]['column_values'] as &$column) {
+                            if ($column['id'] == $columnId) {
+                                // Step 3: Set the value from $subItemColumnValues to the column
+                                $columnsToUpdate[$columnId] = $columnValue;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Convert the column values to JSON
+                $columnValuesJson = json_encode($columnsToUpdate, JSON_UNESCAPED_SLASHES);
+
+                // Construct the GraphQL mutation
+                $mutation = 'mutation {
+                    change_multiple_column_values(
+                        item_id: ' . $subItemId . ',
+                        board_id: ' . $subitemBoardId . ',
+                        column_values: "' . addslashes($columnValuesJson) . '"
+                    ) {
+                        id
+                    }
+                }';
+
+                // Initialize cURL
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $mutation]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                // Execute the request and get the response
+                $response = curl_exec($curl);
+                if($response === false) {
+                    echo "cURL Error: " . curl_error($curl);
+                } else {
+                    $responseData = json_decode($response, true);
+                    if (isset($responseData['errors'])) {
+                        print_r($responseData['errors']);
+                    }
+                }
+                if(isset($headerImage['headerImage'])){
+                    // Construct the GraphQL mutation
+                    // Construct the GraphQL mutation
+                    $mutation = 'mutation {
+                        change_column_value(
+                            board_id: ' . $subitemBoardId . ',
+                            item_id: ' . $subItemId . ',
+                            column_id: "' . $headerImageId . '",
+                            value: "{\\"url\\": \\"' . addslashes($headerImage['headerImage']) . '\\", \\"text\\": \\"Header Image\\"}"
+                        ) {
+                            id
+                        }
+                    }';
+                                    
+                    // Initialize cURL
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://api.monday.com/v2',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode(['query' => $mutation]),
+                        CURLOPT_HTTPHEADER => array(
+                            'Authorization: Bearer ' . $apiToken,
+                            'Content-Type: application/json',
+                        ),
+                    ));
+    
+                    // Execute the request and get the response
+                    $response = curl_exec($curl);
+                    if($response === false) {
+                        echo "cURL Error: " . curl_error($curl);
+                    } else {
+                        $responseData = json_decode($response, true);
+                        if (isset($responseData['errors'])) {
+                            print_r($responseData['errors']);
+                        }
+                    }
+                }
+                if(isset($frameImage['frameImage'])){
+                    // Construct the GraphQL mutation
+                    $mutation = 'mutation {
+                        change_column_value(
+                            board_id: ' . $subitemBoardId . ',
+                            item_id: ' . $subItemId . ',
+                            column_id: "' . $frameImageId . '",
+                            value: "{\\"url\\": \\"' . addslashes($frameImage['frameImage']) . '\\", \\"text\\": \\"Frame Image\\"}"
+                        ) {
+                            id
+                        }
+                    }';
+                    // Initialize cURL
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                        CURLOPT_URL => 'https://api.monday.com/v2',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_ENCODING => '',
+                        CURLOPT_MAXREDIRS => 10,
+                        CURLOPT_TIMEOUT => 0,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                        CURLOPT_CUSTOMREQUEST => 'POST',
+                        CURLOPT_POSTFIELDS => json_encode(['query' => $mutation]),
+                        CURLOPT_HTTPHEADER => array(
+                            'Authorization: Bearer ' . $apiToken,
+                            'Content-Type: application/json',
+                        ),
+                    ));
+    
+                    // Execute the request and get the response
+                    $response = curl_exec($curl);
+                    if($response === false) {
+                        echo "cURL Error: " . curl_error($curl);
+                    } else {
+                        $responseData = json_decode($response, true);
+                        if (isset($responseData['errors'])) {
+                            print_r($responseData['errors']);
+                        }
+                    }
+                }
+
+
+            }
+        }
+    }
+    
+    // ---------------------------------- CREATING SUBITEM AND UPDATE VALUE ----------------------------------------------------
     // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
+    // Columns to create
+    $columnsToCreate = [
+        ["title" => "Customer", "type" => "text"], 
+        ["title" => "Company", "type" => "text"], 
+        ["title" => "Email", "type" => "text"],
+        ["title" => "Qty", "type" => "text"],
+        ["title" => "Date", "type" => "text"],
+    ];
+
+    // Step 1: Fetch existing columns in the board
+    $queryExistingColumns = '{
+        boards(ids: ' . $boardId . ') {
+            columns {
+                title
+            }
+        }
+    }';
+
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $queryExistingColumns]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $existingColumnsResponse = json_decode($response, true);
+
+    $existingColumns = [];
+    if (isset($existingColumnsResponse['data']['boards'][0]['columns'])) {
+        foreach ($existingColumnsResponse['data']['boards'][0]['columns'] as $column) {
+            $existingColumns[] = $column['title'];
+        }
+    }
+
+    // Step 2: Loop through columns and create them if they don't exist
+    foreach ($columnsToCreate as $column) {
+        if (!in_array($column['title'], $existingColumns)) {
+            // Create the column
+            $createColumnMutation = 'mutation {
+                create_column (
+                    board_id: ' . $boardId . ',
+                    title: "' . addslashes($column['title']) . '",
+                    column_type: ' . $column['type'] . '
+                ) {
+                    id
+                }
+            }';
+
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://api.monday.com/v2',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode(['query' => $createColumnMutation]),
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization: Bearer ' . $apiToken,
+                    'Content-Type: application/json',
+                ),
+            ));
+            $response = curl_exec($curl);
+            curl_close($curl);
+        }
+    }
 
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -511,7 +1205,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Loop through the formData and match it with Monday column titles
     foreach ($formData as $field => $value) {
         foreach ($mondayColumns as $column) {
-            if ($column['title'] === $field) {
+            if ($column['title'] == $field) {
                 // Store the value using the column ID in the object
                 $columnValues[$column['id']] = $value;
                 break;
@@ -534,7 +1228,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             ) { id }
         }
     ';
-    // echo "<pre>";print_r($mutation);
 
 
     // Initialize curl for the mutation request
@@ -558,8 +1251,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Execute the request to update the column values
     $response = curl_exec($curl);
     curl_close($curl);
-    sendEmailToUser($_REQUEST);
-    echo json_encode($response);
+    // sendEmailToUser($_REQUEST);
+    echo json_encode(["status" => "success", "message" => $response]);
     exit;
     // ---------------------------------- ADDING TO MONDAY BOARD ----------------------------------------------------
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'setSessionData'){
@@ -665,4 +1358,44 @@ function sendEmailToUser($data){
     } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
     }
+}
+
+// Function to Retrieve Existing Columns
+function getExistingColumns($apiToken, $subitemBoardId) {
+    $query = '{
+        boards(ids: ' . $subitemBoardId . ') {
+            columns {
+                id
+                title
+            }
+        }
+    }';
+
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $query]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    curl_close($curl);
+
+    $responseData = json_decode($response, true);
+
+    if (isset($responseData['data']['boards'][0]['columns'])) {
+        return array_column($responseData['data']['boards'][0]['columns'], 'title');
+    }
+
+    return [];
 }
