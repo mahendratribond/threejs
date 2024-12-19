@@ -774,7 +774,7 @@ export async function showHideNodes() {
     let main_model = sharedParams.selectedGroup;
     // Collect all nodes once
     const nodes = collectNodes(main_model.activeModel);
-    console.log(sharedParams.modelGroup);
+    // console.log(sharedParams.modelGroup);
     for (const hideNode of nodes.nodeToHide) {
         hideNode.visible = false;
     }
@@ -860,8 +860,6 @@ export async function showHideNodes() {
 
         // Header nodes
         updateInChunks(nodes.headerNodes, (node) => {
-            console.log(current_setting);
-
             node.visible =
                 current_setting.topOption == "Header" &&
                 current_setting.defaultHeaderSize == node.name;

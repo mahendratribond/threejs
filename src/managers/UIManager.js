@@ -164,7 +164,7 @@ export class UIManager {
                 if (event.target.classList.contains("frameSize")) {
                     setting[params.selectedGroupName].defaultModel =
                         event.target.value;
-                    console.log(setting[params.selectedGroupName].defaultModel);
+                    // console.log(setting[params.selectedGroupName].defaultModel);
                     updateActiveModel(
                         setting[params.selectedGroupName].defaultModel
                     );
@@ -186,10 +186,10 @@ export class UIManager {
                     //   "setting[params.selectedGroupName]",
                     //   setting[params.selectedGroupName]
                     // );
-                    console.log(
-                        "params.selectedGroupName",
-                        params.selectedGroupName
-                    );
+                    // console.log(
+                    //     "params.selectedGroupName",
+                    //     params.selectedGroupName
+                    // );
                     setting[params.selectedGroupName].topOption =
                         event.target.value;
                     setting[params.selectedGroupName].headerRodToggle = false;
@@ -201,7 +201,7 @@ export class UIManager {
                             params.selectedGroupName
                         ].headerRodToggle = true;
                     }
-                    console.log(setting[params.selectedGroupName].topOption);
+                    // console.log(setting[params.selectedGroupName].topOption);
 
                     const headerRodToggle =
                         document.querySelector(".headerRodToggle");
@@ -281,9 +281,9 @@ export class UIManager {
                 if (event.target.classList.contains("slottedSidesToggle")) {
                     setting[params.selectedGroupName].slottedSidesToggle =
                         event.target.checked;
-                    console.log(
-                        setting[params.selectedGroupName].slottedSidesToggle
-                    );
+                    // console.log(
+                    //     setting[params.selectedGroupName].slottedSidesToggle
+                    // );
 
                     await showHideNodes();
                 }
@@ -797,12 +797,12 @@ export class UIManager {
                                     child.rackArrayKey &&
                                     child.rackCount
                                 ) {
-                                    console.log(
-                                        "params.rackAdded",
-                                        params.rackAdded
-                                    );
-                                    console.log("child", child);
-                                    console.log("child.name", child.name);
+                                    // console.log(
+                                    //     "params.rackAdded",
+                                    //     params.rackAdded
+                                    // );
+                                    // console.log("child", child);
+                                    // console.log("child.name", child.name);
 
                                     params.rackAdded = params.rackAdded || {};
                                     params.rackAdded[child.rackArrayKey] =
@@ -1440,7 +1440,7 @@ export class UIManager {
             this.hangerIntersects.length > 0 &&
             sharedParams.transformControls
         ) {
-            console.log(this.hangerIntersects);
+            // console.log(this.hangerIntersects);
 
             this.hideRemoveIcons();
             const intersectNode = this.hangerIntersects[0].object;
