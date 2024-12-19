@@ -95,6 +95,7 @@ async function renderAndDownload(
     name,
     imagesNameArr
 ) {
+    
     // Store original renderer size and camera properties
     const originalWidth = tempRenderer.domElement.width;
     const originalHeight = tempRenderer.domElement.height;
@@ -151,9 +152,11 @@ async function renderAndDownload(
         tempCamera.quaternion.copy(originalQuaternion);
         tempCamera.updateProjectionMatrix();
     }
+    
 }
 
 async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
+    
     const croppedImage = await removeBlankSpacesFromImage(dataUrl);
     try {
         const response = await fetch("api.php", {
@@ -172,6 +175,7 @@ async function downloadScreenshotwithDiffCanvas(dataUrl, filename) {
     } catch (error) {
         console.error("Fetch error:", error);
     }
+    
 }
 
 // function removeBlankSpacesFromImage(imageSrc) {
@@ -417,7 +421,7 @@ async function captureFixtureImage(
                         center.z + (cameraDistance + 500) // Offset in Z for distance
                     );
                     tempCamera.lookAt(center);
-
+                    
                     await renderAndDownload(
                         child.name,
                         tempCamera,
@@ -466,7 +470,7 @@ async function captureModelImages() {
     const originalQuaternion = sharedParams.camera.quaternion.clone();
 
     // Calculate bounding box for the model group
-
+    
     const Outerbox = await cloneMainModelGroup(sharedParams.modelGroup);
     const outerSize = Outerbox.getSize(new THREE.Vector3());
     const outerCenter = Outerbox.getCenter(new THREE.Vector3());
@@ -507,9 +511,9 @@ async function captureModelImages() {
         });
 
         // Step 1: Calculate the bounding box for the current model
-
+        
         let modelSize = await cloneModelGroup(model);
-
+        
         const box = new THREE.Box3().setFromObject(modelSize[0]);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
@@ -535,18 +539,18 @@ async function captureModelImages() {
         // Step 2a: Front view - Set the camera position to capture the front of the model
         frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
         frontCamera.lookAt(center);
-        // await renderAndDownload(
-        //     "front",
-        //     frontCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
+        await renderAndDownload(
+            "front",
+            frontCamera,
+            tempRenderer,
+            model.name,
+            imagesNameArr
+        );
 
         // Side view
-        // tempCanvas.width = 1602;
-        // tempCanvas.height = 2005;
-        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+        tempCanvas.width = 1602;
+        tempCanvas.height = 2005;
+        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
         const sideCamera = new THREE.OrthographicCamera(
             -1602,
             1602,
@@ -565,18 +569,18 @@ async function captureModelImages() {
         sideCamera.lookAt(center);
 
         // Wait for side view render to complete
-        // await renderAndDownload(
-        //     "side",
-        //     sideCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
+        await renderAndDownload(
+            "side",
+            sideCamera,
+            tempRenderer,
+            model.name,
+            imagesNameArr
+        );
 
         // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
-        // tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-        // tempCanvas.height = size.y; // Use both y and z for better height coverage
-        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+        tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
+        tempCanvas.height = size.y; // Use both y and z for better height coverage
+        tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
         const diagonalCamera = new THREE.PerspectiveCamera(
             45,
             size.x / size.y,
@@ -594,58 +598,27 @@ async function captureModelImages() {
         );
 
         diagonalCamera.lookAt(center);
-        // await renderAndDownload(
-        //     "diagonal",
-        //     diagonalCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
+        await renderAndDownload(
+            "diagonal",
+            diagonalCamera,
+            tempRenderer,
+            model.name,
+            imagesNameArr
+        );
 
-        await Promise.all([
-            renderAndDownload(
-                "front",
-                frontCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr
-            ),
+        diagonalCamera.position.set(
+            center.x + cameraDistance, // Offset in X for diagonal perspective
+            center.y + 100, // Offset in Y for better centering
+            center.z + cameraDistance + 500 // Offset in Z for distance
+        );
 
-            (tempCanvas.width = 1602),
-            (tempCanvas.height = 2005),
-            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-            renderAndDownload(
-                "side",
-                sideCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr
-            ),
-
-            (tempCanvas.width = size.x + size.z),
-            (tempCanvas.height = size.y),
-            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-            renderAndDownload(
-                "diagonal",
-                diagonalCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr
-            ),
-
-            diagonalCamera.position.set(
-                center.x + cameraDistance, // Offset in X for diagonal perspective
-                center.y + 100, // Offset in Y for better centering
-                center.z + cameraDistance + 500 // Offset in Z for distance
-            ),
-            captureFixtureImage(
-                diagonalCamera,
-                tempRenderer,
-                model,
-                model.name,
-                imagesNameArr
-            ),
-        ]);
+        await captureFixtureImage(
+            diagonalCamera,
+            tempRenderer,
+            model,
+            model.name,
+            imagesNameArr
+        );
 
         // Restore visibility
         sharedParams.scene.children.forEach((childScene) => {
@@ -730,6 +703,10 @@ export async function creatingPDF() {
             child.rackArrayKey &&
             child.rackCount
         ) {
+            // console.log("params.rackAdded", params.rackAdded);
+            // console.log("child", child);
+            // console.log("child.name", child.name);
+
             params.rackAdded = params.rackAdded || {};
             params.rackAdded[child.rackArrayKey] =
                 params.rackAdded[child.rackArrayKey] || {};
@@ -737,9 +714,11 @@ export async function creatingPDF() {
                 child.position;
         }
     });
-
+    
+    
     let ModelImageName = await captureModelImages();
 
+    
     const dataToSave = {
         params: params || null,
         setting: setting || null,
@@ -749,7 +728,7 @@ export async function creatingPDF() {
         ModelImageName: ModelImageName || null,
     };
     await delay(1000);
-
+    
     await savePdfData(dataToSave, sharedParams.modelGroup);
     console.log(
         `after creatingPDF`,
@@ -794,7 +773,7 @@ export async function savePdfData(dataToSave) {
     dataToSave["fileName"] = fileName;
 
     const pdf_data = JSON.stringify(dataToSave);
-
+    
     fetch("api.php", {
         method: "POST",
         headers: {
@@ -811,6 +790,7 @@ export async function savePdfData(dataToSave) {
                 pdfDownoad.href = data.url;
                 pdfDownoad.download = fileName;
                 pdfDownoad.click();
+                
             } else {
                 console.error("Error saving model data:", data.error);
             }

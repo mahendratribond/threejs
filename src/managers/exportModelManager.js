@@ -188,7 +188,7 @@ export async function exportModelForAr(model, name, isQr = false) {
     const clone = model.clone();
     await traverseAsync(clone, (cloneChild) => {
       if (cloneChild.name.startsWith("Cone")) {
-          console.log(cloneChild);
+        //   console.log(cloneChild);
             cloneChild.parent.remove(cloneChild);
         }
     });
@@ -219,7 +219,7 @@ export async function exportModelForAr(model, name, isQr = false) {
 }
 
 async function saveArrayBuffer(blob, filename) {
-    console.log(blob.size);
+    // console.log(blob.size);
     const formData = new FormData();
     formData.append("file", blob, filename);
     formData.append("action", "saveModelFile");
