@@ -65,6 +65,25 @@ export let sharedParams = {
     selectedGroup: null,
     removeIcon: null,
 };
+// Names for different frame parts 'Model_600', 'Model_900', 'Model_661', 'Model_1061',
+export let allGroupNames = ['main_model'];
+export let allModelNames = ['Model_661', 'Model_1061', 'Model_1200', 'Model_1500', 'Model_2000', 'Model_3000'];
+export let allOtherModelNames = ['Other_Model_661', 'Other_Model_1061', 'Other_Model_1200', 'Other_Model_1500', 'Other_Model_2000', 'Other_Model_3000'];
+export let frameTop1Names = ['Header_Graphic1-Mat', 'Header_Graphic2-Mat'];
+export let headerNames = ['Header_300', 'Header_500', 'Header_500_2'];
+export let frameMainNames = ['Cube1-Mat', 'Cube2-Mat'];
+export let allFrameBorderNames = ['Header_Frame', 'Top_Ex', "Top_Ex-Frame", 'Bottom_Ex', 'Left_Ex', 'Right_Ex', 'Left_Ex_Slotted', 'Right_Ex_Slotted', 'Left_Ex_Slotted-Frame', 'Right_Ex_Slotted-Frame'];
+export let baseFrameNames = ["Base_Flat", "Base_Solid", "Base_Support_Sides"];
+export let baseFrameTextureNames = ['Base_Option.1', 'Base_Option.2'];
+export let rodFrameTextureNames = ['Rod'];
+export let heightMeasurementNames = ['Header_300', 'Header_500', 'Header_500_2', 'Left_Ex', 'Right_Ex', 'Left_Ex_Slotted', 'Right_Ex_Slotted', 'Base_Flat', 'Base_Solid', 'Header_Wooden_Shelf', 'Header_Glass_Shelf', 'Rod', 'Glass_Shelf_Fixing'];
+export let hangerNames = ['Hanger_Rail_Step', 'Hanger_Rail_Single', 'Hanger_Rail_D_500mm', 'Hanger_Rail_D_1000mm', 'Hanger_Golf_Club_Iron', 'Hanger_Golf_Club_Driver'];
+export let hangerPartNames = ['Hanger_Stand', 'Hanger_Clubs', 'Hanger_Faceplate', 'Clothing', 'Clothing-Fixture_Material', 'Clothing-Mat', 'Clothing-Shirt_Colour'];
+export let rackNames = ['RackWoodenShelf', 'RackGlassShelf'];
+export let rackPartNames = ['Rack_Wooden_Shelf', 'Rack_Glass_Shelf', 'Rack_Stand_LH', 'Rack_Stand_RH', 'Rack_Glass_Shelf'];
+export let golfClubNames = ["Hanger_Golf_Club_Iron", "Hanger_Golf_Club_Driver"];
+export let hangerStandBaseNodes = ['Top_Ex'];
+export let allGroupModelName = ['main_model'];
 
 export let allGroups = [];
 export const lights = [];

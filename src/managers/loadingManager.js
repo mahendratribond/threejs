@@ -1,37 +1,25 @@
-import {
-    THREE,
-    RGBELoader,
-    GLTFLoader,
-    updateVariable,
-    allGroupNames,
-    modelQueue,
-    params,
-    setting,
-    sharedParams,
-} from "../../config.js";
-import {
-    setPositionCenter,
-    addAnotherModels,
-    centerMainModel,
-    showHideNodes,
-    addRacks,
-    delay,
-} from "../../utils6.js";
-import {
-    getModelData,
-} from "./DBManager.js"
-import { addHangers } from "./HangerManager.js";
-import { addNewMaterials, restoreMaterials } from "./MaterialManager.js";
-import {
-    setTopFrameCropedImage,
-    setMainFrameCropedImage,
-} from "./FrameImagesManager.js";
-import {getNodeSize} from "./MeasurementManager.js"
+import * as THREE from "three";
+import { setPositionCenter } from "../../utils6.js";
 
-import { UIManager } from "./UIManager.js";
-import { ModelManager } from "./ModelManager.js";
-const uiManager = new UIManager();
-const modelManager = new ModelManager();
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+
+
+
+
+
+
+
+export const manager = new THREE.LoadingManager();
+export const TextureLoaderJpg = new THREE.TextureLoader(manager).setPath(
+  "./assets/images/background/"
+);
+
+
+
+
+
 // Create a function to load GLTF models using a Promise
 export const manager = new THREE.LoadingManager();
 const glftLoader = new GLTFLoader(manager).setPath("./assets/models/glb/");

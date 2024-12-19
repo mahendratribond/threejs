@@ -377,7 +377,22 @@
             </label>
           </div>
           <div class="control-group">
-            <button class="btn btn-primary btn-sm addAnotherModel" data-type="Add_Another_Model">Add Another Model</button>
+            <!-- <label for="addAnotherModel">Add Another Model</label> -->
+            <button class="btn btn-primary btn-sm addAnotherModel" data-type="Add_Another_Model">Add Another
+              Model</button>
+            <div class="horizontal-buttons d-flex gap-2">
+              <!-- <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_661">661mm Wide</button>
+                <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_1061">1061mm Wide</button>
+                <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_1200">1200mm Wide</button>
+                <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_1500">1500mm Wide</button>
+                <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_2000">2000mm Wide</button>
+                <button class="btn btn-primary btn-sm addAnotherModel" data-type="Model_3000">3000mm Wide</button> -->
+            </div>
+          </div>
+          <div class="control-group">
+            <!-- <input type="checkbox" class="btn-check" id="selectedModel" autocomplete="off">
+            <label class="btn btn-outline-primary" for="selectedModel"><i class="fas fa-cube"></i></label> -->
+
           </div>
           <div class="control-group moveLeftRightModel" style="display: none;">
             <button id="moveLeftModel" class="btn btn-outline-primary"><i class="fas fa-arrow-left"></i></button>
@@ -639,7 +654,7 @@
     }
     document.getElementById("logout").addEventListener("click", function(){
       destroySession();
-      window.location.href = "test6.html";
+      window.location.reload();
     })
 
     // Lazy load images using IntersectionObserver
