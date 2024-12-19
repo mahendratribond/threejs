@@ -267,10 +267,6 @@ export class UIManager {
                     ) {
                         setting[params.selectedGroupName].headerRodToggle = true;
                     }
-                    if(setting[params.selectedGroupName].topOption == "Header" && setting[params.selectedGroupName].previousRodToggle){
-                        setting[params.selectedGroupName].headerRodToggle = true;
-                        setting[params.selectedGroupName].headerUpDown = true;
-                    }
                     // console.log(setting[params.selectedGroupName].topOption);
 
                     const headerRodToggle =
@@ -1513,6 +1509,8 @@ export class UIManager {
             this.hangerIntersects.length > 0 &&
             sharedParams.transformControls && !isLoaderActive
         ) {
+            // console.log(this.hangerIntersects);
+
             this.hideRemoveIcons();
             const intersectNode = this.hangerIntersects[0].object;
             let camSide = sharedParams.camera.position.z > 0 ? "Front" : "Back";

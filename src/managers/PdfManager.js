@@ -235,48 +235,124 @@ async function waitForAjaxToFinish() {
     }
 }
 
-async function downloadScreenshotwithDiffCanvas(DataArr) {
-    for (const fileName of Object.keys(DataArr)) {
-        const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
-        try {
-            startAjax();
-            const response = await fetch("api.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: croppedImage,
-                    filename: fileName,
-                }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                endAjax();
-            } else {
-                console.error("Error saving screenshot:", data.error);
-            }
-        } catch (error) {
-            console.error("Fetch error:", error);
-        }
-        delay(200);
-    }
-    await waitForAjaxToFinish();
-}
+// function removeBlankSpacesFromImage(imageSrc) {
+//     return new Promise((resolve, reject) => {
+//         const img = new Image();
+//         img.src = imageSrc;
+//         img.onload = function () {
+//             // Create a canvas to work with the image
+//             const canvas = document.createElement("canvas");
+//             const ctx = canvas.getContext("2d");
+//             canvas.width = img.width;
+//             canvas.height = img.height;
+
+//             // Draw the image onto the canvas
+//             ctx.drawImage(img, 0, 0);
+
+//             // Get the image data
+//             const imageData = ctx.getImageData(
+//                 0,
+//                 0,
+//                 canvas.width,
+//                 canvas.height
+//             );
+//             const { data, width, height } = imageData;
+
+//             let top = 0,
+//                 bottom = height,
+//                 left = 0,
+//                 right = width;
+
+//             // Find the top boundary
+//             for (let y = 0; y < height; y++) {
+//                 for (let x = 0; x < width; x++) {
+//                     const alpha = data[(y * width + x) * 4 + 3];
+//                     if (alpha > 0) {
+//                         top = y;
+//                         break;
+//                     }
+//                 }
+//                 if (top !== 0) break;
+//             }
+
+//             // Find the bottom boundary
+//             for (let y = height - 1; y >= 0; y--) {
+//                 for (let x = 0; x < width; x++) {
+//                     const alpha = data[(y * width + x) * 4 + 3];
+//                     if (alpha > 0) {
+//                         bottom = y;
+//                         break;
+//                     }
+//                 }
+//                 if (bottom !== height) break;
+//             }
+
+//             // Find the left boundary
+//             for (let x = 0; x < width; x++) {
+//                 for (let y = 0; y < height; y++) {
+//                     const alpha = data[(y * width + x) * 4 + 3];
+//                     if (alpha > 0) {
+//                         left = x;
+//                         break;
+//                     }
+//                 }
+//                 if (left !== 0) break;
+//             }
+
+//             // Find the right boundary
+//             for (let x = width - 1; x >= 0; x--) {
+//                 for (let y = 0; y < height; y++) {
+//                     const alpha = data[(y * width + x) * 4 + 3];
+//                     if (alpha > 0) {
+//                         right = x;
+//                         break;
+//                     }
+//                 }
+//                 if (right !== width) break;
+//             }
+
+//             // Crop dimensions
+//             const cropWidth = right - left + 1;
+//             const cropHeight = bottom - top + 1;
+
+//             // Draw the cropped image
+//             const croppedCanvas = document.createElement("canvas");
+//             const croppedCtx = croppedCanvas.getContext("2d");
+//             croppedCanvas.width = cropWidth;
+//             croppedCanvas.height = cropHeight;
+
+//             croppedCtx.drawImage(
+//                 canvas,
+//                 left,
+//                 top,
+//                 cropWidth,
+//                 cropHeight,
+//                 0,
+//                 0,
+//                 cropWidth,
+//                 cropHeight
+//             );
+
+//             // Convert cropped canvas to a new image
+//             const croppedImage = croppedCanvas.toDataURL();
+//             resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
+//         };
+
+//         img.onerror = reject; // In case of an error, reject the promise
+//     });
+// }
 
 function removeBlankSpacesFromImage(imageSrc) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = imageSrc;
         img.onload = function () {
-            // Create a canvas to work with the image
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             canvas.width = img.width;
             canvas.height = img.height;
-
-            // Draw the image onto the canvas
             ctx.drawImage(img, 0, 0);
 
-            // Get the image data
             const imageData = ctx.getImageData(
                 0,
                 0,
@@ -285,64 +361,28 @@ function removeBlankSpacesFromImage(imageSrc) {
             );
             const { data, width, height } = imageData;
 
-            let top = 0,
-                bottom = height,
-                left = 0,
-                right = width;
+            let top = height,
+                bottom = 0,
+                left = width,
+                right = 0;
 
-            // Find the top boundary
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
+            // Scan in chunks for faster detection
+            const step = 10;
+            for (let y = 0; y < height; y += step) {
+                for (let x = 0; x < width; x += step) {
                     const alpha = data[(y * width + x) * 4 + 3];
                     if (alpha > 0) {
-                        top = y;
-                        break;
+                        top = Math.min(top, y);
+                        bottom = Math.max(bottom, y);
+                        left = Math.min(left, x);
+                        right = Math.max(right, x);
                     }
                 }
-                if (top !== 0) break;
             }
 
-            // Find the bottom boundary
-            for (let y = height - 1; y >= 0; y--) {
-                for (let x = 0; x < width; x++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        bottom = y;
-                        break;
-                    }
-                }
-                if (bottom !== height) break;
-            }
-
-            // Find the left boundary
-            for (let x = 0; x < width; x++) {
-                for (let y = 0; y < height; y++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        left = x;
-                        break;
-                    }
-                }
-                if (left !== 0) break;
-            }
-
-            // Find the right boundary
-            for (let x = width - 1; x >= 0; x--) {
-                for (let y = 0; y < height; y++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 0) {
-                        right = x;
-                        break;
-                    }
-                }
-                if (right !== width) break;
-            }
-
-            // Crop dimensions
             const cropWidth = right - left + 1;
             const cropHeight = bottom - top + 1;
 
-            // Draw the cropped image
             const croppedCanvas = document.createElement("canvas");
             const croppedCtx = croppedCanvas.getContext("2d");
             croppedCanvas.width = cropWidth;
@@ -359,16 +399,11 @@ function removeBlankSpacesFromImage(imageSrc) {
                 cropWidth,
                 cropHeight
             );
-            // Convert cropped canvas to a new image
-            const croppedImage = croppedCanvas.toDataURL();
-            resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
-            img.src = "";
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.width = 0;
-            canvas.height = 0;
+
+            resolve(croppedCanvas.toDataURL());
         };
 
-        img.onerror = reject; // In case of an error, reject the promise
+        img.onerror = reject;
     });
 }
 
@@ -576,39 +611,57 @@ async function captureModelImages() {
             frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
             frontCamera.lookAt(center);
 
-            const sideCamera = new THREE.OrthographicCamera(
-                -1602,
-                1602,
-                2005,
-                -2005,
-                1,
-                10000
-            );
-            // Position the camera along the positive X-axis for a side view
-            const sideViewDistance = size.x + 1000;
-            sideCamera.position.set(
-                center.x + sideViewDistance,
-                center.y,
-                center.z
-            );
-            sideCamera.lookAt(center);
+        // Step 2a: Front view - Set the camera position to capture the front of the model
+        frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
+        frontCamera.lookAt(center);
+        // await renderAndDownload(
+        //     "front",
+        //     frontCamera,
+        //     tempRenderer,
+        //     model.name,
+        //     imagesNameArr
+        // );
 
-            // Wait for side view render to complete
-            const diagonalCamera = new THREE.PerspectiveCamera(
-                45,
-                size.x / size.y,
-                100,
-                100000
-            );
+        // Side view
+        // tempCanvas.width = 1602;
+        // tempCanvas.height = 2005;
+        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+        const sideCamera = new THREE.OrthographicCamera(
+            -1602,
+            1602,
+            2005,
+            -2005,
+            1,
+            10000
+        );
+        // Position the camera along the positive X-axis for a side view
+        const sideViewDistance = size.x + 1000;
+        sideCamera.position.set(
+            center.x + sideViewDistance,
+            center.y,
+            center.z
+        );
+        sideCamera.lookAt(center);
 
-            const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-            const cameraDistance = maxDim + 350; // Adjust multiplier as needed
+        // Wait for side view render to complete
+        // await renderAndDownload(
+        //     "side",
+        //     sideCamera,
+        //     tempRenderer,
+        //     model.name,
+        //     imagesNameArr
+        // );
 
-            diagonalCamera.position.set(
-                center.x + cameraDistance, // Offset in X for diagonal perspective
-                center.y, // Offset in Y for better centering
-                center.z + cameraDistance + 500 // Offset in Z for distance
-            );
+        // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
+        // tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
+        // tempCanvas.height = size.y; // Use both y and z for better height coverage
+        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
+        const diagonalCamera = new THREE.PerspectiveCamera(
+            45,
+            size.x / size.y,
+            100,
+            100000
+        );
 
             diagonalCamera.lookAt(center);
 
@@ -622,44 +675,59 @@ async function captureModelImages() {
                     DataArr
                 ),
 
-                (tempCanvas.width = 1602),
-                (tempCanvas.height = 2005),
-                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-                await renderAndDownload(
-                    "side",
-                    sideCamera,
-                    tempRenderer,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
+        diagonalCamera.lookAt(center);
+        // await renderAndDownload(
+        //     "diagonal",
+        //     diagonalCamera,
+        //     tempRenderer,
+        //     model.name,
+        //     imagesNameArr
+        // );
 
-                (tempCanvas.width = size.x + size.z),
-                (tempCanvas.height = size.y),
-                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-                await renderAndDownload(
-                    "diagonal",
-                    diagonalCamera,
-                    tempRenderer,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
+        await Promise.all([
+            renderAndDownload(
+                "front",
+                frontCamera,
+                tempRenderer,
+                model.name,
+                imagesNameArr
+            ),
 
-                diagonalCamera.position.set(
-                    center.x + cameraDistance, // Offset in X for diagonal perspective
-                    center.y + 100, // Offset in Y for better centering
-                    center.z + cameraDistance + 500 // Offset in Z for distance
-                ),
-                await captureFixtureImage(
-                    diagonalCamera,
-                    tempRenderer,
-                    model,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
-            // ]);
+            (tempCanvas.width = 1602),
+            (tempCanvas.height = 2005),
+            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
+            renderAndDownload(
+                "side",
+                sideCamera,
+                tempRenderer,
+                model.name,
+                imagesNameArr
+            ),
+
+            (tempCanvas.width = size.x + size.z),
+            (tempCanvas.height = size.y),
+            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
+            renderAndDownload(
+                "diagonal",
+                diagonalCamera,
+                tempRenderer,
+                model.name,
+                imagesNameArr
+            ),
+
+            diagonalCamera.position.set(
+                center.x + cameraDistance, // Offset in X for diagonal perspective
+                center.y + 100, // Offset in Y for better centering
+                center.z + cameraDistance + 500 // Offset in Z for distance
+            ),
+            captureFixtureImage(
+                diagonalCamera,
+                tempRenderer,
+                model,
+                model.name,
+                imagesNameArr
+            ),
+        ]);
 
             // Restore visibility
             sharedParams.scene.children.forEach((childScene) => {
@@ -766,6 +834,11 @@ export async function checkAndPreparePDF() {
 }
 
 export async function creatingPDF() {
+    console.log(
+        `before creatingPDF`,
+        Math.floor(Math.floor(Date.now() / 1000) / 60),
+        Math.floor(Math.floor(Date.now() / 1000) % 60)
+    );
     sharedParams.transformControls.detach();
     params.measurementToggle = false;
     await showHideNodes();
@@ -809,7 +882,13 @@ export async function creatingPDF() {
         ModelImageName: ModelImageName || null,
     };
     await delay(1000);
+
     await savePdfData(dataToSave, sharedParams.modelGroup);
+    console.log(
+        `after creatingPDF`,
+        Math.floor(Math.floor(Date.now() / 1000) / 60),
+        Math.floor(Math.floor(Date.now() / 1000) % 60)
+    );
 }
 
 export async function savePdfData(dataToSave) {

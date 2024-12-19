@@ -1171,27 +1171,26 @@ export async function showHideNodes(modelGroup, scene, camera) {
       }
     });
 
-    if (params.topOption == "Header") {
-      await traverseAsync(main_model, async (modelNode) => {
-        if (allModelNames.includes(modelNode.name)) {
-          await Promise.all(
-            headerNames.map(async (headerName) => {
-              const header = modelNode.getObjectByName(headerName);
-              if (header) {
-                if (
-                  current_setting.headerRodToggle &&
-                  !current_setting.headerUpDown
-                ) {
-                  header.position.y += params.rodSize.y;
-                } else if (
-                  !current_setting.headerRodToggle &&
-                  current_setting.headerUpDown
-                ) {
-                  header.position.y -= params.rodSize.y;
-                }
-              }
-            })
-          );
+    return nodeCollections;
+}
+
+export async function showHideNodes() {
+    const uiManager = new UIManager();
+    let current_setting = setting[sharedParams.selectedGroup.name];
+    let main_model = sharedParams.selectedGroup;
+    // Collect all nodes once
+    const nodes = collectNodes(main_model.activeModel);
+    // console.log(sharedParams.modelGroup);
+    for (const hideNode of nodes.nodeToHide) {
+        hideNode.visible = false;
+    }
+    // Update materials and visibility in chunks
+    async function updateInChunks(nodeArray, updateFn) {
+        const chunkSize = 10;
+        for (let i = 0; i < nodeArray.length; i += chunkSize) {
+            const chunk = nodeArray.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(updateFn));
+            await new Promise((resolve) => setTimeout(resolve, 0));
         }
       });
 
@@ -1341,74 +1340,56 @@ export async function showHideNodes(modelGroup, scene, camera) {
         });
     }
 
-    if (
-      current_setting.topOption == "Shelf" &&
-      current_setting.defaultShelfType == "Header_Wooden_Shelf"
-    ) {
-      parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-        element.style.display = "block";
-      });
-    } else {
-      parentElement.querySelectorAll(".shelfTypeBox").forEach((element) => {
-        element.style.display = "none";
-      });
-    }
+        // Header nodes
+        updateInChunks(nodes.headerNodes, (node) => {
+            node.visible =
+                current_setting.topOption == "Header" &&
+                current_setting.defaultHeaderSize == node.name;
+            if (current_setting.topOption == "Header") {
+                if (
+                    current_setting.headerRodToggle &&
+                    !current_setting.headerUpDown
+                ) {
+                    node.position.y += params.rodSize.y;
+                } else if (
+                    !current_setting.headerRodToggle &&
+                    current_setting.headerUpDown
+                ) {
+                    node.position.y -= params.rodSize.y;
+                }
+            }
+            return Promise.resolve();
+        }),
 
-    if (
-      current_setting.topOption == "Header" &&
-      current_setting.headerOptions == "SEG"
-    ) {
-      parentElement
-        .querySelectorAll(".headerFrameColorDropdownBox")
-        .forEach((element) => {
-          element.style.display = "none";
-        });
-      parentElement
-        .querySelectorAll(".headerFrameColorInputBox")
-        .forEach((element) => {
-          element.style.display = "block";
-        });
-    } else if (
-      current_setting.topOption == "Header" &&
-      current_setting.headerOptions == "ALG"
-    ) {
-      parentElement
-        .querySelectorAll(".headerFrameColorDropdownBox")
-        .forEach((element) => {
-          element.style.display = "block";
-        });
-      parentElement
-        .querySelectorAll(".headerFrameColorInputBox")
-        .forEach((element) => {
-          element.style.display = "none";
-        });
-    } else if (
-      current_setting.topOption == "Header" &&
-      current_setting.headerOptions == "ALG3D"
-    ) {
-      parentElement
-        .querySelectorAll(".headerFrameColorDropdownBox")
-        .forEach((element) => {
-          element.style.display = "none";
-        });
-      parentElement
-        .querySelectorAll(".headerFrameColorInputBox")
-        .forEach((element) => {
-          element.style.display = "block";
-        });
-    } else {
-      parentElement
-        .querySelectorAll(".headerFrameColorDropdownBox")
-        .forEach((element) => {
-          element.style.display = "none";
-        });
-      parentElement
-        .querySelectorAll(".headerFrameColorInputBox")
-        .forEach((element) => {
-          element.style.display = "none";
-        });
-    }
-  }
+        updateInChunks(main_model.children, (childNode) => {
+            if (current_setting.defaultModel !== childNode.name) {
+                if (
+                    current_setting.headerRodToggle &&
+                    !current_setting.headerUpDown
+                ) {
+                    let header300 = childNode.getObjectByName("Header_300");
+                    if (header300) {
+                        header300.position.y += params.rodSize.y;
+                    }
+                    let header500 = childNode.getObjectByName("Header_500");
+                    if (header500) {
+                        header500.position.y += params.rodSize.y;
+                    }
+                } else if (
+                    !current_setting.headerRodToggle &&
+                    current_setting.headerUpDown
+                ) {
+                    let header300 = childNode.getObjectByName("Header_300");
+                    if (header300) {
+                        header300.position.y -= params.rodSize.y;
+                    }
+                    let header500 = childNode.getObjectByName("Header_500");
+                    if (header500) {
+                        header500.position.y -= params.rodSize.y;
+                    }
+                }
+            }
+        }),
 
         (setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle),
         // Header Wooden Shelf nodes
