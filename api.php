@@ -20,7 +20,7 @@ if (!function_exists('deleteOldMedia')) {
             $path = __DIR__ . $arr[$i]; // Replace with the actual path
             if (is_dir($path)) {
                 // Get the timestamp for 30 minutes ago
-                $tenDaysAgo = strtotime('-10 days');
+                $tenDaysAgo = strtotime('-15 days');
 
                 // Get all files in the directory
                 $files = scandir($path);

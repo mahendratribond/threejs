@@ -742,14 +742,11 @@ export class UIManager {
                             "flex";
                         return;
                     } else {
-                        document.getElementById("loadingModal").style.display =
-                            "flex";
-                        document.getElementById("loadingText").innerHTML =
-                            "Please wait... we are creating your Pdf file";
                         try {
                             await creatingPDF();
                         } catch (error) {
                             console.error("Error creating PDF:", error);
+                            document.getElementById("loadingModal").style.display = "none";
                         }
                     }
                 }
