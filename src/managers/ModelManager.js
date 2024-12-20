@@ -117,7 +117,7 @@ export class ModelManager {
                         // cone.scale.set(0.5, 0.5, 0.5)
                         cone.position.set(
                             modelNode.position.x, // Adjust based on offset
-                            modelBox.max.y + coneHeight / 2 + 210,
+                            modelBox.max.y + coneHeight / 2 + 260,
                             // modelBox.min.y - coneHeight / 2 - 10,
                             0
                         );
