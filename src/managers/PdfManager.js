@@ -14,8 +14,8 @@ import {
     // setupHangerModel,
 } from "./HangerManager.js";
 import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
-import { traverseAsync, delay, checkTime, showHideNodes } from "../../utils6.js";
-let activeAjaxCalls = 0;
+import { traverseAsync, delay, checkTime } from "../../utils6.js";
+
 async function cloneModelGroup(model) {
     let cloneModelGroup = model.clone();
     let CloneArr = [];
@@ -168,20 +168,19 @@ async function renderAndDownload(
     const originalQuaternion = tempCamera.quaternion.clone();
 
     try {
-        // Get device's maximum resolution
-        const deviceWidth = window.screen.width * window.devicePixelRatio;
-        const deviceHeight = window.screen.height * window.devicePixelRatio;
+        // Set higher resolution (2x or 3x the original resolution)
+        let scaleFactor = 2.5; // Default scale factor
 
-        // Compute model aspect ratio and dynamic scaling
-        const modelAspectRatio = originalWidth / originalHeight;
-        let targetWidth = Math.min(originalWidth * 2, deviceWidth);
-        let targetHeight = Math.min(originalHeight * 2, deviceHeight);
-
-        // Adjust for large width/small height or vice versa
-        if (modelAspectRatio > 1) {
-            targetHeight = targetWidth / modelAspectRatio;
-        } else {
-            targetWidth = targetHeight * modelAspectRatio;
+        if (
+            (viewName === "diagonal" || viewName === "wholeModel") &&
+            originalWidth * 3 > 5000
+        ) {
+            scaleFactor = 1.5;
+        } else if (
+            viewName === "front" &&
+            (originalWidth >= 3000 || originalWidth * 3 > 5000)
+        ) {
+            scaleFactor = 1.5;
         }
 
         // Ensure resolution does not exceed device capabilities
@@ -197,8 +196,7 @@ async function renderAndDownload(
         tempRenderer.render(sharedParams.scene, tempCamera);
         const screenshotData = tempRenderer.domElement.toDataURL("image/png");
         const unixTime = Math.floor(Date.now() / 1000);
-
-        // Save the screenshot data
+        // Download or save the screenshot
         DataArr[`model-${name}-${viewName}-${unixTime}.png`] = screenshotData;
         imagesNameArr.push(
             `./screenshots/model-${name}-${viewName}-${unixTime}.png`
@@ -214,145 +212,44 @@ async function renderAndDownload(
     }
 }
 
-function startAjax() {
-    activeAjaxCalls++;
-}
-
-// Decrement when an AJAX request completes
-function endAjax() {
-    activeAjaxCalls--;
-}
-
-// Check if any AJAX requests are running
-function isAjaxRunning() {
-    return activeAjaxCalls > 0;
-}
-
-async function waitForAjaxToFinish() {
-    while (isAjaxRunning()) {
-        // Wait for 100ms before checking again
-        await new Promise((resolve) => setTimeout(resolve, 100));
+async function downloadScreenshotwithDiffCanvas(DataArr) {
+    Object.keys(DataArr).forEach(async (fileName) => {
+    const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
+    try {
+        const response = await fetch("api.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                image: croppedImage,
+                filename: fileName,
+            }),
+        });
+        const data = await response.json();
+        if (data.success) {
+        } else {
+            console.error("Error saving screenshot:", data.error);
+        }
+    } catch (error) {
+        console.error("Fetch error:", error);
     }
+});
 }
-
-// function removeBlankSpacesFromImage(imageSrc) {
-//     return new Promise((resolve, reject) => {
-//         const img = new Image();
-//         img.src = imageSrc;
-//         img.onload = function () {
-//             // Create a canvas to work with the image
-//             const canvas = document.createElement("canvas");
-//             const ctx = canvas.getContext("2d");
-//             canvas.width = img.width;
-//             canvas.height = img.height;
-
-//             // Draw the image onto the canvas
-//             ctx.drawImage(img, 0, 0);
-
-//             // Get the image data
-//             const imageData = ctx.getImageData(
-//                 0,
-//                 0,
-//                 canvas.width,
-//                 canvas.height
-//             );
-//             const { data, width, height } = imageData;
-
-//             let top = 0,
-//                 bottom = height,
-//                 left = 0,
-//                 right = width;
-
-//             // Find the top boundary
-//             for (let y = 0; y < height; y++) {
-//                 for (let x = 0; x < width; x++) {
-//                     const alpha = data[(y * width + x) * 4 + 3];
-//                     if (alpha > 0) {
-//                         top = y;
-//                         break;
-//                     }
-//                 }
-//                 if (top !== 0) break;
-//             }
-
-//             // Find the bottom boundary
-//             for (let y = height - 1; y >= 0; y--) {
-//                 for (let x = 0; x < width; x++) {
-//                     const alpha = data[(y * width + x) * 4 + 3];
-//                     if (alpha > 0) {
-//                         bottom = y;
-//                         break;
-//                     }
-//                 }
-//                 if (bottom !== height) break;
-//             }
-
-//             // Find the left boundary
-//             for (let x = 0; x < width; x++) {
-//                 for (let y = 0; y < height; y++) {
-//                     const alpha = data[(y * width + x) * 4 + 3];
-//                     if (alpha > 0) {
-//                         left = x;
-//                         break;
-//                     }
-//                 }
-//                 if (left !== 0) break;
-//             }
-
-//             // Find the right boundary
-//             for (let x = width - 1; x >= 0; x--) {
-//                 for (let y = 0; y < height; y++) {
-//                     const alpha = data[(y * width + x) * 4 + 3];
-//                     if (alpha > 0) {
-//                         right = x;
-//                         break;
-//                     }
-//                 }
-//                 if (right !== width) break;
-//             }
-
-//             // Crop dimensions
-//             const cropWidth = right - left + 1;
-//             const cropHeight = bottom - top + 1;
-
-//             // Draw the cropped image
-//             const croppedCanvas = document.createElement("canvas");
-//             const croppedCtx = croppedCanvas.getContext("2d");
-//             croppedCanvas.width = cropWidth;
-//             croppedCanvas.height = cropHeight;
-
-//             croppedCtx.drawImage(
-//                 canvas,
-//                 left,
-//                 top,
-//                 cropWidth,
-//                 cropHeight,
-//                 0,
-//                 0,
-//                 cropWidth,
-//                 cropHeight
-//             );
-
-//             // Convert cropped canvas to a new image
-//             const croppedImage = croppedCanvas.toDataURL();
-//             resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
-//         };
-
-//         img.onerror = reject; // In case of an error, reject the promise
-//     });
-// }
 
 function removeBlankSpacesFromImage(imageSrc) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = imageSrc;
         img.onload = function () {
+            // Create a canvas to work with the image
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             canvas.width = img.width;
             canvas.height = img.height;
+
+            // Draw the image onto the canvas
             ctx.drawImage(img, 0, 0);
 
+            // Get the image data
             const imageData = ctx.getImageData(
                 0,
                 0,
@@ -361,28 +258,64 @@ function removeBlankSpacesFromImage(imageSrc) {
             );
             const { data, width, height } = imageData;
 
-            let top = height,
-                bottom = 0,
-                left = width,
-                right = 0;
+            let top = 0,
+                bottom = height,
+                left = 0,
+                right = width;
 
-            // Scan in chunks for faster detection
-            const step = 10;
-            for (let y = 0; y < height; y += step) {
-                for (let x = 0; x < width; x += step) {
+            // Find the top boundary
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
                     const alpha = data[(y * width + x) * 4 + 3];
                     if (alpha > 0) {
-                        top = Math.min(top, y);
-                        bottom = Math.max(bottom, y);
-                        left = Math.min(left, x);
-                        right = Math.max(right, x);
+                        top = y;
+                        break;
                     }
                 }
+                if (top !== 0) break;
             }
 
+            // Find the bottom boundary
+            for (let y = height - 1; y >= 0; y--) {
+                for (let x = 0; x < width; x++) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha > 0) {
+                        bottom = y;
+                        break;
+                    }
+                }
+                if (bottom !== height) break;
+            }
+
+            // Find the left boundary
+            for (let x = 0; x < width; x++) {
+                for (let y = 0; y < height; y++) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha > 0) {
+                        left = x;
+                        break;
+                    }
+                }
+                if (left !== 0) break;
+            }
+
+            // Find the right boundary
+            for (let x = width - 1; x >= 0; x--) {
+                for (let y = 0; y < height; y++) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha > 0) {
+                        right = x;
+                        break;
+                    }
+                }
+                if (right !== width) break;
+            }
+
+            // Crop dimensions
             const cropWidth = right - left + 1;
             const cropHeight = bottom - top + 1;
 
+            // Draw the cropped image
             const croppedCanvas = document.createElement("canvas");
             const croppedCtx = croppedCanvas.getContext("2d");
             croppedCanvas.width = cropWidth;
@@ -400,10 +333,12 @@ function removeBlankSpacesFromImage(imageSrc) {
                 cropHeight
             );
 
-            resolve(croppedCanvas.toDataURL());
+            // Convert cropped canvas to a new image
+            const croppedImage = croppedCanvas.toDataURL();
+            resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
         };
 
-        img.onerror = reject;
+        img.onerror = reject; // In case of an error, reject the promise
     });
 }
 
@@ -614,18 +549,7 @@ async function captureModelImages() {
         // Step 2a: Front view - Set the camera position to capture the front of the model
         frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
         frontCamera.lookAt(center);
-        // await renderAndDownload(
-        //     "front",
-        //     frontCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
 
-        // Side view
-        // tempCanvas.width = 1602;
-        // tempCanvas.height = 2005;
-        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
         const sideCamera = new THREE.OrthographicCamera(
             -1602,
             1602,
@@ -644,18 +568,6 @@ async function captureModelImages() {
         sideCamera.lookAt(center);
 
         // Wait for side view render to complete
-        // await renderAndDownload(
-        //     "side",
-        //     sideCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
-
-        // Step 2c: Diagonal view - Adjust the camera position to capture a diagonal angle of the model
-        // tempCanvas.width = size.x + size.z; // Use both x and z to ensure a wide view
-        // tempCanvas.height = size.y; // Use both y and z for better height coverage
-        // tempRenderer.setSize(tempCanvas.width, tempCanvas.height);
         const diagonalCamera = new THREE.PerspectiveCamera(
             45,
             size.x / size.y,
@@ -676,13 +588,6 @@ async function captureModelImages() {
                 ),
 
         diagonalCamera.lookAt(center);
-        // await renderAndDownload(
-        //     "diagonal",
-        //     diagonalCamera,
-        //     tempRenderer,
-        //     model.name,
-        //     imagesNameArr
-        // );
 
         await Promise.all([
             renderAndDownload(
@@ -690,7 +595,8 @@ async function captureModelImages() {
                 frontCamera,
                 tempRenderer,
                 model.name,
-                imagesNameArr
+                imagesNameArr,
+                DataArr
             ),
 
             (tempCanvas.width = 1602),
@@ -701,7 +607,8 @@ async function captureModelImages() {
                 sideCamera,
                 tempRenderer,
                 model.name,
-                imagesNameArr
+                imagesNameArr,
+                DataArr
             ),
 
             (tempCanvas.width = size.x + size.z),
@@ -712,7 +619,8 @@ async function captureModelImages() {
                 diagonalCamera,
                 tempRenderer,
                 model.name,
-                imagesNameArr
+                imagesNameArr,
+                DataArr
             ),
 
             diagonalCamera.position.set(
@@ -725,7 +633,8 @@ async function captureModelImages() {
                 tempRenderer,
                 model,
                 model.name,
-                imagesNameArr
+                imagesNameArr,
+                DataArr
             ),
         ]);
 
@@ -834,17 +743,9 @@ export async function checkAndPreparePDF() {
 }
 
 export async function creatingPDF() {
-    console.log(
-        `before creatingPDF`,
-        Math.floor(Math.floor(Date.now() / 1000) / 60),
-        Math.floor(Math.floor(Date.now() / 1000) % 60)
-    );
     sharedParams.transformControls.detach();
-    params.measurementToggle = false;
-    await showHideNodes();
     const loadingModal = document.getElementById("loadingModal");
-    document.getElementById("loadingText").innerHTML =
-        "Please wait... we are creating your Pdf file";
+    document.getElementById("loadingText").innerHTML = "Please wait... we are creating your Pdf file";
     loadingModal.style.display = "flex";
     await traverseAsync(sharedParams.modelGroup, async (child) => {
         if (
@@ -882,13 +783,7 @@ export async function creatingPDF() {
         ModelImageName: ModelImageName || null,
     };
     await delay(1000);
-
     await savePdfData(dataToSave, sharedParams.modelGroup);
-    console.log(
-        `after creatingPDF`,
-        Math.floor(Math.floor(Date.now() / 1000) / 60),
-        Math.floor(Math.floor(Date.now() / 1000) % 60)
-    );
 }
 
 export async function savePdfData(dataToSave) {

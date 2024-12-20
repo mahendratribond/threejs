@@ -2883,4 +2883,12 @@ export function checkTime(name){
         Math.floor(Math.floor(Date.now() / 1000) % 60)
     );
 }
+
+export function checkTime(name){
+    console.log(
+        `${name}`,
+        Math.floor(Math.floor(Date.now() / 1000) / 60),
+        Math.floor(Math.floor(Date.now() / 1000) % 60)
+    );
+}
 // --------------------------------export models--------------------------------------------
