@@ -2633,4 +2633,12 @@ export async function savePdfData(dataToSave, modelGroup) {
     })
     .catch((error) => console.error("Fetch error:", error));
 }
+
+export function checkTime(name){
+    console.log(
+        `${name}`,
+        Math.floor(Math.floor(Date.now() / 1000) / 60),
+        Math.floor(Math.floor(Date.now() / 1000) % 60)
+    );
+}
 // --------------------------------export models--------------------------------------------
