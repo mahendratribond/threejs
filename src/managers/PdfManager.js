@@ -214,25 +214,26 @@ async function renderAndDownload(
 
 async function downloadScreenshotwithDiffCanvas(DataArr) {
     Object.keys(DataArr).forEach(async (fileName) => {
-    const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
-    try {
-        const response = await fetch("api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                image: croppedImage,
-                filename: fileName,
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-        } else {
-            console.error("Error saving screenshot:", data.error);
+        const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
+        try {
+            const response = await fetch("api.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    image: croppedImage,
+                    filename: fileName,
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+            } else {
+                console.error("Error saving screenshot:", data.error);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
         }
-    } catch (error) {
-        console.error("Fetch error:", error);
-    }
-});
+        delay(200);
+    });
 }
 
 function removeBlankSpacesFromImage(imageSrc) {
@@ -747,6 +748,7 @@ export async function creatingPDF() {
     const loadingModal = document.getElementById("loadingModal");
     document.getElementById("loadingText").innerHTML = "Please wait... we are creating your Pdf file";
     loadingModal.style.display = "flex";
+    await delay(100);
     await traverseAsync(sharedParams.modelGroup, async (child) => {
         if (
             hangerNames.includes(child.name) &&
@@ -773,7 +775,7 @@ export async function creatingPDF() {
     });
 
     let ModelImageName = await captureModelImages();
-
+    
     const dataToSave = {
         params: params || null,
         setting: setting || null,

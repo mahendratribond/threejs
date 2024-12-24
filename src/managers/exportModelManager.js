@@ -8,6 +8,7 @@ async function saveModel(blob, filename) {
 }
 async function exportGLB(clone, name) {
     const gltfExporter = new GLTFExporter();
+    console.log(clone);
     clone.traverse((child) => {
         if (child.isMesh && child.material && child.name !== "Header_Glass_Shelf") {
             child.material.transparent = false; // Disable transparency
@@ -19,7 +20,6 @@ async function exportGLB(clone, name) {
         }
     });
     clone.renderOrder = 999999;
-    await optimizeTexturesForGLB(clone);
     const options = {
         compressed: true, // Enable mesh compression
         bufferStreamed: true, // Stream the buffer data
@@ -29,7 +29,7 @@ async function exportGLB(clone, name) {
         embedImages: false, // Embed images in the GLB file
         forcePowerOfTwoTextures: true, // Ensure textures have power-of-two dimensions
         textureCompressionFormat: THREE.RGBA_ASTC_4x4_Format, // Use ASTC texture compression
-        textureCompressionQuality: 1.0,
+        textureCompressionQuality: 0.5,
 
         // Other options
         includeCustomExtensions: false, // Exclude custom extensions
