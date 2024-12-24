@@ -889,7 +889,7 @@ export class UIManager {
 
         if (this.elements.submitForm) {
             this.elements.submitForm.addEventListener("click", async () => {
-                this.showLoadingModal("Please wait... the form submitting");
+                this.showLoadingModal("Please wait... the form is submitting");
                 const form = document.getElementById("FormSubmitionForMonday");
                 let hasError = false;
                 const specialCharRegex = /[^a-zA-Z0-9\s]/;
@@ -2124,6 +2124,7 @@ export class UIManager {
             }
         } catch (error) {
             console.error("Error while submitting form: ", error);
+            this.hideLoadingModal();
             throw error; // Re-throw the error to handle it at the calling point
         }
     }

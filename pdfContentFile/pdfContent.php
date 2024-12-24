@@ -515,7 +515,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="260px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -635,7 +635,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="280px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -755,7 +755,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="380px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -875,7 +875,7 @@
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="460px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto" height="420px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -961,10 +961,10 @@
                                 </td>
                             </tr>                    
                             <tr>
-                                <td width="100%">
+                                <td width="100%" style="vertical-align: middle;">
                                     <table width="100%">
                                         <tr>
-                                            <td width="60%" style="padding-top:75px;  text-align:center;">
+                                            <td width="70%" style="padding-top:125px;  text-align:center;">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -980,22 +980,22 @@
                                                         </tr>
                                                         <tr>
                                                             <td style="">
-                                                                <table style="border-top: 1px solid black; border-bottom: 1px solid black; width:90px">
+                                                                <table style="border-top: 1px solid black; border-bottom: 1px solid black; width:60px">
                                                                     <tr>
-                                                                        <td style="border-right: 1px dashed black; height:195px;"></td>
-                                                                        <td style="height:195px;"></td>
+                                                                        <td style="border-right: 1px dashed black; height:150px;"></td>
+                                                                        <td style="height:150px;"></td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td colspan="2" style="text-align: center; font-family: gothambook; color:#4d4b4b; font-size:10px; letter-spacing:1px;"><?php echo $ModelMeasureArr['modelMeasure']['height'] ?></td>
                                                                     </tr>
                                                                     <tr>
-                                                                        <td style="border-right: 1px dashed black; height:195px;"></td>
-                                                                        <td style="height:195px;"></td>
+                                                                        <td style="border-right: 1px dashed black; height:155px;"></td>
+                                                                        <td style="height:155px;"></td>
                                                                     </tr>
                                                                 </table>
                                                             </td>    
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" width="500px" height="420px">
+                                                                <img src="<?php echo $imageLink ?>" width="auto" height="320px">
                                                             </td>
                                                         </tr>
                                                         <tr>
@@ -1018,7 +1018,7 @@
                                                     <?php } ?>
                                                 <?php } ?>
                                             </td>
-                                            <td width="40%" style="padding-top:75px; ">
+                                            <td width="30%" style="padding-top:125px; ">
                                                 <?php foreach($data['ModelImageName'] as $imageLink){ ?>
                                                     <?php
                                                         $trimmedPath = str_replace('./screenshots/', '', $imageLink);
@@ -1035,7 +1035,7 @@
                                                         <tr>    
                                                             <td></td>
                                                             <td style="">
-                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="415px">
+                                                                <img src="<?php echo $imageLink ?>" style="width:auto;" height="320px">
                                                             </td>
                                                         </tr>
                                                         <tr>

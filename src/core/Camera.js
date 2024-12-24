@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 // core/Camera.js
 export class Camera extends THREE.PerspectiveCamera {
-    constructor(fov = 45, aspect = window.innerWidth / window.innerHeight, near = 1, far = 500000) {
+    constructor(fov = 45, aspect = window.innerWidth / window.innerHeight, near = 1, far = 5000000) {
         super(fov, aspect, near, far);
         this.setupInitialPosition();
     }
