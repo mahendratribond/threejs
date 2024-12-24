@@ -13,7 +13,18 @@ async function saveModel(blob, filename) {
 }
 async function exportGLB(clone, name) {
     const gltfExporter = new GLTFExporter();
-
+    console.log(clone);
+    clone.traverse((child) => {
+        if (child.isMesh && child.material && child.name !== "Header_Glass_Shelf") {
+            child.material.transparent = false; // Disable transparency
+            child.material.opacity = 1.0; // Fully opaque
+            child.material.depthWrite = true; // Write to the depth buffer
+            child.material.depthTest = true; // Enable depth testing
+            child.material.alphaTest = 0.5; // Enable depth testing
+            child.material.side = THREE.DoubleSide; // Render only front faces
+        }
+    });
+    clone.renderOrder = 999999;
     const options = {
         compressed: true, // Enable mesh compression
         bufferStreamed: true, // Stream the buffer data
@@ -23,6 +34,7 @@ async function exportGLB(clone, name) {
         embedImages: false, // Embed images in the GLB file
         forcePowerOfTwoTextures: true, // Ensure textures have power-of-two dimensions
         textureCompressionFormat: THREE.RGBA_ASTC_4x4_Format, // Use ASTC texture compression
+        textureCompressionQuality: 0.5,
 
         // Other options
         includeCustomExtensions: false, // Exclude custom extensions
@@ -116,10 +128,6 @@ function createMaterialKey(material) {
             ? material.map.image.src
             : "no_texture";
 
-    // console.log("material.name ", material.name);
-    // console.log("material.uuid ", material.uuid);
-    // console.log(`${colorKey}_${mapKey}_${textureKey}`);
-
     // Combine properties into a unique string
     return `${colorKey}_${mapKey}_${textureKey}`;
 }
@@ -207,8 +215,10 @@ export async function exportModelForAr(model, name, isQr = false) {
         navigator.userAgent || navigator.vendor || window.opera
     );
     if (isQr) {
-        await exportUSDZ(clone.clone(), name); // Export USDZ for iOS devices
-        await exportGLB(clone.clone(), name); // Export only GLB for other devices
+        await Promise.all([
+            exportUSDZ(clone.clone(), name),
+            exportGLB(clone.clone(), name)
+        ]);
     } else {
         if (isIOS) {
             await exportUSDZ(clone.clone(), name); // Export USDZ for iOS devices

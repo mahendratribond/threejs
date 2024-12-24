@@ -614,7 +614,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 $ceateSubItemMutation = 'mutation { 
                     create_subitem (
                         parent_item_id: "' . $itemId . '", 
-                        item_name: "' . $groupName . '" 
+                        item_name: "' . $value['defaultModel'] . '" 
                     ) { 
                         id 
                     } 
@@ -881,7 +881,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 }
 
 
-                $baseSize = 'null'; 
+                $baseSize = ''; 
                 if (!empty($ModelMeasureArr['Base_Solid'])) {
                     $baseSize = round($ModelMeasureArr['Base_Solid']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Solid']['z']) . 'mm';
                 } elseif (!empty($ModelMeasureArr['Base_Support_Sides'])) {
@@ -889,40 +889,40 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 }
                 $subItemColumnValues = [
                     "header Type" => $value['topOption'],    
-                    "header Size" => $value['topOption'] == "Header" ? $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : "null",
-                    "Header Shelf Type" => $value['topOption'] == "Shelf" ? $value['defaultShelfType'] : "null",
-                    "Header Shelf size" => $value['topOption'] == "Shelf" ? round($ModelMeasureArr[$value['defaultShelfType']]['x']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['y']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['z']).'mm' : "null" ,
-                    "Header Glass Shelf Fixing" => $value['topOption'] == "Shelf" && $value['defaultShelfType'] == "Header_Glass_Shelf" ? round($ModelMeasureArr['Glass_Shelf_Fixing']['x']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['y']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['z']).'mm' : "null" ,
+                    "header Size" => $value['topOption'] == "Header" ? $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : "",
+                    "Header Shelf Type" => $value['topOption'] == "Shelf" ? $value['defaultShelfType'] : "",
+                    "Header Shelf size" => $value['topOption'] == "Shelf" ? round($ModelMeasureArr[$value['defaultShelfType']]['x']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['y']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['z']).'mm' : "" ,
+                    "Header Glass Shelf Fixing" => $value['topOption'] == "Shelf" && $value['defaultShelfType'] == "Header_Glass_Shelf" ? round($ModelMeasureArr['Glass_Shelf_Fixing']['x']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['y']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['z']).'mm' : "" ,
                     "isRod Active" => $value['headerRodToggle'] ? "Yes" : "No", 
-                    "Rod Size" => $value['headerRodToggle'] == true && isset($ModelMeasureArr['Rod']) ? round($ModelMeasureArr['Rod']['x']).'mm x '.round($ModelMeasureArr['Rod']['y']).'mm x '.round($ModelMeasureArr['Rod']['z']).'mm' : "null" ,
-                    "Rod Color" => $value['headerRodToggle'] == true ? $value['rodFrameColor'] : "null",
+                    "Rod Size" => $value['headerRodToggle'] == true && isset($ModelMeasureArr['Rod']) ? round($ModelMeasureArr['Rod']['x']).'mm x '.round($ModelMeasureArr['Rod']['y']).'mm x '.round($ModelMeasureArr['Rod']['z']).'mm' : "" ,
+                    "Rod Color" => $value['headerRodToggle'] == true ? $value['rodFrameColor'] : "",
                     "Frame Type" => $value['defaultModel'],
                     "Frame Size" => $ModelMeasureArr['Frame']['width'].' x '.$ModelMeasureArr['Frame']['height'].' x '.$ModelMeasureArr['Frame']['depth'],
                     "Frame Border Color" => $value['frameBorderColor'],
                     "Frame Material Type" => $value['frameMaterialType'],
                     "isSlotted Active" => $value['slottedSidesToggle'] ? "Yes" : "No",
                     "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ?  "Yes" : "No",
-                    "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "null",
+                    "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "",
                     "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ?  "Yes" : "No",
-                    "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "null",
-                    "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "null",
-                    "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "null",
+                    "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "",
+                    "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "",
+                    "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "",
                     "Base Type" => isset($ModelMeasureArr['Base_Solid']) ? "Base_Solid" : "Base_Support_Sides" ,
                     "Base Size" => $baseSize,
-                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "null",
-                    "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "null",
-                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "null",
-                    "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "null",
-                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "null",
-                    "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "null",
-                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "null",
-                    "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "null",
-                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "null",
-                    "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "null",
-                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "null",
-                    "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "null",
-                    "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "null",
-                    "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "null",
+                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "",
+                    "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "",
+                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "",
+                    "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "",
+                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "",
+                    "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "",
+                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "",
+                    "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "",
+                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "",
+                    "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "",
+                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "",
+                    "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "",
+                    "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "",
+                    "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "",
                 ];
 
                 // Initialize a mapping of current column titles to their values
@@ -1251,7 +1251,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Execute the request to update the column values
     $response = curl_exec($curl);
     curl_close($curl);
-    // sendEmailToUser($_REQUEST);
+    sendEmailToUser($_REQUEST);
     echo json_encode(["status" => "success", "message" => $response]);
     exit;
     // ---------------------------------- ADDING TO MONDAY BOARD ----------------------------------------------------
@@ -1346,7 +1346,7 @@ function sendEmailToUser($data){
 
         // Recipients
         $mail->setFrom('tempacchj@gmail.com', 'biginstore');
-        $mail->addAddress($data['email'], $data['name']);  // Add a recipient
+        $mail->addAddress($data['Email'], $data['Customer']);  // Add a recipient
 
         // Content
         $mail->isHTML(true);  // Set email format to HTML
