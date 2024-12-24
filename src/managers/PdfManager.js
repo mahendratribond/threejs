@@ -14,13 +14,8 @@ import {
     // setupHangerModel,
 } from "./HangerManager.js";
 import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
-<<<<<<< HEAD
-import { traverseAsync, delay, checkTime, showHideNodes } from "../../utils6.js";
-let activeAjaxCalls = 0;
-=======
 import { traverseAsync, delay, checkTime } from "../../utils6.js";
 
->>>>>>> 1c382c0 (new chnages in pdf creation)
 async function cloneModelGroup(model) {
     let cloneModelGroup = model.clone();
     let CloneArr = [];
@@ -173,22 +168,6 @@ async function renderAndDownload(
     const originalQuaternion = tempCamera.quaternion.clone();
 
     try {
-<<<<<<< HEAD
-        // Get device's maximum resolution
-        const deviceWidth = window.screen.width * window.devicePixelRatio;
-        const deviceHeight = window.screen.height * window.devicePixelRatio;
-
-        // Compute model aspect ratio and dynamic scaling
-        const modelAspectRatio = originalWidth / originalHeight;
-        let targetWidth = Math.min(originalWidth * 2, deviceWidth);
-        let targetHeight = Math.min(originalHeight * 2, deviceHeight);
-
-        // Adjust for large width/small height or vice versa
-        if (modelAspectRatio > 1) {
-            targetHeight = targetWidth / modelAspectRatio;
-        } else {
-            targetWidth = targetHeight * modelAspectRatio;
-=======
         // Set higher resolution (2x or 3x the original resolution)
         let scaleFactor = 2.5; // Default scale factor
 
@@ -202,7 +181,6 @@ async function renderAndDownload(
             (originalWidth >= 3000 || originalWidth * 3 > 5000)
         ) {
             scaleFactor = 1.5;
->>>>>>> 1c382c0 (new chnages in pdf creation)
         }
 
         // Ensure resolution does not exceed device capabilities
@@ -234,26 +212,6 @@ async function renderAndDownload(
     }
 }
 
-<<<<<<< HEAD
-function startAjax() {
-    activeAjaxCalls++;
-}
-
-// Decrement when an AJAX request completes
-function endAjax() {
-    activeAjaxCalls--;
-}
-
-// Check if any AJAX requests are running
-function isAjaxRunning() {
-    return activeAjaxCalls > 0;
-}
-
-async function waitForAjaxToFinish() {
-    while (isAjaxRunning()) {
-        // Wait for 100ms before checking again
-        await new Promise((resolve) => setTimeout(resolve, 100));
-=======
 async function downloadScreenshotwithDiffCanvas(DataArr) {
     Object.keys(DataArr).forEach(async (fileName) => {
     const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
@@ -273,41 +231,10 @@ async function downloadScreenshotwithDiffCanvas(DataArr) {
         }
     } catch (error) {
         console.error("Fetch error:", error);
->>>>>>> 1c382c0 (new chnages in pdf creation)
     }
 });
 }
 
-<<<<<<< HEAD
-async function downloadScreenshotwithDiffCanvas(DataArr) {
-    for (const fileName of Object.keys(DataArr)) {
-        const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
-        try {
-            startAjax();
-            const response = await fetch("api.php", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    image: croppedImage,
-                    filename: fileName,
-                }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                endAjax();
-            } else {
-                console.error("Error saving screenshot:", data.error);
-            }
-        } catch (error) {
-            console.error("Fetch error:", error);
-        }
-        delay(200);
-    }
-    await waitForAjaxToFinish();
-}
-
-=======
->>>>>>> 1c382c0 (new chnages in pdf creation)
 function removeBlankSpacesFromImage(imageSrc) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -405,20 +332,10 @@ function removeBlankSpacesFromImage(imageSrc) {
                 cropWidth,
                 cropHeight
             );
-<<<<<<< HEAD
-            // Convert cropped canvas to a new image
-            const croppedImage = croppedCanvas.toDataURL();
-            resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
-            img.src = "";
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.width = 0;
-            canvas.height = 0;
-=======
 
             // Convert cropped canvas to a new image
             const croppedImage = croppedCanvas.toDataURL();
             resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
->>>>>>> 1c382c0 (new chnages in pdf creation)
         };
 
         img.onerror = reject; // In case of an error, reject the promise
@@ -614,51 +531,6 @@ async function captureModelImages() {
         const tempRenderer = cloneRenderer();
         tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
         tempRenderer.setClearColor(0x000000, 0);
-<<<<<<< HEAD
-        try {
-            // Set up an orthographic camera based on the bounding box size
-            const frontCamera = new THREE.OrthographicCamera(
-                -size.x / 2,
-                size.x / 2,
-                size.y / 2,
-                -size.y / 2,
-                0.5,
-                10000
-            );
-
-            // Step 2a: Front view - Set the camera position to capture the front of the model
-            frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
-            frontCamera.lookAt(center);
-
-            const sideCamera = new THREE.OrthographicCamera(
-                -1602,
-                1602,
-                2005,
-                -2005,
-                1,
-                10000
-            );
-            // Position the camera along the positive X-axis for a side view
-            const sideViewDistance = size.x + 1000;
-            sideCamera.position.set(
-                center.x + sideViewDistance,
-                center.y,
-                center.z
-            );
-            sideCamera.lookAt(center);
-
-            // Wait for side view render to complete
-            const diagonalCamera = new THREE.PerspectiveCamera(
-                45,
-                size.x / size.y,
-                100,
-                100000
-            );
-
-            const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-            const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-
-=======
 
         // Set up an orthographic camera based on the bounding box size
         const frontCamera = new THREE.OrthographicCamera(
@@ -744,84 +616,10 @@ async function captureModelImages() {
                 DataArr
             ),
 
->>>>>>> 1c382c0 (new chnages in pdf creation)
             diagonalCamera.position.set(
                 center.x + cameraDistance, // Offset in X for diagonal perspective
                 center.y, // Offset in Y for better centering
                 center.z + cameraDistance + 500 // Offset in Z for distance
-<<<<<<< HEAD
-            );
-
-            diagonalCamera.lookAt(center);
-
-            // await Promise.all([
-                await renderAndDownload(
-                    "front",
-                    frontCamera,
-                    tempRenderer,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
-
-                (tempCanvas.width = 1602),
-                (tempCanvas.height = 2005),
-                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-                await renderAndDownload(
-                    "side",
-                    sideCamera,
-                    tempRenderer,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
-
-                (tempCanvas.width = size.x + size.z),
-                (tempCanvas.height = size.y),
-                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-                await renderAndDownload(
-                    "diagonal",
-                    diagonalCamera,
-                    tempRenderer,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
-
-                diagonalCamera.position.set(
-                    center.x + cameraDistance, // Offset in X for diagonal perspective
-                    center.y + 100, // Offset in Y for better centering
-                    center.z + cameraDistance + 500 // Offset in Z for distance
-                ),
-                await captureFixtureImage(
-                    diagonalCamera,
-                    tempRenderer,
-                    model,
-                    model.name,
-                    imagesNameArr,
-                    DataArr
-                ),
-            // ]);
-
-            // Restore visibility
-            sharedParams.scene.children.forEach((childScene) => {
-                if (childScene.name === "main_group") {
-                    childScene.children.forEach((child) => {
-                        child.visible = true;
-                    });
-                }
-            });
-
-            // Restore Cone visibility
-            if (isCorn) {
-                for (const modelChild of model.children) {
-                    modelChild.traverse((node) => {
-                        if (node.name === "Cone") {
-                            node.visible = true;
-                        }
-                    });
-                }
-=======
             ),
             captureFixtureImage(
                 diagonalCamera,
@@ -850,7 +648,6 @@ async function captureModelImages() {
                         node.visible = true;
                     }
                 });
->>>>>>> 1c382c0 (new chnages in pdf creation)
             }
         } finally {
             cleanupResources(tempRenderer);
@@ -861,11 +658,7 @@ async function captureModelImages() {
     if (getCone && getCone.visible == true){
         mainGroupCone = true;
         getCone.visible = false;
-<<<<<<< HEAD
     }
-=======
-    }
->>>>>>> 1c382c0 (new chnages in pdf creation)
 
     const wholeModelDistance = distance + 1000; // Slightly closer for wholeModel view
     sharedParams.camera.position.set(
@@ -943,19 +736,10 @@ export async function checkAndPreparePDF() {
 
 export async function creatingPDF() {
     sharedParams.transformControls.detach();
-<<<<<<< HEAD
-    params.measurementToggle = false;
-    await showHideNodes();
-    const loadingModal = document.getElementById("loadingModal");
-    document.getElementById("loadingText").innerHTML =
-        "Please wait... we are creating your Pdf file";
-    loadingModal.style.display = "flex";
-    await delay(100);
-=======
+
     const loadingModal = document.getElementById("loadingModal");
     document.getElementById("loadingText").innerHTML = "Please wait... we are creating your Pdf file";
     loadingModal.style.display = "flex";
->>>>>>> 1c382c0 (new chnages in pdf creation)
     await traverseAsync(sharedParams.modelGroup, async (child) => {
         if (
             hangerNames.includes(child.name) &&
