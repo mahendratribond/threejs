@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/svg" href="assets/images/logo_3.svg" />
   <title>Three.js Frame Customizer</title>
   <link href="assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -477,7 +478,7 @@
           <a id="ViewArForIos" rel="ar" style="display: none;">
             <img href="eg.jpg>" alt="here" />
           </a>
-          <div id="loadingModal" class="extraModel" style="background: rgba(0, 0, 0, 0.5)">
+          <div id="loadingModal" class="extraModel" style="background: rgba(0, 0, 0, 0.5); z-index: 20;">
             <div style=" display: flex; flex-direction: column; align-items: center;">
               <div class="modelWaitingloader"><img src="./assets/images/newLoader.gif" alt="" style="width: 14%; padding-bottom: 10px;">
                 <p id="loadingText"></p>
@@ -639,7 +640,7 @@
     }
     document.getElementById("logout").addEventListener("click", function(){
       destroySession();
-      window.location.reload();
+      window.location.href = "test6.html";
     })
     
     // Lazy load images using IntersectionObserver

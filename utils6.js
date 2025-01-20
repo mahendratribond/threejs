@@ -102,7 +102,7 @@ export function updateModelName(model, oldName, newName) {
     return model;
 }
 
-export function cloneWithCustomProperties(source, target) {
+export async function cloneWithCustomProperties(source, target) {
     for (let model of allModelNames) {
         let sourceModel = source.getObjectByName(model);
         let targetModel = target.getObjectByName(model);
@@ -910,7 +910,6 @@ export async function showHideNodes() {
         }),
 
         (setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle),
-
         // Header Wooden Shelf nodes
         updateInChunks(nodes.headerShelfWooden, (node) => {
             node.visible =
@@ -1301,24 +1300,24 @@ export async function addAnotherModels(
     side = null
 ) {
     if (sharedParams.modelGroup) {
+        let haveShelf = false;
         let defaultModel =
             sharedParams.modelGroup.getObjectByName("main_model");
         // console.log('defaultModel', defaultModel);
-
         const newModel = defaultModel.clone();
-        cloneWithCustomProperties(defaultModel, newModel);
-
+        await cloneWithCustomProperties(defaultModel, newModel);
+        
         const nodesToRemove = [];
         await traverseAsync(newModel, async (child) => {
-            if (
-                hangerNames.includes(child.name) ||
-                rackNames.includes(child.name)
-            ) {
+            if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+                if (child.name == "RackWoodenShelf" || child.name == "RackGlassShelf") {
+                    haveShelf = true;
+                }
                 // Mark node for removal
                 nodesToRemove.push(child);
             }
         });
-
+        
         // Remove nodes after traversal
         nodesToRemove.forEach((node) => {
             if (node.parent) {
@@ -1351,9 +1350,9 @@ export async function addAnotherModels(
             sharedParams.modelGroup,
             allModelNames
         );
+        
         const center = boundingBox.getCenter(new THREE.Vector3());
-        const cameraOnLeft = side || sharedParams.camera.position.x < center.x;
-
+        const cameraOnLeft = side || sharedParams.camera.position.x < center.x;        
         if (cameraOnLeft) {
             newModel.position.x = boundingBox.max.x + modelWidth / 2;
             allGroupNames.push(newModel.name);

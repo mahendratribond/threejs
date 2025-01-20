@@ -229,6 +229,8 @@ export let params = {
     hangerAdded: {},
     rackCount: {},
     rackAdded: {},
+    previousRodToggle: false,
+    spacing:0,
 };
 
 export let setting = {};

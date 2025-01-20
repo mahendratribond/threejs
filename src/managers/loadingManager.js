@@ -150,6 +150,7 @@ export async function loadPreviousModels() {
                 await setMainFrameCropedImage(
                     sharedParams.mainFrameCropedImage
                 );
+                sharedParams.selectedGroup.spacing = setting[params.selectedGroupName].spacing;
                 await showHideNodes();
                 await centerMainModel();
 
@@ -451,9 +452,6 @@ export async function loadAllModels() {
                     case "header_rod_model.glb":
                         if (!gltf) throw new Error("header_rod_model is null");
                         sharedParams.header_rod_model = gltf;
-                        params.rodSize = getNodeSize(
-                            sharedParams.header_rod_model
-                        );
                         params.rodSize = { x: 50, y: 50, z: 50 };
                         break;
 

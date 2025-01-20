@@ -13,7 +13,6 @@ async function saveModel(blob, filename) {
 }
 async function exportGLB(clone, name) {
     const gltfExporter = new GLTFExporter();
-    console.log(clone);
     clone.traverse((child) => {
         if (child.isMesh && child.material && child.name !== "Header_Glass_Shelf") {
             child.material.transparent = false; // Disable transparency

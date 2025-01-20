@@ -42,9 +42,7 @@ import {
     drawMeasurementBoxesWithLabels,
 } from "./MeasurementManager.js";
 import { addHangers } from "./HangerManager.js";
-import {
-    creatingPDF,
-} from "./PdfManager.js";
+import { creatingPDF, checkAndPreparePDF } from "./PdfManager.js";
 import { FileManager } from "./FileManager.js";
 import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
 
@@ -194,12 +192,13 @@ export class UIManager {
                         event.target.value;
                     setting[params.selectedGroupName].headerRodToggle = false;
                     if (
-                        setting[params.selectedGroupName].topOption ==
-                        "Header_Wooden_Shelf"
+                        setting[params.selectedGroupName].topOption == "Header_Wooden_Shelf"
                     ) {
-                        setting[
-                            params.selectedGroupName
-                        ].headerRodToggle = true;
+                        setting[params.selectedGroupName].headerRodToggle = true;
+                    }
+                    if(setting[params.selectedGroupName].topOption == "Header" && setting[params.selectedGroupName].previousRodToggle){
+                        setting[params.selectedGroupName].headerRodToggle = true;
+                        setting[params.selectedGroupName].headerUpDown = true;
                     }
                     // console.log(setting[params.selectedGroupName].topOption);
 
@@ -243,6 +242,8 @@ export class UIManager {
             document.addEventListener("change", async function (event) {
                 if (event.target.classList.contains("headerRodToggle")) {
                     setting[params.selectedGroupName].headerRodToggle =
+                        event.target.checked;
+                    setting[params.selectedGroupName].previousRodToggle =
                         event.target.checked;
 
                     await showHideNodes();
@@ -300,10 +301,8 @@ export class UIManager {
 
                         const reader = new FileReader();
                         reader.onload = async function (e) {
-                            const cropperImage =
-                                document.getElementById("cropper-image");
-                            const cropperContainer =
-                                document.getElementById("cropper-container");
+                            const cropperImage = document.getElementById("cropper-image");
+                            const cropperContainer = document.getElementById("cropper-container");
                             cropperImage.src = e.target.result;
                             cropperContainer.style.display = "block";
 
@@ -311,24 +310,13 @@ export class UIManager {
                                 sharedParams.cropper.destroy();
                             }
 
-                            let currentGroup =
-                                sharedParams.modelGroup.getObjectByName(
-                                    params.selectedGroupName
-                                );
-                            let defaultModelName =
-                                setting[params.selectedGroupName].defaultModel;
+                            let currentGroup = sharedParams.modelGroup.getObjectByName(params.selectedGroupName);
+                            let defaultModelName = setting[params.selectedGroupName].defaultModel;
 
-                            let currentModel =
-                                currentGroup.getObjectByName(defaultModelName);
-                            let defaultHeaderSize =
-                                setting[params.selectedGroupName]
-                                    .defaultHeaderSize;
-                            let currentHeader =
-                                currentModel.getObjectByName(defaultHeaderSize);
-                            const size = await getCurrentModelSize(
-                                currentHeader,
-                                "Header_Graphic1-Mat"
-                            );
+                            let currentModel = currentGroup.getObjectByName(defaultModelName);
+                            let defaultHeaderSize = setting[params.selectedGroupName].defaultHeaderSize;
+                            let currentHeader = currentModel.getObjectByName(defaultHeaderSize);
+                            const size = await getCurrentModelSize(currentHeader,"Header_Graphic1-Mat");
                             // console.log("size", size);
 
                             sharedParams.cropper = new Cropper(cropperImage, {
@@ -408,55 +396,27 @@ export class UIManager {
             this.elements.cropButton.addEventListener(
                 "click",
                 async (event) => {
+                    this.showLoadingModal("Please wait...");
                     if (sharedParams.cropper) {
                         let selectedGroupName = params.selectedGroupName;
-                        let defaultModel =
-                            setting[selectedGroupName].defaultModel;
-                        let defaultHeaderSize =
-                            setting[selectedGroupName].defaultHeaderSize;
+                        let defaultModel = setting[selectedGroupName].defaultModel;
+                        let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
                         if (params.fileUploadFlag == "MainFrame") {
-                            sharedParams.mainFrameCropedImage =
-                                sharedParams.mainFrameCropedImage || {};
-                            sharedParams.mainFrameCropedImage[
-                                selectedGroupName
-                            ] =
-                                sharedParams.mainFrameCropedImage[
-                                    selectedGroupName
-                                ] || {};
-                            let mainFrameSaveImageURl =
-                                await this.saveCropImage();
-                            sharedParams.mainFrameCropedImage[
-                                selectedGroupName
-                            ][defaultModel] = mainFrameSaveImageURl.imageUrl;
-                            await setMainFrameCropedImage(
-                                sharedParams.mainFrameCropedImage
-                            );
+                            sharedParams.mainFrameCropedImage = sharedParams.mainFrameCropedImage || {};
+                            sharedParams.mainFrameCropedImage[selectedGroupName] = sharedParams.mainFrameCropedImage[selectedGroupName] || {};
+                            let mainFrameSaveImageURl = await this.saveCropImage();
+                            sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] = mainFrameSaveImageURl.imageUrl;
+                            await setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
                         } else if (params.fileUploadFlag == "TopFrame") {
-                            sharedParams.topFrameCropedImage =
-                                sharedParams.topFrameCropedImage || {};
-                            sharedParams.topFrameCropedImage[
-                                selectedGroupName
-                            ] =
-                                sharedParams.topFrameCropedImage[
-                                    selectedGroupName
-                                ] || {};
-                            sharedParams.topFrameCropedImage[selectedGroupName][
-                                defaultModel
-                            ] =
-                                sharedParams.topFrameCropedImage[
-                                    selectedGroupName
-                                ][defaultModel] || {};
-                            let topFrameSaveImageURl =
-                                await this.saveCropImage();
-                            sharedParams.topFrameCropedImage[selectedGroupName][
-                                defaultModel
-                            ][defaultHeaderSize] =
-                                topFrameSaveImageURl.imageUrl;
-                            await setTopFrameCropedImage(
-                                sharedParams.topFrameCropedImage
-                            );
+                            sharedParams.topFrameCropedImage = sharedParams.topFrameCropedImage || {};
+                            sharedParams.topFrameCropedImage[selectedGroupName] = sharedParams.topFrameCropedImage[selectedGroupName] || {};
+                            sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] = sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] || {};
+                            let topFrameSaveImageURl = await this.saveCropImage();
+                            sharedParams.topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;
+                            await setTopFrameCropedImage(sharedParams.topFrameCropedImage);
                         }
                     }
+                    this.hideLoadingModal();
                 }
             );
         }
@@ -743,7 +703,7 @@ export class UIManager {
                         return;
                     } else {
                         try {
-                            await creatingPDF();
+                            await checkAndPreparePDF();
                         } catch (error) {
                             console.error("Error creating PDF:", error);
                             document.getElementById("loadingModal").style.display = "none";
@@ -872,6 +832,8 @@ export class UIManager {
                     return;
                 } else {
                     formModel.style.display = "flex";
+                    const formBase = document.getElementById("formBase");
+                    formBase.style.display = "unset";
                 }
             });
         }
@@ -889,7 +851,6 @@ export class UIManager {
 
         if (this.elements.submitForm) {
             this.elements.submitForm.addEventListener("click", async () => {
-                this.showLoadingModal("Please wait... the form is submitting");
                 const form = document.getElementById("FormSubmitionForMonday");
                 let hasError = false;
                 const specialCharRegex = /[^a-zA-Z0-9\s]/;
@@ -945,12 +906,13 @@ export class UIManager {
                         ).onclick = () => {
                             modal.style.display = "none";
                             formModel.style.display = "none";
-                            this.hideLoadingModal();
+                            // this.hideLoadingModal();
                         };
 
                         // Handle modal buttons
                         document.getElementById("yesButton").onclick =
                             async () => {
+                                this.showLoadingModal("Please wait... the form is submitting");
                                 modal.style.display = "none"; // Hide modal
                                 formModel.style.display = "none";
                                 try {
@@ -968,6 +930,7 @@ export class UIManager {
 
                         document.getElementById("noButton").onclick =
                             async () => {
+                                this.showLoadingModal("Please wait... the form is submitting");
                                 modal.style.display = "none"; // Hide modal
                                 formModel.style.display = "none";
                                 await this.formSubmitionForMonday();
@@ -1057,23 +1020,34 @@ export class UIManager {
 
         // Move Left
         this.elements.moveLeftModel.addEventListener("click", async () => {
+            const mainModelIndex = allGroupNames.indexOf(
+                params.selectedGroupName
+            );
+            let beforeMainModel
+            if (mainModelIndex !== -1) {
+                beforeMainModel = mainModelIndex ? allGroupNames[mainModelIndex - 1] : null;
+            }
+            let beforeCurrentModel = setting[beforeMainModel];
+            
             const selectedGroupName = params.selectedGroupName;
-            const selectedModelGroup =
-                sharedParams.modelGroup.getObjectByName(selectedGroupName);
-
-            if (selectedModelGroup) {
-                // Check for collision before moving left
-                const canMoveLeft = await checkForCollision(
-                    selectedModelGroup,
-                    -params.moveLeftRight
-                );
-
-                if (canMoveLeft) {
+            const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
+                if (selectedModelGroup) {
+                    // Check for collision before moving left
+                    const canMoveLeft = await checkForCollision(
+                        selectedModelGroup,
+                        -params.moveLeftRight
+                    );
+                    
+                    if (canMoveLeft) {
                     selectedModelGroup.position.x -= params.moveLeftRight; // Move selected model group left
                     if (!selectedModelGroup.spacing) {
                         selectedModelGroup.spacing = 0;
                     }
                     selectedModelGroup.spacing -= params.moveLeftRight;
+                    if(beforeCurrentModel && beforeCurrentModel.spacing !== 0){
+                        beforeCurrentModel.spacing += params.moveLeftRight;
+                    }                    
+                    setting[params.selectedGroupName].spacing = selectedModelGroup.spacing;
                     await drawMeasurementBoxesWithLabels();
                 } else {
                     console.log(
@@ -1087,9 +1061,14 @@ export class UIManager {
 
         // Move Right
         this.elements.moveRightModel.addEventListener("click", async () => {
+            const mainModelIndex = allGroupNames.indexOf(params.selectedGroupName);
+            let aftereMainModel
+            if (mainModelIndex !== -1) {
+                aftereMainModel = mainModelIndex ? allGroupNames[mainModelIndex + 1] : null;
+            }
+            let afterCurrentModel = setting[aftereMainModel];
             const selectedGroupName = params.selectedGroupName;
-            const selectedModelGroup =
-                sharedParams.modelGroup.getObjectByName(selectedGroupName);
+            const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
 
             if (selectedModelGroup) {
                 // Check for collision before moving right
@@ -1104,6 +1083,10 @@ export class UIManager {
                         selectedModelGroup.spacing = 0;
                     }
                     selectedModelGroup.spacing += params.moveLeftRight;
+                    if(afterCurrentModel && afterCurrentModel.spacing !== 0){
+                        afterCurrentModel.spacing -= params.moveLeftRight;
+                    }
+                    setting[params.selectedGroupName].spacing = selectedModelGroup.spacing;
                     await drawMeasurementBoxesWithLabels();
                 } else {
                     console.log(
@@ -1432,21 +1415,21 @@ export class UIManager {
     async onMouseClick() {
         // console.log("hangerIntersects", this.hangerIntersects);
         // let defaultModel = sharedParams.modelGroup.getObjectByName(params.selectedGroupName);
+        let isLoaderActive = document.getElementById("loadingModal").style.display == "none" ? false : true;
         if (
             this.hangerIntersects &&
             this.hangerIntersects.length > 0 &&
-            sharedParams.transformControls
+            sharedParams.transformControls && !isLoaderActive
         ) {
-            // console.log(this.hangerIntersects);
-
             this.hideRemoveIcons();
             const intersectNode = this.hangerIntersects[0].object;
+            let camSide = sharedParams.camera.position.z > 0 ? "Front" : "Back";
             let hangerParent = findParentWithNamesInArr(
                 intersectNode,
                 hangerNames
             );
             let RackParent = findParentWithNamesInArr(intersectNode, rackNames);
-            if (hangerParent) {
+            if (hangerParent && camSide == hangerParent.side) {
                 sharedParams.transformControls.attach(hangerParent);
                 sharedParams.transformControls.setMode("translate"); // Set the mode to 'translate' for moving
 
@@ -1461,7 +1444,7 @@ export class UIManager {
                     this.enforceHangerBounds
                 );
             }
-            if (RackParent) {
+            if (RackParent && camSide == RackParent.side) {
                 sharedParams.transformControls.attach(RackParent);
                 sharedParams.transformControls.setMode("translate"); // Set the mode to 'translate' for moving
                 sharedParams.transformControls.translationSnap = 3.139;
@@ -1477,7 +1460,9 @@ export class UIManager {
             }
             let activeParent = hangerParent ? hangerParent : RackParent;
             sharedParams.selectedNode = activeParent;
-            activeParent.removeIcon.visible = true;
+            if(activeParent.side == camSide){
+                activeParent.removeIcon.visible = true;
+            }
 
             if (intersectNode.parent.name.includes("removeHanger-")) {
                 sharedParams.transformControls.detach(activeParent);
@@ -2256,6 +2241,15 @@ export class UIManager {
         if (shelfTypeDropdown) {
             shelfTypeDropdown.value = current_setting.defaultShelfType;
         }
+        let topShelfColorDropdown = parentElement.querySelectorAll(
+            '.custom-dropdown[data-type="shelf"] .dropdown-item'
+        );
+        topShelfColorDropdown.forEach((dropdownItem) => {
+            let dataValue = dropdownItem.getAttribute("data-value");
+            if (dataValue === current_setting.defaultShelfColor) {
+                dropdownItem.classList.add("selected");
+            }
+        });
         let slottedSidesToggle = parentElement.querySelector(
             ".slottedSidesToggle"
         );
@@ -2277,6 +2271,15 @@ export class UIManager {
             headerFrameColorDropdown.value =
                 current_setting.topFrameBackgroundColor;
         }
+        let mainFrameColorDropdown = parentElement.querySelectorAll(
+            '.custom-dropdown[data-type="frame"] .dropdown-item'
+        );
+        mainFrameColorDropdown.forEach((dropdownItem) => {
+            let dataValue = dropdownItem.getAttribute("data-value");
+            if (dataValue === current_setting.frameBorderColor) {
+                dropdownItem.classList.add("selected");
+            }
+        });
         let mainFrameColorInput = parentElement.querySelector(
             ".mainFrameColorInput"
         );
