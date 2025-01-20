@@ -14,8 +14,8 @@ import {
     // setupHangerModel,
 } from "./HangerManager.js";
 import { getModelMeasurement, getComponentSize } from "./MeasurementManager.js";
-import { traverseAsync, delay, checkTime } from "../../utils6.js";
-
+import { traverseAsync, delay, checkTime, showHideNodes } from "../../utils6.js";
+let activeAjaxCalls = 0;
 async function cloneModelGroup(model) {
     let cloneModelGroup = model.clone();
     let CloneArr = [];
@@ -168,19 +168,20 @@ async function renderAndDownload(
     const originalQuaternion = tempCamera.quaternion.clone();
 
     try {
-        // Set higher resolution (2x or 3x the original resolution)
-        let scaleFactor = 2.5; // Default scale factor
+        // Get device's maximum resolution
+        const deviceWidth = window.screen.width * window.devicePixelRatio;
+        const deviceHeight = window.screen.height * window.devicePixelRatio;
 
-        if (
-            (viewName === "diagonal" || viewName === "wholeModel") &&
-            originalWidth * 3 > 5000
-        ) {
-            scaleFactor = 1.5;
-        } else if (
-            viewName === "front" &&
-            (originalWidth >= 3000 || originalWidth * 3 > 5000)
-        ) {
-            scaleFactor = 1.5;
+        // Compute model aspect ratio and dynamic scaling
+        const modelAspectRatio = originalWidth / originalHeight;
+        let targetWidth = Math.min(originalWidth * 2, deviceWidth);
+        let targetHeight = Math.min(originalHeight * 2, deviceHeight);
+
+        // Adjust for large width/small height or vice versa
+        if (modelAspectRatio > 1) {
+            targetHeight = targetWidth / modelAspectRatio;
+        } else {
+            targetWidth = targetHeight * modelAspectRatio;
         }
 
         // Ensure resolution does not exceed device capabilities
@@ -196,7 +197,8 @@ async function renderAndDownload(
         tempRenderer.render(sharedParams.scene, tempCamera);
         const screenshotData = tempRenderer.domElement.toDataURL("image/png");
         const unixTime = Math.floor(Date.now() / 1000);
-        // Download or save the screenshot
+
+        // Save the screenshot data
         DataArr[`model-${name}-${viewName}-${unixTime}.png`] = screenshotData;
         imagesNameArr.push(
             `./screenshots/model-${name}-${viewName}-${unixTime}.png`
@@ -212,27 +214,52 @@ async function renderAndDownload(
     }
 }
 
-async function downloadScreenshotwithDiffCanvas(DataArr) {
-    Object.keys(DataArr).forEach(async (fileName) => {
-    const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
-    try {
-        const response = await fetch("api.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                image: croppedImage,
-                filename: fileName,
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-        } else {
-            console.error("Error saving screenshot:", data.error);
-        }
-    } catch (error) {
-        console.error("Fetch error:", error);
+function startAjax() {
+    activeAjaxCalls++;
+}
+
+// Decrement when an AJAX request completes
+function endAjax() {
+    activeAjaxCalls--;
+}
+
+// Check if any AJAX requests are running
+function isAjaxRunning() {
+    return activeAjaxCalls > 0;
+}
+
+async function waitForAjaxToFinish() {
+    while (isAjaxRunning()) {
+        // Wait for 100ms before checking again
+        await new Promise((resolve) => setTimeout(resolve, 100));
     }
-});
+}
+
+async function downloadScreenshotwithDiffCanvas(DataArr) {
+    for (const fileName of Object.keys(DataArr)) {
+        const croppedImage = await removeBlankSpacesFromImage(DataArr[fileName]);
+        try {
+            startAjax();
+            const response = await fetch("api.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    image: croppedImage,
+                    filename: fileName,
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                endAjax();
+            } else {
+                console.error("Error saving screenshot:", data.error);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        }
+        delay(200);
+    }
+    await waitForAjaxToFinish();
 }
 
 function removeBlankSpacesFromImage(imageSrc) {
@@ -332,10 +359,13 @@ function removeBlankSpacesFromImage(imageSrc) {
                 cropWidth,
                 cropHeight
             );
-
             // Convert cropped canvas to a new image
             const croppedImage = croppedCanvas.toDataURL();
             resolve(croppedImage); // Resolve the promise with the cropped image as a data URL
+            img.src = "";
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.width = 0;
+            canvas.height = 0;
         };
 
         img.onerror = reject; // In case of an error, reject the promise
@@ -531,123 +561,124 @@ async function captureModelImages() {
         const tempRenderer = cloneRenderer();
         tempRenderer.setSize(tempCanvas.width * 1.2, tempCanvas.height * 1.2);
         tempRenderer.setClearColor(0x000000, 0);
+        try {
+            // Set up an orthographic camera based on the bounding box size
+            const frontCamera = new THREE.OrthographicCamera(
+                -size.x / 2,
+                size.x / 2,
+                size.y / 2,
+                -size.y / 2,
+                0.5,
+                10000
+            );
 
-        // Set up an orthographic camera based on the bounding box size
-        const frontCamera = new THREE.OrthographicCamera(
-            -size.x / 2,
-            size.x / 2,
-            size.y / 2,
-            -size.y / 2,
-            0.5,
-            10000
-        );
+            // Step 2a: Front view - Set the camera position to capture the front of the model
+            frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
+            frontCamera.lookAt(center);
 
-        // Step 2a: Front view - Set the camera position to capture the front of the model
-        frontCamera.position.set(center.x, center.y, center.z + 700 + 2000); // Increase the z-distance
-        frontCamera.lookAt(center);
+            const sideCamera = new THREE.OrthographicCamera(
+                -1602,
+                1602,
+                2005,
+                -2005,
+                1,
+                10000
+            );
+            // Position the camera along the positive X-axis for a side view
+            const sideViewDistance = size.x + 1000;
+            sideCamera.position.set(
+                center.x + sideViewDistance,
+                center.y,
+                center.z
+            );
+            sideCamera.lookAt(center);
 
-        const sideCamera = new THREE.OrthographicCamera(
-            -1602,
-            1602,
-            2005,
-            -2005,
-            1,
-            10000
-        );
-        // Position the camera along the positive X-axis for a side view
-        const sideViewDistance = size.x + 1000;
-        sideCamera.position.set(
-            center.x + sideViewDistance,
-            center.y,
-            center.z
-        );
-        sideCamera.lookAt(center);
+            // Wait for side view render to complete
+            const diagonalCamera = new THREE.PerspectiveCamera(
+                45,
+                size.x / size.y,
+                100,
+                100000
+            );
 
-        // Wait for side view render to complete
-        const diagonalCamera = new THREE.PerspectiveCamera(
-            45,
-            size.x / size.y,
-            100,
-            100000
-        );
-
-        const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
-        const cameraDistance = maxDim + 350; // Adjust multiplier as needed
-
-        diagonalCamera.position.set(
-            center.x + cameraDistance, // Offset in X for diagonal perspective
-            center.y, // Offset in Y for better centering
-            center.z + cameraDistance + 500 // Offset in Z for distance
-        );
-
-        diagonalCamera.lookAt(center);
-
-        await Promise.all([
-            renderAndDownload(
-                "front",
-                frontCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr,
-                DataArr
-            ),
-
-            (tempCanvas.width = 1602),
-            (tempCanvas.height = 2005),
-            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-            renderAndDownload(
-                "side",
-                sideCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr,
-                DataArr
-            ),
-
-            (tempCanvas.width = size.x + size.z),
-            (tempCanvas.height = size.y),
-            tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
-            renderAndDownload(
-                "diagonal",
-                diagonalCamera,
-                tempRenderer,
-                model.name,
-                imagesNameArr,
-                DataArr
-            ),
+            const maxDim = Math.max(size.x, size.y, size.z); // Largest dimension
+            const cameraDistance = maxDim + 350; // Adjust multiplier as needed
 
             diagonalCamera.position.set(
                 center.x + cameraDistance, // Offset in X for diagonal perspective
                 center.y, // Offset in Y for better centering
                 center.z + cameraDistance + 500 // Offset in Z for distance
-            ),
-            captureFixtureImage(
-                diagonalCamera,
-                tempRenderer,
-                model,
-                model.name,
-                imagesNameArr,
-                DataArr
-            ),
-        ]);
+            );
 
-        // Restore visibility
-        sharedParams.scene.children.forEach((childScene) => {
-            if (childScene.name === "main_group") {
-                childScene.children.forEach((child) => {
-                    child.visible = true;
-                });
-            }
-        });
+            diagonalCamera.lookAt(center);
 
-        // Restore Cone visibility
-        if (isCorn) {
-            for (const modelChild of model.children) {
-                modelChild.traverse((node) => {
-                    if (node.name === "Cone") {
-                        node.visible = true;
-                    }
-                });
+            // await Promise.all([
+                await renderAndDownload(
+                    "front",
+                    frontCamera,
+                    tempRenderer,
+                    model.name,
+                    imagesNameArr,
+                    DataArr
+                ),
+
+                (tempCanvas.width = 1602),
+                (tempCanvas.height = 2005),
+                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
+                await renderAndDownload(
+                    "side",
+                    sideCamera,
+                    tempRenderer,
+                    model.name,
+                    imagesNameArr,
+                    DataArr
+                ),
+
+                (tempCanvas.width = size.x + size.z),
+                (tempCanvas.height = size.y),
+                tempRenderer.setSize(tempCanvas.width, tempCanvas.height),
+                await renderAndDownload(
+                    "diagonal",
+                    diagonalCamera,
+                    tempRenderer,
+                    model.name,
+                    imagesNameArr,
+                    DataArr
+                ),
+
+                diagonalCamera.position.set(
+                    center.x + cameraDistance, // Offset in X for diagonal perspective
+                    center.y + 100, // Offset in Y for better centering
+                    center.z + cameraDistance + 500 // Offset in Z for distance
+                ),
+                await captureFixtureImage(
+                    diagonalCamera,
+                    tempRenderer,
+                    model,
+                    model.name,
+                    imagesNameArr,
+                    DataArr
+                ),
+            // ]);
+
+            // Restore visibility
+            sharedParams.scene.children.forEach((childScene) => {
+                if (childScene.name === "main_group") {
+                    childScene.children.forEach((child) => {
+                        child.visible = true;
+                    });
+                }
+            });
+
+            // Restore Cone visibility
+            if (isCorn) {
+                for (const modelChild of model.children) {
+                    modelChild.traverse((node) => {
+                        if (node.name === "Cone") {
+                            node.visible = true;
+                        }
+                    });
+                }
             }
         } finally {
             cleanupResources(tempRenderer);
@@ -736,9 +767,11 @@ export async function checkAndPreparePDF() {
 
 export async function creatingPDF() {
     sharedParams.transformControls.detach();
-
+    params.measurementToggle = false;
+    await showHideNodes();
     const loadingModal = document.getElementById("loadingModal");
-    document.getElementById("loadingText").innerHTML = "Please wait... we are creating your Pdf file";
+    document.getElementById("loadingText").innerHTML =
+        "Please wait... we are creating your Pdf file";
     loadingModal.style.display = "flex";
     await traverseAsync(sharedParams.modelGroup, async (child) => {
         if (

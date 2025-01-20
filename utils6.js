@@ -227,13 +227,17 @@ export async function updateMainModelName(model) {
 }
 
 export async function cloneWithCustomProperties(source, target) {
-  for (let model of allModelNames) {
-    let sourceModel = source.getObjectByName(model);
-    let targetModel = target.getObjectByName(model);
-    for (let key in sourceModel) {
-      if (sourceModel.hasOwnProperty(key) && !targetModel.hasOwnProperty(key)) {
-        targetModel[key] = sourceModel[key];
-      }
+    for (let model of allModelNames) {
+        let sourceModel = source.getObjectByName(model);
+        let targetModel = target.getObjectByName(model);
+        for (let key in sourceModel) {
+            if (
+                sourceModel.hasOwnProperty(key) &&
+                !targetModel.hasOwnProperty(key)
+            ) {
+                targetModel[key] = sourceModel[key];
+            }
+        }
     }
   }
 }
@@ -1406,7 +1410,184 @@ export async function showHideNodes(modelGroup, scene, camera) {
     }
   }
 
-  await drawMeasurementBoxesWithLabels(modelGroup, scene, camera);
+        (setting[params.selectedGroupName].headerUpDown = setting[params.selectedGroupName].headerRodToggle),
+        // Header Wooden Shelf nodes
+        updateInChunks(nodes.headerShelfWooden, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Wooden_Shelf";
+            return Promise.resolve();
+        }),
+
+        // Header Glass Shelf nodes
+        updateInChunks(nodes.headerShelfGlass, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Glass_Shelf";
+            return Promise.resolve();
+        }),
+
+        // Continue with all your other conditions...
+        // Example for frame border nodes:
+        updateInChunks(nodes.frameBorderNodes, async (node) => {
+            if (current_setting.frameMaterialType === "texture") {
+                let frame_material =
+                    sharedParams.border_texture_material.clone();
+                let frame_texture_border = await new THREE.TextureLoader().load(
+                    "./assets/images/borders/" +
+                        current_setting.frameBorderColor
+                );
+                frame_texture_border = await setTextureParams(
+                    frame_texture_border
+                );
+                frame_material.map = frame_texture_border;
+                node.material = frame_material;
+            } else if (current_setting.frameMaterialType === "color") {
+                const material = await commonMaterial(
+                    parseInt(current_setting.frameBorderColor, 16)
+                );
+                node.material = material;
+            }
+            node.material.needsUpdate = true;
+        }),
+
+        updateInChunks(nodes.headerShelfWooden, async (node) => {
+            // console.log('Header_Wooden_Shelf', dropdownType, child.name)
+            if (current_setting.shelfMaterialType === "texture") {
+                // Load texture
+                let texture_border = new THREE.TextureLoader().load(
+                    "./assets/images/borders/" +
+                        current_setting.defaultShelfColor
+                );
+                texture_border = await setTextureParams(texture_border);
+                let material = border_texture_material_Clone;
+                material.map = texture_border;
+                node.material = material;
+                node.material.needsUpdate = true;
+            } else if (current_setting.shelfMaterialType === "color") {
+                // Apply color
+                const material = await commonMaterial(
+                    parseInt(current_setting.defaultShelfColor, 16)
+                );
+                node.material = material;
+                node.material.needsUpdate = true;
+            }
+        }),
+
+        // Base Frame nodes
+        updateInChunks(nodes.baseFrameNodes, (node) => {
+            node.visible = node.name === current_setting.selectedBaseFrame;
+            return Promise.resolve();
+        }),
+
+        updateInChunks(nodes.baseMaterialNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(getHex(current_setting.baseFrameColor));
+            node.material.needsUpdate = true;
+        }),
+
+        updateInChunks(nodes.rackNodes, async (node) => {
+            let rackArr = node.rackArrayKey;
+            let rackModelName = rackArr.split("-")[1];
+            let rackside = rackArr.split("-")[2];
+            let isSameSide = false;
+            let currentModel = main_model.getObjectByName(rackModelName);
+            let frame = currentModel.getObjectByName("Frame");
+
+            for (const hangerFrame of frame.children) {
+                if (
+                    hangerNames.includes(hangerFrame.name) &&
+                    hangerFrame.visible
+                ) {
+                    let hangerArrKey = hangerFrame.hangerArrayKey;
+                    let hangerModel = hangerArrKey.split("-")[1];
+                    let hangerSide = hangerArrKey.split("-")[2];
+                    if (
+                        rackModelName === hangerModel &&
+                        rackside === hangerSide
+                    ) {
+                        isSameSide = true;
+                    }
+                }
+            }
+
+            node.visible = current_setting.slottedSidesToggle && !isSameSide;
+            return Promise.resolve();
+        }),
+
+        // Rack wooden nodes
+        updateInChunks(nodes.rackWoodenNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                getHex(current_setting.defaultRackShelfStandColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        // Rack stand nodes
+        updateInChunks(nodes.rackStandNodes, async (node) => {
+            if (node.material) {
+                node.material = node.material.clone();
+                node.material.color.set(
+                    getHex(current_setting.defaultRackStandStandColor)
+                );
+                node.material.needsUpdate = true;
+            } else {
+                node.traverse(async function (mesh) {
+                    if (mesh.material) {
+                        mesh.material = mesh.material.clone();
+                        mesh.material.color.set(
+                            getHex(current_setting.defaultRackStandStandColor)
+                        );
+                        mesh.material.needsUpdate = true;
+                    }
+                });
+            }
+        }),
+
+        // Hanger stand nodes
+        updateInChunks(nodes.hangerStandNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(
+                getHex(current_setting.defaultHangerStandColor)
+            );
+            node.material.needsUpdate = true;
+        }),
+
+        // Clothing nodes
+        updateInChunks(nodes.clothingNodes, (node) => {
+            node.visible = current_setting.hangerClothesToggle;
+            return Promise.resolve();
+        }),
+
+        // Hanger Club nodes
+        updateInChunks(nodes.hangerClubNodes, (node) => {
+            node.visible = current_setting.hangerGolfClubsToggle;
+            return Promise.resolve();
+        }),
+
+        // Rod frame nodes
+        updateInChunks(nodes.rodFrameNodes, async (node) => {
+            node.material = node.material.clone();
+            node.material.color.set(getHex(current_setting.rodFrameColor));
+            node.material.needsUpdate = true;
+        }),
+
+        // Glass Shelf Fixing nodes
+        updateInChunks(nodes.glassShelfFixing, (node) => {
+            node.visible =
+                current_setting.topOption == "Shelf" &&
+                current_setting.defaultShelfType == "Header_Glass_Shelf" &&
+                nodes.headerShelfGlass.length > 0;
+            return Promise.resolve();
+        }),
+
+        // Add all your other conditions here following the same pattern
+    ]);
+
+    // Update UI elements at the end
+    uiManager.updateUIElements(current_setting);
+    await drawMeasurementBoxesWithLabels();
 }
 
 export function updateActiveModel(modelName) {
@@ -2059,27 +2240,31 @@ export async function addAnotherModels(
   modelName = null,
   side = null
 ) {
-  if (modelGroup) {
-    let defaultModel = modelGroup.getObjectByName("main_model");
-    // console.log('defaultModel', defaultModel);
+    if (sharedParams.modelGroup) {
+        let haveShelf = false;
+        let defaultModel =
+            sharedParams.modelGroup.getObjectByName("main_model");
+        // console.log('defaultModel', defaultModel);
+        const newModel = defaultModel.clone();
+        await cloneWithCustomProperties(defaultModel, newModel);
 
-    const newModel = defaultModel.clone();
-    await cloneWithCustomProperties(defaultModel, newModel);
+        const nodesToRemove = [];
+        await traverseAsync(newModel, async (child) => {
+            if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
+                if (child.name == "RackWoodenShelf" || child.name == "RackGlassShelf") {
+                    haveShelf = true;
+                }
+                // Mark node for removal
+                nodesToRemove.push(child);
+            }
+        });
 
-    const nodesToRemove = [];
-    await traverseAsync(newModel, async (child) => {
-      if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
-        // Mark node for removal
-        nodesToRemove.push(child);
-      }
-    });
-
-    // Remove nodes after traversal
-    nodesToRemove.forEach((node) => {
-      if (node.parent) {
-        node.parent.remove(node); // Remove the node from its parent
-      }
-    });
+        // Remove nodes after traversal
+        nodesToRemove.forEach((node) => {
+            if (node.parent) {
+                node.parent.remove(node); // Remove the node from its parent
+            }
+        });
 
     if (!modelName) {
       let baseModelName = "Other_" + newModel.name;
@@ -2090,7 +2275,83 @@ export async function addAnotherModels(
         newModelName = `${baseModelName}_${suffix}`;
       }
 
-      modelName = newModelName;
+            modelName = newModelName;
+        }
+
+        newModel.name = modelName; // If modelName is not null or undefined
+
+        //   newModel.position.x = i * 18.05 - (modelGroupLength - 1) * 9.025;
+        const modelBoundingBox = await computeBoundingBox(
+            newModel,
+            allModelNames
+        );
+        const modelWidth = modelBoundingBox.max.x - modelBoundingBox.min.x;
+
+        const boundingBox = await computeBoundingBox(
+            sharedParams.modelGroup,
+            allModelNames
+        );
+
+        const center = boundingBox.getCenter(new THREE.Vector3());
+        const cameraOnLeft = side || sharedParams.camera.position.x < center.x;
+        if (cameraOnLeft) {
+            newModel.position.x = boundingBox.max.x + modelWidth / 2;
+            allGroupNames.push(newModel.name);
+            allGroupModelName.push(newModel.name);
+        } else {
+            newModel.position.x = boundingBox.min.x - modelWidth / 2;
+            allGroupNames.unshift(newModel.name);
+            allGroupModelName.unshift(newModel.name);
+        }
+
+        if (!setting[modelName]) {
+            setting[modelName] = JSON.parse(
+                JSON.stringify(setting["main_model"])
+            );
+            setting[modelName].topFrameBackgroundColor =
+                params.topFrameBackgroundColor;
+            setting[modelName].mainFrameBackgroundColor =
+                params.mainFrameBackgroundColor;
+            setting[modelName].defaultModel = params.addedVisibleModelName;
+        }
+
+        await traverseAsync(newModel, async (mesh) => {
+            if (
+                frameTop1Names.includes(mesh.name) ||
+                frameMainNames.includes(mesh.name)
+            ) {
+                let currentModelNode = await getMainParentNode(
+                    mesh,
+                    allModelNames
+                );
+                if (
+                    params.lastInnerMaterial[currentModelNode.name] &&
+                    params.lastInnerMaterial[currentModelNode.name][mesh.name]
+                ) {
+                    // const material = await commonMaterial(parseInt('0xffffff', 16))
+                    const material =
+                        params.lastInnerMaterial[currentModelNode.name][
+                            mesh.name
+                        ];
+                    mesh.material = material;
+                    mesh.needsUpdate = true;
+                }
+            }
+
+            if (mesh.name && allModelNames.includes(mesh.name)) {
+                if (mesh.name === params.addedVisibleModelName) {
+                    mesh.visible = true; // Show the selected model
+                } else {
+                    mesh.visible = false; // Hide other models
+                }
+            }
+        });
+
+        sharedParams.modelGroup.add(newModel);
+        newModel.activeModel = newModel.children[0];
+        allGroups.push(newModel);
+        sharedParams.selectedGroup = newModel;
+        await addAnotherModelView(allGroupNames, cameraOnLeft);
     }
 
     newModel.name = modelName; // If modelName is not null or undefined

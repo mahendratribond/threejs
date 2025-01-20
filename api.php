@@ -434,8 +434,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
     $data = json_decode($_REQUEST['mondayData'], true);
     $formData = $_REQUEST;
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.htHEKSVIIvtaIyoGdM9K8iHx3GYvE2mZv-RG87LfjBM";
-    $boardId = 1973431870;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
+    $boardId = 1955177183;
     $itemName = $_SESSION['username'];
 
     // ------------------------------GETTING PRICE DATA ------------------------------
@@ -909,7 +909,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $host = $_SERVER['HTTP_HOST']; // e.g., localhost or your domain
     $scriptDir = dirname($_SERVER['SCRIPT_NAME']); // e.g., /three-model
     $baseURL = $protocol . "://" . $host . $scriptDir;
-
     foreach ($data['group_names'] as $index => $groupName) {
         foreach ($data['setting'] as $key => $value) {
             if($key == $groupName){
@@ -1350,28 +1349,26 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                     "Frame Sell Price" => $value['slottedSidesToggle'] == false ? strval(1 * $priceListBaseOnQty['Frame_'.$value['defaultModel']]) : "",
                     "Frame Border Color" => $value['frameBorderColor'],
                     "Frame Material Type" => $value['frameMaterialType'],
-                    "isSlotted Active" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? "Yes" : "No",
-                    "Frame Slotted Qty" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? "1" : "",
-                    "Frame Slotted Sell Price" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? strval(1 * $priceListBaseOnQty['Frame_Slotted_'.$value['defaultModel']]) : "",
-                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ?  "Yes" : "No",
+                    "isSlotted Active" => $value['slottedSidesToggle'] ? "Yes" : "No",
+                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) && array_key_exists("RackWoodenShelf", $shelfCount) ?  "Yes (".$shelfCount['RackWoodenShelf'].")" : "No",
                     "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "",
-                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ?  "Yes" : "No",
+                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) && array_key_exists("RackGlassShelf", $shelfCount) ?  "Yes (".$shelfCount['RackGlassShelf'].")" : "No",
                     "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "",
                     "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "",
                     "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "",
                     "Base Type" => isset($ModelMeasureArr['Base_Solid']) ? "Base_Solid" : "Base_Support_Sides" ,
                     "Base Size" => $baseSize,
-                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "",
+                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) && array_key_exists("Hanger_Rail_Step", $hangerCount) ? 'Hanger_Rail_Step ('.$hangerCount['Hanger_Rail_Step'].')' : "",
                     "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "",
-                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "",
+                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) && array_key_exists("Hanger_Rail_Single", $hangerCount) ? 'Hanger_Rail_Single ('.$hangerCount['Hanger_Rail_Single'].')' : "",
                     "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "",
-                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "",
+                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) && array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? 'Hanger_Rail_D_500mm ('.$hangerCount['Hanger_Rail_D_500mm'].')' : "",
                     "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "",
-                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "",
+                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) && array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? 'Hanger_Rail_D_1000mm ('.$hangerCount['Hanger_Rail_D_1000mm'].')' : "",
                     "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "",
-                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "",
+                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) && array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? 'Hanger_Golf_Club_Driver ('.$hangerCount['Hanger_Golf_Club_Driver'].')' : "",
                     "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "",
-                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "",
+                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) && array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? 'Hanger_Golf_Club_Iron ('.$hangerCount['Hanger_Golf_Club_Iron'].')' : "",
                     "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "",
                     "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "",
                     "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "",

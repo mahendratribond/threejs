@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/svg" href="assets/images/logo_3.svg" />
   <title>Three.js Frame Customizer</title>
   <link href="assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -653,7 +654,7 @@
     }
     document.getElementById("logout").addEventListener("click", function(){
       destroySession();
-      window.location.reload();
+      window.location.href = "test6.html";
     })
 
     // Lazy load images using IntersectionObserver
