@@ -267,6 +267,10 @@ export class UIManager {
                     ) {
                         setting[params.selectedGroupName].headerRodToggle = true;
                     }
+                    if(setting[params.selectedGroupName].topOption == "Header" && setting[params.selectedGroupName].previousRodToggle){
+                        setting[params.selectedGroupName].headerRodToggle = true;
+                        setting[params.selectedGroupName].headerUpDown = true;
+                    }
                     // console.log(setting[params.selectedGroupName].topOption);
 
                     const headerRodToggle =
@@ -939,7 +943,6 @@ export class UIManager {
 
         if (this.elements.submitForm) {
             this.elements.submitForm.addEventListener("click", async () => {
-                this.showLoadingModal("Please wait... the form is submitting");
                 const form = document.getElementById("FormSubmitionForMonday");
                 let hasError = false;
                 const specialCharRegex = /[^a-zA-Z0-9\s]/;
@@ -1510,8 +1513,6 @@ export class UIManager {
             this.hangerIntersects.length > 0 &&
             sharedParams.transformControls && !isLoaderActive
         ) {
-            // console.log(this.hangerIntersects);
-
             this.hideRemoveIcons();
             const intersectNode = this.hangerIntersects[0].object;
             let camSide = sharedParams.camera.position.z > 0 ? "Front" : "Back";
@@ -2382,6 +2383,27 @@ export class UIManager {
             event.target.checked;
           await otherModelSetup();
           await showHideNodes(modelGroup, scene, camera);
+        }
+        let topShelfColorDropdown = parentElement.querySelectorAll(
+            '.custom-dropdown[data-type="shelf"] .dropdown-item'
+        );
+        if (headerSizeDropdown) {
+            headerSizeDropdown.value = current_setting.defaultHeaderSize;
+        }
+        let headerRodToggle = parentElement.querySelector(".headerRodToggle");
+        if (headerRodToggle) {
+            headerRodToggle.checked = current_setting.headerRodToggle;
+        }
+        let headerRodColorDropdown = parentElement.querySelector(
+            ".headerRodColorDropdown"
+        );
+        if (headerRodColorDropdown) {
+            headerRodColorDropdown.value = current_setting.rodFrameColor;
+        }
+        let shelfTypeDropdown =
+            parentElement.querySelector(".shelfTypeDropdown");
+        if (shelfTypeDropdown) {
+            shelfTypeDropdown.value = current_setting.defaultShelfType;
         }
         let topShelfColorDropdown = parentElement.querySelectorAll(
             '.custom-dropdown[data-type="shelf"] .dropdown-item'
