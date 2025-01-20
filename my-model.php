@@ -25,6 +25,25 @@ if (isset($_GET['id'])) {
     $stmt->close();
 } 
 
+// Handle deletion for selected models
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_ids'])) {
+    $selectedIds = $_POST['selected_ids'];
+    if (!empty($selectedIds)) {
+        $placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
+        $sql = "DELETE FROM threejs_models WHERE id IN ($placeholders)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param(str_repeat('i', count($selectedIds)), ...$selectedIds);
+
+        if ($stmt->execute()) {
+            // Redirect to refresh the page after deletion
+            header("Location: my-model.php");
+            exit();
+        } else {
+            echo "Error: Could not delete the selected records.";
+        }
+    }
+}
+
 // Fetch data from the database
 $sql = "SELECT * FROM threejs_models WHERE user_id = ?"; // Change 'your_table' to your actual table name
 $stmt = $conn->prepare($sql);
@@ -53,34 +72,44 @@ $result = $stmt->get_result();
 <body class="">
   <div class="container mt-5">
     <h2>Data List</h2>
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Name</th> 
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-            <?php if ($result->num_rows > 0): ?>
-                <?php $index = 1; ?>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo $index++; ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td> <!-- Change 'column1' to your actual column names -->
-                        <td>
-                            <a href="test6.html?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm">View</a> <!-- Change 'id' to your primary key -->
-                            <a href="my-model.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="5" class="text-center">No records found.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+     <form method="POST" action="">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th> 
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+              <?php if ($result->num_rows > 0): ?>
+                  <?php $index = 1; ?>
+                  <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                          <td><?php echo $index++; ?></td>
+                          <td><?php echo htmlspecialchars($row['name']); ?></td> <!-- Change 'column1' to your actual column names -->
+                          <td>
+                              <a href="test6.html?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm">View</a> <!-- Change 'id' to your primary key -->
+                              <a href="my-model.php?id=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm">Delete</a>
+                          </td>
+                          <td>
+                              <input type="checkbox" name="selected_ids[]" value="<?php echo $row['id']; ?>">
+                          </td>
+                      </tr>
+                  <?php endwhile; ?>
+                  <tr>
+                    <td colspan="4">
+                      <button type="submit" style="float:right" class="btn btn-danger btn-sm">Delete Selected Model</button>
+                    </td>
+                  </tr>
+              <?php else: ?>
+                  <tr>
+                      <td colspan="4" class="text-center">No records found.</td>
+                  </tr>
+              <?php endif; ?>
+          </tbody>
+      </table>
+    </form>
   </div>
   <script src="assets/plugins/bootstrap/js/bootstrap.min.js" defer></script>
 </body>

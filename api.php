@@ -433,81 +433,9 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
     $data = json_decode($_REQUEST['mondayData'], true);
-    // echo "<pre>";
-    // foreach ($data['group_names'] as $index => $groupName) {
-    //     foreach ($data['setting'] as $key => $value) { 
-    //         if($key == $groupName){ 
-    //             $ModelMeasureArr = [];
-    //             $HangerArr = [];
-    //             $RackArr = [];
-    //             $headerImage = [];
-    //             $frameImage = [];
-    //             if (isset($data['params']) && isset($data['params']['rackAdded'])) {
-    //                 foreach($data['params']['rackAdded'] as $rackKey => $rackVal){
-    //                     $rackPartkey = explode('-',$rackKey);
-    //                     if ($rackPartkey[0] == $groupName) {
-    //                         if (!in_array($rackPartkey[3], $RackArr)) { // Check for duplicates
-    //                             $RackArr[] = $rackPartkey[3];
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             if (isset($data['params']) && isset($data['params']['hangerAdded'])) {
-    //                 foreach($data['params']['hangerAdded'] as $hangerKey => $hangerVal){
-    //                     $hangerPartkey = explode('-',$hangerKey);
-    //                     if ($hangerPartkey[0] == $groupName) {
-    //                         if (!in_array($hangerPartkey[3], $HangerArr)) { // Check for duplicates
-    //                             $HangerArr[] = $hangerPartkey[3];
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             if (isset($data['top_frame_croped_image'])) {
-    //                 foreach($data['top_frame_croped_image'] as $headKey => $headVal){
-    //                     if($headKey == $groupName) {
-    //                         foreach ($headVal as $subHeadkey => $subHeadvalue) {
-    //                             if($subHeadkey == $value['defaultModel']){
-    //                                 foreach ($subHeadvalue as $Imagekey => $Imagevalue) {
-    //                                     $headerImage['headerImage'] = __DIR__.'/'.$Imagevalue;
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             if (isset($data['main_frame_croped_image'])) {
-    //                 foreach($data['main_frame_croped_image'] as $frameKey => $frameVal){
-    //                     if($frameKey == $groupName) {
-    //                         foreach ($frameVal as $subframekey => $subframevalue) {
-    //                             if($subframekey == $value['defaultModel']){
-    //                                 foreach ($subframevalue as $Imagekey => $Imagevalue) {
-    //                                     $frameImage['frameImage'] = __DIR__.'/'.$Imagevalue;
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //             foreach ($data['ModelData'] as $modelKey => $ModelMeasureValue) {
-    //                 if($modelKey == $key){
-    //                     foreach ($ModelMeasureValue as $submodelkey => $subModelMeasureData) {
-    //                         foreach($subModelMeasureData as $measureKey => $ModelMeasure){
-    //                             $ModelMeasureArr[$measureKey] = $ModelMeasure;
-    //                         }
-    //                     }
-    //                 }
-    //             } 
-
-    //             print_r($HangerArr);
-    //             print_r($RackArr);
-    //             print_r($ModelMeasureArr);
-    //         }
-    //     }
-    // }
-    // die;
     $formData = $_REQUEST;
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0OTAwMzY5MiwiYWFpIjoxMSwidWlkIjo2OTcxMjQwMSwiaWFkIjoiMjAyNC0xMi0xN1QwOTo0ODo1OS41MjdaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY5OTQ1MDIsInJnbiI6ImFwc2UyIn0.LCR6zgDGK5sxh_tM9vsZa51g2utgduvwDxjjf0yv71I";
-    $boardId = 1948140868;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
+    $boardId = 1955177183;
     $itemName = $_SESSION['username'];
 
     // Escape and encode the item name to safely include it in the GraphQL query
@@ -549,6 +477,10 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
     // ---------------------------------- CREATING ITEM ----------------------------------------------------
     // ---------------------------------- CREATING SUBITEM AND UPDATE VALUE ----------------------------------------------------
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST']; // e.g., localhost or your domain
+    $scriptDir = dirname($_SERVER['SCRIPT_NAME']); // e.g., /three-model
+    $baseURL = $protocol . "://" . $host . $scriptDir;
     foreach ($data['group_names'] as $index => $groupName) {
         foreach ($data['setting'] as $key => $value) { 
             if($key == $groupName){ 
@@ -557,6 +489,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 $RackArr = [];
                 $headerImage = [];
                 $frameImage = [];
+                $shelfCount = [];
+                $hangerCount = [];
                 if (isset($data['params']) && isset($data['params']['rackAdded'])) {
                     foreach($data['params']['rackAdded'] as $rackKey => $rackVal){
                         $rackPartkey = explode('-',$rackKey);
@@ -583,7 +517,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                             foreach ($headVal as $subHeadkey => $subHeadvalue) {
                                 if($subHeadkey == $value['defaultModel']){
                                     foreach ($subHeadvalue as $Imagekey => $Imagevalue) {
-                                        $headerImage['headerImage'] = 'http://localhost/three-model/'.$Imagevalue;
+                                        $headerImage['headerImage'] = $baseURL.'/'.$Imagevalue;
                                     }
                                 }
                             }
@@ -595,7 +529,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                         if($frameKey == $groupName) {
                             foreach ($frameVal as $subframekey => $subframevalue) {
                                 if($subframekey == $value['defaultModel']){
-                                    $frameImage['frameImage'] = 'http://localhost/three-model/'.$subframevalue;
+                                    $frameImage['frameImage'] = $baseURL.'/'.$subframevalue;
                                 }
                             }
                         }
@@ -609,7 +543,31 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                             }
                         }
                     }
+                }
+                if (isset($data['params']) && isset($data['params']['rackCount'])) {
+                    foreach($data['params']['rackCount'] as $rackKey => $rackVal){
+                        $rackPartkey = explode('-',$rackKey);
+                        if ($rackPartkey[0] == $groupName) {
+                            if(array_key_exists($rackPartkey[3] ,$shelfCount)){
+                                $shelfCount[$rackPartkey[3]] += $rackVal;
+                            }else{
+                                $shelfCount[$rackPartkey[3]] = $rackVal;
+                            }
+                        }
+                    }
                 } 
+                if (isset($data['params']) && isset($data['params']['hangerCount'])) {
+                    foreach($data['params']['hangerCount'] as $hangerKey => $hangerVal){
+                        $hangerPartkey = explode('-',$hangerKey);
+                        if ($hangerPartkey[0] == $groupName) {
+                            if(array_key_exists($hangerPartkey[3] ,$hangerCount)){
+                                $hangerCount[$hangerPartkey[3]] += $hangerVal;
+                            }else{
+                                $hangerCount[$hangerPartkey[3]] = $hangerVal;
+                            }
+                        }
+                    }
+                }
 
                 $ceateSubItemMutation = 'mutation { 
                     create_subitem (
@@ -784,21 +742,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                     }
                 }
 
-                
-                // // Retrieve Existing Columns
-                // $existingColumns = getExistingColumns($apiToken, $subitemBoardId);
-                // // Create Missing Columns
-                // foreach ($columnData as $columnName => $columnType) {
-                //     if (!in_array($columnName, $existingColumns)) {
-                //         $success = createColumn($apiToken, $subitemBoardId, $columnName, $columnType);
-                //          // Add the column title as text value
-                //         if ($success) {
-                //         } else {
-                //             echo "Failed to create column '$columnName'.\n";
-                //         }
-                //     }
-                // }
-                // echo "<pre>"; print_r($responseForSubItem);die;
                 // ---------------------------------- CREATING SUBITEM COLUMN ----------------------------------------------------
                 $getSubItemColumns = '
                     {
@@ -901,25 +844,25 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                     "Frame Border Color" => $value['frameBorderColor'],
                     "Frame Material Type" => $value['frameMaterialType'],
                     "isSlotted Active" => $value['slottedSidesToggle'] ? "Yes" : "No",
-                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ?  "Yes" : "No",
+                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) && array_key_exists("RackWoodenShelf", $shelfCount) ?  "Yes (".$shelfCount['RackWoodenShelf'].")" : "No",
                     "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "",
-                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ?  "Yes" : "No",
+                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) && array_key_exists("RackGlassShelf", $shelfCount) ?  "Yes (".$shelfCount['RackGlassShelf'].")" : "No",
                     "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "",
                     "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "",
                     "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "",
                     "Base Type" => isset($ModelMeasureArr['Base_Solid']) ? "Base_Solid" : "Base_Support_Sides" ,
                     "Base Size" => $baseSize,
-                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "",
+                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) && array_key_exists("Hanger_Rail_Step", $hangerCount) ? 'Hanger_Rail_Step ('.$hangerCount['Hanger_Rail_Step'].')' : "",
                     "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "",
-                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "",
+                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) && array_key_exists("Hanger_Rail_Single", $hangerCount) ? 'Hanger_Rail_Single ('.$hangerCount['Hanger_Rail_Single'].')' : "",
                     "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "",
-                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "",
+                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) && array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? 'Hanger_Rail_D_500mm ('.$hangerCount['Hanger_Rail_D_500mm'].')' : "",
                     "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "",
-                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "",
+                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) && array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? 'Hanger_Rail_D_1000mm ('.$hangerCount['Hanger_Rail_D_1000mm'].')' : "",
                     "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "",
-                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "",
+                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) && array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? 'Hanger_Golf_Club_Driver ('.$hangerCount['Hanger_Golf_Club_Driver'].')' : "",
                     "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "",
-                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "",
+                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) && array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? 'Hanger_Golf_Club_Iron ('.$hangerCount['Hanger_Golf_Club_Iron'].')' : "",
                     "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "",
                     "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "",
                     "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "",
