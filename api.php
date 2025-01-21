@@ -1142,14 +1142,10 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
     // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
 
-    // Create an object to store the column values
     $columnValues = [];
-
-    // Loop through the formData and match it with Monday column titles
     foreach ($formData as $field => $value) {
         foreach ($mondayColumns as $column) {
             if ($column['title'] == $field) {
-                // Store the value using the column ID in the object
                 $columnValues[$column['id']] = $value;
                 break;
             }
@@ -1157,11 +1153,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     }
     // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
     // ---------------------------------- ADDING TO MONDAY BOARD ----------------------------------------------------
-    // Convert the column values to JSON format
     $columnValuesJson = json_encode($columnValues, JSON_UNESCAPED_SLASHES);
-    // print_r($columnValuesJson);
-
-    // Prepare the mutation to update multiple column values
     $mutation = '
         mutation {
             change_multiple_column_values (
@@ -1201,7 +1193,316 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'setSessionData'){
     $_SESSION['user_id'] = $_REQUEST['userId'];
     $_SESSION['username'] = $_REQUEST['username'];
-} else {
+} else if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'createMainBoard'){
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
+    // Initialize cURL
+    $query = 'query {
+                boards {
+                    id
+                    name
+                    description
+                    state
+                    board_kind
+                    board_folder_id
+                }
+            }';
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $query]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    // Execute the request and get the response
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $responseSearchBoard = json_decode($response, true);
+    $isPriceBoard = false;
+    foreach ($responseSearchBoard['data']['boards'] as $boardKey => $boardValue) {
+        if($boardValue['name'] == "Price Board"){
+            $isPriceBoard = true;
+        }   
+    }
+    if(!$isPriceBoard){
+        $mutation = 'mutation createBoard(
+                        $boardName: String!
+                        $boardKind: BoardKind!
+                    ) {
+                        create_board(
+                            board_name: $boardName,
+                            board_kind: $boardKind,
+                        ) {
+                            id
+                            name
+                            board_kind
+                            board_folder_id
+                            workspace_id
+                            state
+                            description
+                            columns {
+                                id
+                                title
+                                type
+                            }
+                        }
+                    }';
+        $variables = [
+            'boardName' => "Price Board",
+            'boardKind' => "public",
+        ];
+        // Remove null values from variables
+        $variables = array_filter($variables, function($value) {
+            return $value !== null;
+        });
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.monday.com/v2',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS =>json_encode(['query' => $mutation, 'variables' => $variables]),
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Bearer ' . $apiToken,
+                'Content-Type: application/json',
+            ),
+        ));
+
+        // Execute the request and get the response
+        $response = curl_exec($curl);
+        curl_close($curl);
+        $responseForBoard = json_decode($response, true);
+        $boardId = $responseForBoard['data']['create_board']['id'];
+        // -------------------------------- create column ------------------------------
+        $columnData = [
+            "Cost Price" => "text",
+            "Sell Price 1-10" => "text",
+            "Sell Price 11-25" => "text",
+            "Sell Price 26-50" => "text",
+            "Sell Price 51-100" => "text",
+            "Sell Price 100+" => "text",
+        ];
+
+        // Retrieve Existing Columns
+        $existingColumns = getExistingColumns($apiToken, $boardId);
+        // Create Missing Columns
+        foreach ($columnData as $columnName => $columnType) {
+            if (!in_array($columnName, $existingColumns)) {
+                $mutationsForColumnCreate = 'mutation {
+                        create_column (
+                            board_id: ' . $boardId . ',
+                            title: "' . addslashes($columnName) . '",
+                            column_type: ' . $columnType . '
+                        ) {
+                            id
+                        }
+                }';
+                // Perform the API request to Monday.com
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.monday.com/v2',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS => json_encode(['query' => $mutationsForColumnCreate]),
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $apiToken,
+                        'Content-Type: application/json',
+                    ),
+                ));
+
+                $response = curl_exec($curl);
+                curl_close($curl);
+                sleep(2);
+            }
+        }
+        // -------------------------------- create column ------------------------------
+        // -------------------------------- get column id ------------------------------
+        // GraphQL query to fetch columns
+        $query = 'query {
+            boards(ids: ' . $boardId . ') {
+                columns {
+                    id
+                    title
+                    type
+                }
+            }
+        }';
+    
+        // Initialize cURL
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => 'https://api.monday.com/v2',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode(['query' => $query]),
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiToken,
+                'Content-Type: application/json',
+            ],
+        ]);
+    
+        // Execute the request
+        $response = curl_exec($curl);
+        curl_close($curl);
+    
+        // Decode the JSON response
+        $responseData = json_decode($response, true);
+    
+        // Extract column IDs and titles
+        $columnsIdArr = [];
+        if (isset($responseData['data']['boards'][0]['columns'])) {
+            foreach ($responseData['data']['boards'][0]['columns'] as $column) {
+                $columnsIdArr[$column['title']] = $column['id'];
+            }
+        }
+        // -------------------------------- get column id ------------------------------
+        // -------------------------------- create item ------------------------------
+        $filePath = 'price.json';
+        if (!file_exists($filePath)) {
+            throw new Exception("JSON file not found at: " . $filePath);
+        }
+        $jsonString = file_get_contents($filePath);
+        if ($jsonString === false) {
+            throw new Exception("Failed to read JSON file");
+        }
+        $jsonData = json_decode($jsonString, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("JSON decode error: " . json_last_error_msg());
+        }
+        // echo "<pre>"; print_r($jsonData);
+        $itemData = [
+            "header 300",
+            "header 500",
+            "Header Woodern Shelf",
+            "Header Glass Shelf",
+            "Header Glass Shelf Fixing",
+            "Rod",
+            "Frame 661mm Wide",
+            "Frame Slotted 661mm",
+            "Frame 1061mm Wide",
+            "Frame Slotted 1061mm",
+            "Frame 1200mm Wide",
+            "Frame Slotted 1200mm",
+            "Frame 1500mm Wide",
+            "Frame 2000mm Wide",
+            "Frame 3000mm Wide",
+            "Rack Wooden Shelf",
+            "Rack Glass Shelf",
+            "Rack Shelf Bracket",
+            "Base solid",
+            "Base flat",
+            "Hanger Rail Step",
+            "Hanger Rail Single",
+            "Hanger Rail D 500",
+            "Hanger Rail D 1000",
+            "Hanger Golf Driver",
+            "Hanger Golf Iron",
+        ];
+        foreach ($itemData as $itemName) {
+            $mutationForItemCreate = 'mutation {
+                    create_item (
+                        board_id: ' . $boardId . ',
+                        item_name: "' . addslashes($itemName) . '"
+                    ) {
+                        id
+                        name
+                        column_values {
+                            id
+                            value
+                            text
+                        }
+                    }
+                }';
+            // Perform the API request to Monday.com
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://api.monday.com/v2',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode(['query' => $mutationForItemCreate]),
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization: Bearer ' . $apiToken,
+                    'Content-Type: application/json',
+                ),
+            ));
+    
+            $response = curl_exec($curl);
+            curl_close($curl);
+            $responseOfCreatedItem = json_decode($response, true);
+    
+            $itemId = $responseOfCreatedItem['data']['create_item']['id'];
+            $createdItemName = $responseOfCreatedItem['data']['create_item']['name'];
+            foreach ($jsonData[0] as $dataKey => $dataValue) {
+                if ($dataKey == $createdItemName) {
+                    // Update the column values for the created item
+                    foreach ($dataValue as $columnTitle => $columnValue) {
+                        $columnId = $columnsIdArr[$columnTitle];
+                        $mutationForColumnUpdate = 'mutation {
+                            change_simple_column_value(
+                                board_id: ' . $boardId . ',
+                                item_id: ' . $itemId . ',
+                                column_id: "' . $columnId . '",
+                                value: "' . addslashes($columnValue) . '"
+                            ) {
+                                id
+                            }
+                        }';
+    
+                        $curl = curl_init();
+                        curl_setopt_array($curl, array(
+                            CURLOPT_URL => 'https://api.monday.com/v2',
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_ENCODING => '',
+                            CURLOPT_MAXREDIRS => 10,
+                            CURLOPT_TIMEOUT => 0,
+                            CURLOPT_FOLLOWLOCATION => true,
+                            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                            CURLOPT_CUSTOMREQUEST => 'POST',
+                            CURLOPT_POSTFIELDS => json_encode(['query' => $mutationForColumnUpdate]),
+                            CURLOPT_HTTPHEADER => array(
+                                'Authorization: Bearer ' . $apiToken,
+                                'Content-Type: application/json',
+                            ),
+                        ));
+    
+                        $columnResponse = curl_exec($curl);
+                        curl_close($curl);
+                        $responseForColumn = json_decode($columnResponse, true);
+                        if (!isset($responseForColumn['data']['change_simple_column_value'])) {
+                            echo "Error updating column for item $createdItemName: " . print_r($responseForColumn, true);
+                        }
+                        sleep(2);
+                    }
+                }
+            }
+            sleep(2);
+            // -------------------------------- create item ------------------------------
+        }
+    }
+}else {
     echo json_encode("No Action Found"); // No action found
 }
 

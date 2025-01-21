@@ -107,6 +107,7 @@ export class UIManager {
             closeButtonAR: document.getElementById("closeButtonAR"),
             createQrButton: document.getElementById("createQrButton"),
             formSubmition: document.getElementById("formSubmition"),
+            formSubmition2: document.getElementById("formSubmition2"),
             formCloseBtn: document.getElementById("formCloseBtn"),
             submitForm: document.querySelector(".submitForm"),
             formModel: document.getElementById("formModel"),
@@ -837,6 +838,27 @@ export class UIManager {
                 }
             });
         }
+        // if (this.elements.formSubmition2) {
+        //     this.elements.formSubmition2.addEventListener("click", async () => {
+        //         const fomdata = new FormData()
+        //         fomdata.append('action', "createMainBoard")
+        //         try {
+        //             const response = await fetch("api.php", {
+        //                 method: "POST",
+        //                 body: fomdata,
+        //             });
+        //             const data = await response.json();
+        //             if(data.status === "success") {
+        //                 this.hideLoadingModal();
+        //                 return data; // Ensure the resolved data is returned
+        //             }
+        //         } catch (error) {
+        //             console.error("Error while submitting form: ", error);
+        //             this.hideLoadingModal();
+        //             throw error; // Re-throw the error to handle it at the calling point
+        //         }
+        //     });
+        // }
 
         if (this.elements.formCloseBtn) {
             this.elements.formCloseBtn.addEventListener("click", async () => {
