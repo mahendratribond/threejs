@@ -1660,35 +1660,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
     // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
     // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
-    $labourPackageCostArr = [
-        "Labour_Price" => "Labour Price",
-        "Packaging_Price" => "Packaging Price",
-    ];
-    $labourAndPackagingCost = [];
-    foreach ($labourPackageCostArr as $nameKey => $valueKey){
-        foreach ($priceBoardData as $dataPriceKey => $dataPriceValue) {
-            if($valueKey == $dataPriceKey){
-                if($formData['Qty'] > 0 && $formData['Qty'] <= 10){
-                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 1-10"]);
-                }else if($formData['Qty'] >= 11 && $formData['Qty'] <= 25){
-                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 11-25"]);
-                }else if($formData['Qty'] >= 26 && $formData['Qty'] <= 50){
-                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 26-50"]);
-                }else if($formData['Qty'] >= 51 && $formData['Qty'] <= 100){
-                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 51-100"]);
-                }else if($formData['Qty'] > 100){
-                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 100+"]);
-                }
-            }
-        }
-    }
+
     $columnValues = [];
-    $dropDownColumnVal;
-    $grandTotalCost = ($formData['Qty'] * $labourAndPackagingCost['Labour_Price']) + ($formData['Qty'] * $labourAndPackagingCost['Packaging_Price']);
-    $formData['Product Cost'] = strval($totalPrice);
-    $formData['Total Cost'] = strval((($totalPrice * 1.5) * $formData['Qty']) + $grandTotalCost);
-    $formData['Labour Cost'] = strval($formData['Qty'] * $labourAndPackagingCost['Labour_Price']);
-    $formData['Packaging Cost'] = strval($formData['Qty'] * $labourAndPackagingCost['Packaging_Price']);
     foreach ($formData as $field => $value) {
         foreach ($mondayColumns as $column) {
             if ($column['title'] == $field) {
@@ -1741,7 +1714,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $_SESSION['user_id'] = $_REQUEST['userId'];
     $_SESSION['username'] = $_REQUEST['username'];
 } else if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'createMainBoard'){
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.htHEKSVIIvtaIyoGdM9K8iHx3GYvE2mZv-RG87LfjBM";
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
     // Initialize cURL
     $query = 'query {
                 boards {
@@ -1892,7 +1865,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 }
             }
         }';
-
         // Initialize cURL
         $curl = curl_init();
         curl_setopt_array($curl, [
@@ -1936,18 +1908,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         }
         // echo "<pre>"; print_r($jsonData);
         $itemData = [
-            "Header 661X300",
-            "Header 1061X300",
-            "Header 1200X300",
-            "Header 1500X300",
-            "Header 2000X300",
-            "Header 3000X300",
-            "Header 661X500",
-            "Header 1061X500",
-            "Header 1200X500",
-            "Header 1500X500",
-            "Header 2000X500",
-            "Header 3000X500",
+            "header 300",
+            "header 500",
             "Header Woodern Shelf",
             "Header Glass Shelf",
             "Header Glass Shelf Fixing",
@@ -1972,8 +1934,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             "Hanger Rail D 1000",
             "Hanger Golf Driver",
             "Hanger Golf Iron",
-            "Labour Price",
-            "Packaging Price",
         ];
         foreach ($itemData as $itemName) {
             $mutationForItemCreate = 'mutation {
@@ -2029,7 +1989,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                                 id
                             }
                         }';
-
                         $curl = curl_init();
                         curl_setopt_array($curl, array(
                             CURLOPT_URL => 'https://api.monday.com/v2',
@@ -2046,7 +2005,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                                 'Content-Type: application/json',
                             ),
                         ));
-
                         $columnResponse = curl_exec($curl);
                         curl_close($curl);
                         $responseForColumn = json_decode($columnResponse, true);
