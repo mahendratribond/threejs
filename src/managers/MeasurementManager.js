@@ -1,5 +1,13 @@
-import * as THREE from "three";
-import { params, allModelNames } from "../../config.js";
+import {
+    THREE,
+    params,
+    CSS2DObject,
+    sharedParams,
+    CSS2DRenderer,
+    allModelNames,
+    heightMeasurementNames,
+} from "../../config.js";
+import { traverseAsync } from "../../utils6.js";
 export async function getCurrentModelSize(model, node) {
     const cubeNode = model.getObjectByName(node);
     return getNodeSize(cubeNode);
