@@ -10,7 +10,7 @@ $password = "Miami@123";
 $dbname = "three_model";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
-
+define('UPDATE_VALUE', '876635920e53248d9c00486f534deb4f');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
