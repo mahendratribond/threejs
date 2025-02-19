@@ -7,7 +7,7 @@ import {
     allModelNames,
     heightMeasurementNames,
 } from "../../config.js";
-import {traverseAsync} from "../../utils6.js"
+import { traverseAsync } from "../../utils6.js";
 export async function getCurrentModelSize(model, node) {
     const cubeNode = model.getObjectByName(node);
     return getNodeSize(cubeNode);
@@ -506,7 +506,7 @@ export async function getComponentSize(model, modelComponentsData) {
                         const modelNode = frameChild.children[i];
                         if (
                             modelNode.name &&
-                            modelNode.name.startsWith("Hanger_")
+                            (modelNode.name.startsWith("Hanger_") || modelNode.name.startsWith("RackWoodenShelf") || modelNode.name.startsWith("RackGlassShelf"))
                         ) {
                             modelNode.parent.remove(modelNode);
                         }

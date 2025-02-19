@@ -434,9 +434,437 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 } else if (!empty($_REQUEST['action']) && $_REQUEST['action'] == 'formSubmitionForMonday'){
     $data = json_decode($_REQUEST['mondayData'], true);
     $formData = $_REQUEST;
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
-    $boardId = 1955177183;
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.htHEKSVIIvtaIyoGdM9K8iHx3GYvE2mZv-RG87LfjBM";
+    $boardId = 1973431870;
     $itemName = $_SESSION['username'];
+
+    // ------------------------------GETTING PRICE DATA ------------------------------
+    $getAllBoardQuery = 'query {
+                boards {
+                    id
+                    name
+                    description
+                    state
+                    board_kind
+                    board_folder_id
+                }
+            }';
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $getAllBoardQuery]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    // Execute the request and get the response
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $responseSearchBoard = json_decode($response, true);
+    $priceBoardId = null;
+    foreach ($responseSearchBoard['data']['boards'] as $boardKey => $boardValue) {
+        if($boardValue['name'] == "Price Board"){
+            $priceBoardId = $boardValue['id'];
+        }   
+    }
+
+    $getPriceBoardQuery = 'query GetBoardItems{  
+            boards(ids: ' . $priceBoardId . ') {  
+                id
+                name
+                columns {
+                    id
+                    title
+                    type
+                    settings_str
+                }
+                items_page(limit: 100) {  
+                items {  
+                    id  
+                    name  
+                    column_values {  
+                    id  
+                    value  
+                    }  
+                }  
+                }  
+            }  
+        }';
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $getPriceBoardQuery]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    // Execute the request and get the response
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $responsePriceBoard = json_decode($response, true);
+    // Extract column IDs with their titles into an associative array
+    $columns = $responsePriceBoard['data']['boards'][0]['columns'];
+    $priceColumnId = array_column($columns, 'id', 'title');
+    // Extract items and process them
+    $items = $responsePriceBoard['data']['boards'][0]['items_page']['items'];
+    $priceBoardData = [];
+    foreach ($items as $item) {
+        $sellPriceData = [];
+        // Map column values using the associative column ID array
+        foreach ($item['column_values'] as $columnValue) {
+            $columnTitle = array_search($columnValue['id'], $priceColumnId);
+            if ($columnTitle !== false) {
+                $sellPriceData[$columnTitle] = $columnValue['value'];
+            }
+        }
+        $priceBoardData[$item['name']] = $sellPriceData;
+    }
+    // echo "<pre>"; print_r($priceColumnId);
+    $quntityData = [];
+    foreach ($data['group_names'] as $index => $groupName) {
+        foreach ($data['setting'] as $key => $value) { 
+            if($key == $groupName){ 
+                $quntityArr = [];
+                $shelfCount = [];
+                $hangerCount = [];
+                if (isset($data['params']) && isset($data['params']['rackCount'])) {
+                    foreach($data['params']['rackCount'] as $rackKey => $rackVal){
+                        $rackPartkey = explode('-',$rackKey);
+                        if ($rackPartkey[0] == $groupName) {
+                            if(array_key_exists($rackPartkey[3] ,$shelfCount)){
+                                $shelfCount[$rackPartkey[3]] += $rackVal;
+                            }else{
+                                $shelfCount[$rackPartkey[3]] = $rackVal;
+                            }
+                        }
+                    }
+                } 
+                if (isset($data['params']) && isset($data['params']['hangerCount'])) {
+                    foreach($data['params']['hangerCount'] as $hangerKey => $hangerVal){
+                        $hangerPartkey = explode('-',$hangerKey);
+                        if ($hangerPartkey[0] == $groupName) {
+                            if(array_key_exists($hangerPartkey[3] ,$hangerCount)){
+                                $hangerCount[$hangerPartkey[3]] += $hangerVal;
+                            }else{
+                                $hangerCount[$hangerPartkey[3]] = $hangerVal;
+                            }
+                        }
+                    }
+                }
+                $baseSolidQuantity;
+                if($value['defaultModel'] == "Model_661" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 1; 
+                }else if($value['defaultModel'] == "Model_1061" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 1; 
+                }else if($value['defaultModel'] == "Model_1200" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1500" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_2000" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_3000" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 3; 
+                }
+                $baseFlatQuantity;
+                if($value['defaultModel'] == "Model_661" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1061" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1200" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1500" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_2000" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_3000" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 4; 
+                }
+
+                $headerRodsQuantity;
+                if($value['defaultModel'] == "Model_661" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1061" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1200" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_1500" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_2000" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_3000" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 4; 
+                }
+                $quntityArr = [
+                    "Header_300" => [
+                        "Model_661" => $value['defaultModel'] == "Model_661" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                        "Model_1061" => $value['defaultModel'] == "Model_1061" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                        "Model_1200" => $value['defaultModel'] == "Model_1200" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                        "Model_1500" => $value['defaultModel'] == "Model_1500" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                        "Model_2000" => $value['defaultModel'] == "Model_2000" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                        "Model_3000" => $value['defaultModel'] == "Model_3000" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_300" ? 1 : 0,
+                    ],
+                    "Header_500" => [
+                        "Model_661" => $value['defaultModel'] == "Model_661" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                        "Model_1061" => $value['defaultModel'] == "Model_1061" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                        "Model_1200" => $value['defaultModel'] == "Model_1200" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                        "Model_1500" => $value['defaultModel'] == "Model_1500" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                        "Model_2000" => $value['defaultModel'] == "Model_2000" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                        "Model_3000" => $value['defaultModel'] == "Model_3000" &&  $value['topOption'] == "Header" && $value['defaultHeaderSize'] == "Header_500" ? 1 : 0,
+                    ],
+                    "Header_Woodern_Shelf" => $value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Wooden_Shelf" ? 1 : 0,
+                    "Header_Glass_Shelf" => $value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Glass_Shelf" ? 1 : 0,
+                    "Header_Glass_Shelf_Fixing" => $value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Glass_Shelf" ? 2 : 0,
+                    "Rod" => $value['topOption'] == "Shelf" || $value['headerRodToggle'] ? $headerRodsQuantity : 0,
+                    "Frame_Slott" => [
+                        "Model_661" => $value['defaultModel'] == "Model_661" && $value['slottedSidesToggle'] ? 1 : 0,
+                        "Model_1061" => $value['defaultModel'] == "Model_1061" && $value['slottedSidesToggle'] ? 1 : 0,
+                        "Model_1200" => $value['defaultModel'] == "Model_1200" && $value['slottedSidesToggle'] ? 1 : 0,
+                    ],
+                    "Frame" => [
+                        "Model_661" => $value['defaultModel'] == "Model_661" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                        "Model_1061" => $value['defaultModel'] == "Model_1061" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                        "Model_1200" => $value['defaultModel'] == "Model_1200" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                        "Model_1500" => $value['defaultModel'] == "Model_1500" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                        "Model_2000" => $value['defaultModel'] == "Model_2000" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                        "Model_3000" => $value['defaultModel'] == "Model_3000" && $value['slottedSidesToggle'] == false ? 1 : 0,
+                    ],
+                    "Rack_Wooden_Shelf" => array_key_exists("RackWoodenShelf", $shelfCount) ? $shelfCount['RackWoodenShelf'] : 0,
+                    "Rack_Glass_Shelf" => array_key_exists("RackGlassShelf", $shelfCount) ? $shelfCount['RackGlassShelf'] : 0,
+                    "Rack_Shelf_Bracket" => array_key_exists("RackWoodenShelf", $shelfCount) && array_key_exists("RackGlassShelf", $shelfCount) ? ($shelfCount['RackGlassShelf'] + $shelfCount['RackWoodenShelf']) * 2 : (array_key_exists("RackWoodenShelf", $shelfCount) ? $shelfCount['RackWoodenShelf'] * 2 : (array_key_exists("RackGlassShelf", $shelfCount) ? $shelfCount['RackGlassShelf'] * 2  : 0)),
+                    "Base_solid" => $value['selectedBaseFrame'] == "Base_Solid" ? $baseSolidQuantity : 0,
+                    "Base_flat" => $value['selectedBaseFrame'] == "Base_Support_Sides" ? $baseFlatQuantity : 0,
+                    "Hanger_Rail_Step" => array_key_exists("Hanger_Rail_Step", $hangerCount) ? $hangerCount['Hanger_Rail_Step'] : 0,
+                    "Hanger_Rail_Single" => array_key_exists("Hanger_Rail_Single", $hangerCount) ? $hangerCount['Hanger_Rail_Single'] : 0,
+                    "Hanger_Rail_D_500" => array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? $hangerCount['Hanger_Rail_D_500mm'] : 0,
+                    "Hanger_Rail_D_1000" => array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? $hangerCount['Hanger_Rail_D_1000mm'] : 0,
+                    "Hanger_Golf_Driver" => array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? $hangerCount['Hanger_Golf_Club_Driver'] : 0,
+                    "Hanger_Golf_Iron" => array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? $hangerCount['Hanger_Golf_Club_Iron'] : 0,
+                ];
+                $quntityData[$groupName] = $quntityArr;
+            }
+        }
+    }
+    $itemPriceData = [];
+    $possibleKeys = [
+        'Header_Model_661_Header_300', 'Header_Model_1061_Header_300', 'Header_Model_1200_Header_300', 'Header_Model_1500_Header_300', 
+        'Header_Model_2000_Header_300', 'Header_Model_3000_Header_300', 'Header_Model_661_Header_500', 'Header_Model_1061_Header_500', 
+        'Header_Model_1200_Header_500', 'Header_Model_1500_Header_500', 'Header_Model_2000_Header_500', 'Header_Model_3000_Header_500',
+        'Header_Woodern_Shelf', 'Header_Glass_Shelf', 'Header_Glass_Shelf_Fixing',
+        'Rod', 'Frame_Slotted_Model_661', 'Frame_Slotted_Model_1061', 'Frame_Slotted_Model_1200',
+        'Frame_Model_661', 'Frame_Model_1061', 'Frame_Model_1200', 
+        'Frame_Model_1500', 'Frame_Model_2000', 'Frame_Model_3000',
+        'Rack_Wooden_Shelf', 'Rack_Glass_Shelf', 'Rack_Shelf_Bracket',
+        'Base_solid', 'Base_flat', 'Hanger_Rail_Step', 'Hanger_Rail_Single',
+        'Hanger_Rail_D_500', 'Hanger_Rail_D_1000', 'Hanger_Golf_Driver', 
+        'Hanger_Golf_Iron', 'Labour_Price','Packaging_Price'
+    ];
+
+    foreach ($possibleKeys as $key) {
+        $itemPriceData[$key] = 0;
+    }
+    foreach ($quntityData as $modelNameKey => $modelValue) {
+        if($modelValue["Header_300"]["Model_661"] > 0){
+            $itemPriceData["Header_Model_661_Header_300"] += $modelValue["Header_300"]["Model_661"]; 
+        }
+        if($modelValue["Header_300"]["Model_1061"] > 0){
+            $itemPriceData["Header_Model_1061_Header_300"] += $modelValue["Header_300"]["Model_1061"]; 
+        }
+        if($modelValue["Header_300"]["Model_1200"] > 0){
+            $itemPriceData["Header_Model_1200_Header_300"] += $modelValue["Header_300"]["Model_1200"]; 
+        }
+        if($modelValue["Header_300"]["Model_1500"] > 0){
+            $itemPriceData["Header_Model_1500_Header_300"] += $modelValue["Header_300"]["Model_1500"]; 
+        }
+        if($modelValue["Header_300"]["Model_2000"] > 0){
+            $itemPriceData["Header_Model_2000_Header_300"] += $modelValue["Header_300"]["Model_2000"]; 
+        }
+        if($modelValue["Header_300"]["Model_3000"] > 0){
+            $itemPriceData["Header_Model_3000_Header_300"] += $modelValue["Header_300"]["Model_3000"]; 
+        }
+        if($modelValue["Header_500"]["Model_661"] > 0){
+            $itemPriceData["Header_Model_661_Header_500"] += $modelValue["Header_500"]["Model_661"]; 
+        }
+        if($modelValue["Header_500"]["Model_1061"] > 0){
+            $itemPriceData["Header_Model_1061_Header_500"] += $modelValue["Header_500"]["Model_1061"]; 
+        }
+        if($modelValue["Header_500"]["Model_1200"] > 0){
+            $itemPriceData["Header_Model_1200_Header_500"] += $modelValue["Header_500"]["Model_1200"]; 
+        }
+        if($modelValue["Header_500"]["Model_1500"] > 0){
+            $itemPriceData["Header_Model_1500_Header_500"] += $modelValue["Header_500"]["Model_1500"]; 
+        }
+        if($modelValue["Header_500"]["Model_2000"] > 0){
+            $itemPriceData["Header_Model_2000_Header_500"] += $modelValue["Header_500"]["Model_2000"]; 
+        }
+        if($modelValue["Header_500"]["Model_3000"] > 0){
+            $itemPriceData["Header_Model_3000_Header_500"] += $modelValue["Header_500"]["Model_3000"]; 
+        }
+        if($modelValue["Header_Woodern_Shelf"] > 0){
+            $itemPriceData["Header_Woodern_Shelf"] += $modelValue["Header_Woodern_Shelf"];
+        }
+        if($modelValue["Header_Glass_Shelf"] > 0){
+            $itemPriceData["Header_Glass_Shelf"] += $modelValue["Header_Glass_Shelf"]; 
+        }
+        if($modelValue["Header_Glass_Shelf_Fixing"] > 0){
+            $itemPriceData["Header_Glass_Shelf_Fixing"] += $modelValue["Header_Glass_Shelf_Fixing"]; 
+        }
+        if($modelValue["Rod"] > 0){
+            $itemPriceData["Rod"] += $modelValue["Rod"]; 
+        }
+        if($modelValue["Frame_Slott"]["Model_661"] > 0){
+            $itemPriceData["Frame_Slotted_Model_661"] += $modelValue["Frame_Slott"]["Model_661"]; 
+        }
+        if($modelValue["Frame_Slott"]["Model_1061"] > 0){
+            $itemPriceData["Frame_Slotted_Model_1061"] += $modelValue["Frame_Slott"]["Model_1061"]; 
+        }
+        if($modelValue["Frame_Slott"]["Model_1200"] > 0){
+            $itemPriceData["Frame_Slotted_Model_1200"] += $modelValue["Frame_Slott"]["Model_1200"]; 
+        }
+        if($modelValue["Frame"]["Model_661"] > 0){
+            $itemPriceData["Frame_Model_661"] += $modelValue["Frame"]["Model_661"]; 
+        }
+        if($modelValue["Frame"]["Model_1061"] > 0){
+            $itemPriceData["Frame_Model_1061"] += $modelValue["Frame"]["Model_1061"]; 
+        }
+        if($modelValue["Frame"]["Model_1200"] > 0){
+            $itemPriceData["Frame_Model_1200"] += $modelValue["Frame"]["Model_1200"]; 
+        }
+        if($modelValue["Frame"]["Model_1500"] > 0){
+            $itemPriceData["Frame_Model_1500"] += $modelValue["Frame"]["Model_1500"]; 
+        }
+        if($modelValue["Frame"]["Model_2000"] > 0){
+            $itemPriceData["Frame_Model_2000"] += $modelValue["Frame"]["Model_2000"]; 
+        }
+        if($modelValue["Frame"]["Model_3000"] > 0){
+            $itemPriceData["Frame_Model_3000"] += $modelValue["Frame"]["Model_3000"]; 
+        }
+        if($modelValue["Rack_Wooden_Shelf"] > 0){
+            $itemPriceData["Rack_Wooden_Shelf"] += $modelValue["Rack_Wooden_Shelf"]; 
+        }
+        if($modelValue["Rack_Glass_Shelf"] > 0){
+            $itemPriceData["Rack_Glass_Shelf"] += $modelValue["Rack_Glass_Shelf"]; 
+        }
+        if($modelValue["Rack_Shelf_Bracket"] > 0){
+            $itemPriceData["Rack_Shelf_Bracket"] += $modelValue["Rack_Shelf_Bracket"]; 
+        }
+        if($modelValue["Base_solid"] > 0){
+            $itemPriceData["Base_solid"] += $modelValue["Base_solid"]; 
+        }
+        if($modelValue["Base_flat"] > 0){
+            $itemPriceData["Base_flat"] += $modelValue["Base_flat"]; 
+        }
+        if($modelValue["Hanger_Rail_Step"] > 0){
+            $itemPriceData["Hanger_Rail_Step"] += $modelValue["Hanger_Rail_Step"]; 
+        }
+        if($modelValue["Hanger_Rail_Single"] > 0){
+            $itemPriceData["Hanger_Rail_Single"] += $modelValue["Hanger_Rail_Single"]; 
+        }
+        if($modelValue["Hanger_Rail_D_500"] > 0){
+            $itemPriceData["Hanger_Rail_D_500"] += $modelValue["Hanger_Rail_D_500"]; 
+        }
+        if($modelValue["Hanger_Rail_D_1000"] > 0){
+            $itemPriceData["Hanger_Rail_D_1000"] += $modelValue["Hanger_Rail_D_1000"]; 
+        }
+        if($modelValue["Hanger_Golf_Driver"] > 0){
+            $itemPriceData["Hanger_Golf_Driver"] += $modelValue["Hanger_Golf_Driver"]; 
+        }
+        if($modelValue["Hanger_Golf_Iron"] > 0){
+            $itemPriceData["Hanger_Golf_Iron"] += $modelValue["Hanger_Golf_Iron"]; 
+        } 
+    }
+    $itemPriceData["Labour_Price"] = $formData['Qty'];
+    $itemPriceData["Packaging_Price"] = $formData['Qty'];
+    $priceListBaseOnQty = [];
+    $totalPrice = 0;
+    $arrMap = [
+            "Header_Model_661_Header_300" => "Header 661X300",
+            "Header_Model_1061_Header_300" => "Header 1061X300",
+            "Header_Model_1200_Header_300" => "Header 1200X300",
+            "Header_Model_1500_Header_300" => "Header 1500X300",
+            "Header_Model_2000_Header_300" => "Header 2000X300",
+            "Header_Model_3000_Header_300" => "Header 3000X300",
+            "Header_Model_661_Header_500" => "Header 661X500",
+            "Header_Model_1061_Header_500" => "Header 1061X500",
+            "Header_Model_1200_Header_500" => "Header 1200X500",
+            "Header_Model_1500_Header_500" => "Header 1500X500",
+            "Header_Model_2000_Header_500" => "Header 2000X500",
+            "Header_Model_3000_Header_500" => "Header 3000X500",
+            "Header_Woodern_Shelf" => "Header Woodern Shelf",
+            "Header_Glass_Shelf" => "Header Glass Shelf",
+            "Header_Glass_Shelf_Fixing" => "Header Glass Shelf Fixing",
+            "Rod" => "Rod",
+            "Frame_Slotted_Model_661" => "Frame Slotted 661mm",
+            "Frame_Slotted_Model_1061" => "Frame Slotted 1061mm",
+            "Frame_Slotted_Model_1200" => "Frame Slotted 1200mm",
+            "Frame_Model_661" => "Frame 661mm Wide",
+            "Frame_Model_1061" => "Frame 1061mm Wide",
+            "Frame_Model_1200" => "Frame 1200mm Wide",
+            "Frame_Model_1500" => "Frame 1500mm Wide",
+            "Frame_Model_2000" => "Frame 2000mm Wide",
+            "Frame_Model_3000" => "Frame 3000mm Wide",
+            "Rack_Wooden_Shelf" => "Rack Wooden Shelf",
+            "Rack_Glass_Shelf" => "Rack Glass Shelf",
+            "Rack_Shelf_Bracket" => "Rack Shelf Bracket",
+            "Base_solid" => "Base solid",
+            "Base_flat" => "Base flat",
+            "Hanger_Rail_Step" => "Hanger Rail Step",
+            "Hanger_Rail_Single" => "Hanger Rail Single",
+            "Hanger_Rail_D_500" => "Hanger Rail D 500",
+            "Hanger_Rail_D_1000" => "Hanger Rail D 1000",
+            "Hanger_Golf_Driver" => "Hanger Golf Driver",
+            "Hanger_Golf_Iron" => "Hanger Golf Iron", 
+            // "Labour_Price" => "Labour Price", 
+            // "Packaging_Price" => "Packaging Price", 
+        ];
+    foreach ($itemPriceData as $itemQtyKey => $itemQtyValue) {
+        foreach ($priceBoardData as $dataPriceKey => $dataPriceValue) {
+            if(isset($arrMap[$itemQtyKey]) && $arrMap[$itemQtyKey] == $dataPriceKey){
+                if($itemQtyValue > 0 && $itemQtyValue <= 10){
+                    $priceListBaseOnQty[$itemQtyKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 1-10"]);
+                    $totalPrice += $itemQtyValue * (int)str_replace('"', '', $dataPriceValue["Sell Price 1-10"]);
+                }else if($itemQtyValue >= 11 && $itemQtyValue <= 25){
+                    $priceListBaseOnQty[$itemQtyKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 11-25"]);
+                    $totalPrice += $itemQtyValue * (int)str_replace('"', '', $dataPriceValue["Sell Price 11-25"]);
+                }else if($itemQtyValue >= 26 && $itemQtyValue <= 50){
+                    $priceListBaseOnQty[$itemQtyKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 26-50"]);
+                    $totalPrice += $itemQtyValue * (int)str_replace('"', '', $dataPriceValue["Sell Price 26-50"]);
+                }else if($itemQtyValue >= 51 && $itemQtyValue <= 100){
+                    $priceListBaseOnQty[$itemQtyKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 51-100"]);
+                    $totalPrice += $itemQtyValue * (int)str_replace('"', '', $dataPriceValue["Sell Price 51-100"]);
+                }else if($itemQtyValue > 100){
+                    $priceListBaseOnQty[$itemQtyKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 100+"]);
+                    $totalPrice += $itemQtyValue * (int)str_replace('"', '', $dataPriceValue["Sell Price 100+"]);
+                }else{
+                    $priceListBaseOnQty[$itemQtyKey] = 0;
+                }
+            }
+        }   
+    }
+    // echo "<pre>"; print_r($priceListBaseOnQty);
+    // echo "<pre>"; print_r($itemPriceData);
+    // echo "<pre>"; print_r($priceBoardData);
+    // die;
+
+
+    // ------------------------------GETTING PRICE DATA ------------------------------
 
     // Escape and encode the item name to safely include it in the GraphQL query
     $itemName = addslashes($itemName);
@@ -481,6 +909,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $host = $_SERVER['HTTP_HOST']; // e.g., localhost or your domain
     $scriptDir = dirname($_SERVER['SCRIPT_NAME']); // e.g., /three-model
     $baseURL = $protocol . "://" . $host . $scriptDir;
+
     foreach ($data['group_names'] as $index => $groupName) {
         foreach ($data['setting'] as $key => $value) { 
             if($key == $groupName){ 
@@ -598,7 +1027,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
                 // Execute the request and get the response
                 $response = curl_exec($curl);
-                curl_close($curl);
                 if($response === false) {
                     echo "cURL Error: " . curl_error($curl);
                 } else {
@@ -666,41 +1094,73 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
                 // ---------------------------------- CREATING SUBITEM COLUMN ----------------------------------------------------
                 $columnData = [
-                    "header Type" => "text",
-                    "header Size" => "text",
+                    "Header Type" => "text",
+                    "Header Size" => "text",
+                    "Header Qty" => "text",
+                    "Header Sell Price" => "text",
                     "Header Shelf Type" => "text",
                     "Header Shelf size" => "text",
+                    "Header Shelf Qty" => "text",
+                    "Header Shelf Sell Price" => "text",
                     "Header Glass Shelf Fixing" => "text",
+                    "Header Glass Shelf Fixing Qty" => "text",
+                    "Header Glass Shelf Fixing Sell Price" => "text",
                     "isRod Active" => "text",
                     "Rod Size" => "text",
                     "Rod Color" => "text",
+                    "Rod Qty" => "text",
+                    "Rod Sell Price" => "text",
                     "Frame Type" => "text",
                     "Frame Size" => "text",
+                    "Frame Qty" => "text",
+                    "Frame Sell Price" => "text",
                     "Frame Border Color" => "text",
                     "Frame Material Type" => "text",
                     "isSlotted Active" => "text",
+                    "Frame Slotted Qty" => "text",
+                    "Frame Slotted Sell Price" => "text",
                     "Rack Wooden Shelf" => "text",
                     "Rack Wooden Shelf Size" => "text",
+                    "Rack Wooden Shelf Qty" => "text",
+                    "Rack Wooden Shelf Sell Price" => "text",
                     "Rack Glass Shelf" => "text",
                     "Rack Glass Shelf Size" => "text",
+                    "Rack Glass Shelf Qty" => "text",
+                    "Rack Glass Shelf Sell Price" => "text",
                     "Rack Color" => "text",
                     "Rack Stand Color" => "text",
+                    "Rack Stand Qty" => "text",
+                    "Rack Stand Sell Price" => "text",
                     "Base Type" => "text",
                     "Base Size" => "text",
+                    "Base Qty" => "text",
+                    "Base Sell Price" => "text",
                     "Header Image" => "link",
                     "Frame Image" => "link",   
                     "Hanger Rail Step" => "text",
                     "Hanger Rail Step Size" => "text",
+                    "Hanger Rail Step Qty" => "text",
+                    "Hanger Rail Step Sell Price" => "text",
                     "Hanger Rail Single" => "text",
                     "Hanger Rail Single Size" => "text",
+                    "Hanger Rail Single Qty" => "text",
+                    "Hanger Rail Single Sell Price" => "text",
                     "Hanger Rail D 500" => "text",
                     "Hanger Rail D 500 Size" => "text",
+                    "Hanger Rail D 500 Qty" => "text",
+                    "Hanger Rail D 500 Sell Price" => "text",
                     "Hanger Rail D 1000" => "text",
                     "Hanger Rail D 1000 Size" => "text",
+                    "Hanger Rail D 1000 Qty" => "text",
+                    "Hanger Rail D 1000 Sell Price" => "text",
                     "Hanger Golf Driver" => "text",
                     "Hanger Golf Driver Size" => "text",
+                    "Hanger Golf Driver Qty" => "text",
+                    "Hanger Golf Driver Sell Price" => "text",
                     "Hanger Golf Iron" => "text",
                     "Hanger Golf Iron Size" => "text",             
+                    "Hanger Golf Iron Qty" => "text",
+                    "Hanger Golf Iron Sell Price" => "text",
                 ];
 
                 // Retrieve Existing Columns
@@ -830,40 +1290,117 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                 } elseif (!empty($ModelMeasureArr['Base_Support_Sides'])) {
                     $baseSize = round($ModelMeasureArr['Base_Support_Sides']['x']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['y']) . 'mm x ' . round($ModelMeasureArr['Base_Support_Sides']['z']) . 'mm';
                 }
+
+                $baseSolidQuantity;
+                if($value['defaultModel'] == "Model_661" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 1; 
+                }else if($value['defaultModel'] == "Model_1061" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 1; 
+                }else if($value['defaultModel'] == "Model_1200" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1500" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_2000" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_3000" && $value['selectedBaseFrame'] == "Base_Solid"){
+                    $baseSolidQuantity = 3; 
+                }
+                $baseFlatQuantity;
+                if($value['defaultModel'] == "Model_661" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1061" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1200" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1500" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_2000" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_3000" && $value['selectedBaseFrame'] == "Base_Support_Sides"){
+                    $baseFlatQuantity = 4; 
+                }
+                $headerRodsQuantity;
+                if($value['defaultModel'] == "Model_661" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1061" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 2; 
+                }else if($value['defaultModel'] == "Model_1200" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_1500" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_2000" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 3; 
+                }else if($value['defaultModel'] == "Model_3000" && ($value['topOption'] == "Shelf" || $value['headerRodToggle'])){
+                    $headerRodsQuantity = 4; 
+                }
+
+                $rackStandQty = array_key_exists("RackWoodenShelf", $shelfCount) && array_key_exists("RackGlassShelf", $shelfCount) ? $shelfCount['RackGlassShelf'] + $shelfCount['RackWoodenShelf'] : (array_key_exists("RackWoodenShelf", $shelfCount) ? $shelfCount['RackWoodenShelf'] : (array_key_exists("RackGlassShelf", $shelfCount) ? $shelfCount['RackGlassShelf']  : 0));
                 $subItemColumnValues = [
-                    "header Type" => $value['topOption'],    
-                    "header Size" => $value['topOption'] == "Header" ? $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : "",
+                    "Header Type" => $value['topOption'],    
+                    "Header Size" => $value['topOption'] == "Header" ? $ModelMeasureArr['Header_Frame']['x'].'mm x '.$ModelMeasureArr['Header_Frame']['y'].'mm x '.$ModelMeasureArr['Header_Frame']['z'].'mm' : "",
+                    "Header Qty" => $value['topOption'] == "Header" ? "1" : "",
+                    "Header Sell Price" => $value['topOption'] == "Header" ? strval(1 * $priceListBaseOnQty['Header_'.$value['defaultModel'].'_'.$value['defaultHeaderSize']]) : "",
                     "Header Shelf Type" => $value['topOption'] == "Shelf" ? $value['defaultShelfType'] : "",
                     "Header Shelf size" => $value['topOption'] == "Shelf" ? round($ModelMeasureArr[$value['defaultShelfType']]['x']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['y']).'mm x '.round($ModelMeasureArr[$value['defaultShelfType']]['z']).'mm' : "" ,
+                    "Header Shelf Qty" => $value['topOption'] == "Shelf" ? "1" : "",
+                    "Header Shelf Sell Price" => $value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Wooden_Shelf" ? strval(1 * $priceListBaseOnQty["Header_Woodern_Shelf"]) : ($value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Glass_Shelf" ? strval(1 * $priceListBaseOnQty["Header_Glass_Shelf"]) : ""),
                     "Header Glass Shelf Fixing" => $value['topOption'] == "Shelf" && $value['defaultShelfType'] == "Header_Glass_Shelf" ? round($ModelMeasureArr['Glass_Shelf_Fixing']['x']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['y']).'mm x '.round($ModelMeasureArr['Glass_Shelf_Fixing']['z']).'mm' : "" ,
-                    "isRod Active" => $value['headerRodToggle'] ? "Yes" : "No", 
-                    "Rod Size" => $value['headerRodToggle'] == true && isset($ModelMeasureArr['Rod']) ? round($ModelMeasureArr['Rod']['x']).'mm x '.round($ModelMeasureArr['Rod']['y']).'mm x '.round($ModelMeasureArr['Rod']['z']).'mm' : "" ,
-                    "Rod Color" => $value['headerRodToggle'] == true ? $value['rodFrameColor'] : "",
+                    "Header Glass Shelf Fixing Qty" => $value['topOption'] == "Shelf" ? "2" : "",
+                    "Header Glass Shelf Fixing Sell Price" => $value['topOption'] == "Shelf" && $value["defaultShelfType"] == "Header_Glass_Shelf" ? strval(2 * $priceListBaseOnQty["Header_Glass_Shelf_Fixing"]) : "",
+                    "isRod Active" => $value['topOption'] == "Shelf" || $value['headerRodToggle'] ? "Yes" : "No", 
+                    "Rod Size" => ($value['topOption'] == "Shelf" || $value['headerRodToggle']) && isset($ModelMeasureArr['Rod']) ? round($ModelMeasureArr['Rod']['x']).'mm x '.round($ModelMeasureArr['Rod']['y']).'mm x '.round($ModelMeasureArr['Rod']['z']).'mm' : "" ,
+                    "Rod Color" => $value['topOption'] == "Shelf" || $value['headerRodToggle'] ? $value['rodFrameColor'] : "",
+                    "Rod Qty" => $value['topOption'] == "Shelf" || $value['headerRodToggle'] ? strval($headerRodsQuantity) : "",
+                    "Rod Sell Price" => $value['topOption'] == "Shelf" || $value['headerRodToggle'] ? strval($headerRodsQuantity * $priceListBaseOnQty["Rod"]) : "",
                     "Frame Type" => $value['defaultModel'],
                     "Frame Size" => $ModelMeasureArr['Frame']['width'].' x '.$ModelMeasureArr['Frame']['height'].' x '.$ModelMeasureArr['Frame']['depth'],
+                    "Frame Qty" => $value['slottedSidesToggle'] == false ? "1" : "",
+                    "Frame Sell Price" => $value['slottedSidesToggle'] == false ? strval(1 * $priceListBaseOnQty['Frame_'.$value['defaultModel']]) : "",
                     "Frame Border Color" => $value['frameBorderColor'],
                     "Frame Material Type" => $value['frameMaterialType'],
-                    "isSlotted Active" => $value['slottedSidesToggle'] ? "Yes" : "No",
-                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) && array_key_exists("RackWoodenShelf", $shelfCount) ?  "Yes (".$shelfCount['RackWoodenShelf'].")" : "No",
+                    "isSlotted Active" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? "Yes" : "No",
+                    "Frame Slotted Qty" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? "1" : "",
+                    "Frame Slotted Sell Price" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? strval(1 * $priceListBaseOnQty['Frame_Slotted_'.$value['defaultModel']]) : "",
+                    "Rack Wooden Shelf" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ?  "Yes" : "No",
                     "Rack Wooden Shelf Size" => $value['slottedSidesToggle'] == true && in_array('RackWoodenShelf', $RackArr) ? round($ModelMeasureArr['RackWoodenShelf']['x']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['y']).'mm x '.round($ModelMeasureArr['RackWoodenShelf']['z']).'mm' : "",
-                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) && array_key_exists("RackGlassShelf", $shelfCount) ?  "Yes (".$shelfCount['RackGlassShelf'].")" : "No",
+                    "Rack Wooden Shelf Qty" => array_key_exists("RackWoodenShelf", $shelfCount) ? strval($shelfCount['RackWoodenShelf']) : "",
+                    "Rack Wooden Shelf Sell Price" => array_key_exists("RackWoodenShelf", $shelfCount) ? strval($shelfCount['RackWoodenShelf'] * $priceListBaseOnQty["Rack_Wooden_Shelf"]) : "",
+                    "Rack Glass Shelf" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ?  "Yes" : "No",
                     "Rack Glass Shelf Size" => $value['slottedSidesToggle'] == true &&  in_array('RackGlassShelf', $RackArr) ? round($ModelMeasureArr['RackGlassShelf']['x']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['y']).'mm x '.round($ModelMeasureArr['RackGlassShelf']['z']).'mm' : "",
-                    "Rack Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackShelfStandColor'] : "",
-                    "Rack Stand Color" => $value['slottedSidesToggle'] == true ? $value['defaultRackStandStandColor'] : "",
+                    "Rack Glass Shelf Qty" => array_key_exists("RackGlassShelf", $shelfCount) ? strval($shelfCount['RackGlassShelf']) : "",
+                    "Rack Glass Shelf Sell Price" => array_key_exists("RackGlassShelf", $shelfCount) ? strval($shelfCount['RackGlassShelf'] * $priceListBaseOnQty["Rack_Glass_Shelf"]) : "",
+                    "Rack Color" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? $value['defaultRackShelfStandColor'] : "",
+                    "Rack Stand Color" => $value['slottedSidesToggle'] == true && ($value['defaultModel'] == "Model_661" || $value['defaultModel'] == "Model_1061" || $value['defaultModel'] == "Model_1200") ? $value['defaultRackStandStandColor'] : "",
+                    "Rack Stand Qty" => $rackStandQty !== 0 ? strval($rackStandQty * 2) : "",
+                    "Rack Stand Sell Price" => $rackStandQty !== 0 ? strval(($rackStandQty * 2) * $priceListBaseOnQty["Rack_Shelf_Bracket"]) : "",
                     "Base Type" => isset($ModelMeasureArr['Base_Solid']) ? "Base_Solid" : "Base_Support_Sides" ,
                     "Base Size" => $baseSize,
-                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) && array_key_exists("Hanger_Rail_Step", $hangerCount) ? 'Hanger_Rail_Step ('.$hangerCount['Hanger_Rail_Step'].')' : "",
+                    "Base Qty" => isset($ModelMeasureArr['Base_Solid']) ? strval($baseSolidQuantity) : (isset($ModelMeasureArr['Base_Support_Sides']) ? strval($baseFlatQuantity) : ""),
+                    "Base Sell Price" => isset($ModelMeasureArr['Base_Solid']) ? strval($baseSolidQuantity * $priceListBaseOnQty["Base_solid"]) : (isset($ModelMeasureArr['Base_Support_Sides']) ? strval($baseFlatQuantity * $priceListBaseOnQty["Base_flat"]) : ""),
+                    "Hanger Rail Step" => in_array('Hanger_Rail_Step', $HangerArr) ? 'Hanger_Rail_Step' : "",
                     "Hanger Rail Step Size" => in_array('Hanger_Rail_Step', $HangerArr)  ? round($ModelMeasureArr['Hanger_Rail_Step']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Step']['z']).'mm' : "",
-                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) && array_key_exists("Hanger_Rail_Single", $hangerCount) ? 'Hanger_Rail_Single ('.$hangerCount['Hanger_Rail_Single'].')' : "",
+                    "Hanger Rail Step Qty" => array_key_exists("Hanger_Rail_Step", $hangerCount) ? strval($hangerCount['Hanger_Rail_Step']) : "",
+                    "Hanger Rail Step Sell Price" => array_key_exists("Hanger_Rail_Step", $hangerCount) ? strval($hangerCount['Hanger_Rail_Step'] * $priceListBaseOnQty["Hanger_Rail_Step"]) : "",
+                    "Hanger Rail Single" => in_array('Hanger_Rail_Single', $HangerArr) ? 'Hanger_Rail_Single' : "",
                     "Hanger Rail Single Size" => in_array('Hanger_Rail_Single', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_Single']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_Single']['z']).'mm' : "",
-                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) && array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? 'Hanger_Rail_D_500mm ('.$hangerCount['Hanger_Rail_D_500mm'].')' : "",
+                    "Hanger Rail Single Qty" => array_key_exists("Hanger_Rail_Single", $hangerCount) ? strval($hangerCount['Hanger_Rail_Single']) : "",
+                    "Hanger Rail Single Sell Price" => array_key_exists("Hanger_Rail_Single", $hangerCount) ? strval($hangerCount['Hanger_Rail_Single'] * $priceListBaseOnQty["Hanger_Rail_Single"]) : "",
+                    "Hanger Rail D 500" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? 'Hanger_Rail_D_500mm' : "",
                     "Hanger Rail D 500 Size" => in_array('Hanger_Rail_D_500mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_500mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_500mm']['z']).'mm' : "",
-                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) && array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? 'Hanger_Rail_D_1000mm ('.$hangerCount['Hanger_Rail_D_1000mm'].')' : "",
+                    "Hanger Rail D 500 Qty" => array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? strval($hangerCount['Hanger_Rail_D_500mm']) : "",
+                    "Hanger Rail D 500 Sell Price" => array_key_exists("Hanger_Rail_D_500mm", $hangerCount) ? strval($hangerCount['Hanger_Rail_D_500mm'] * $priceListBaseOnQty["Hanger_Rail_D_500"]) : "",
+                    "Hanger Rail D 1000" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? 'Hanger_Rail_D_1000mm' : "",
                     "Hanger Rail D 1000 Size" => in_array('Hanger_Rail_D_1000mm', $HangerArr) ? round($ModelMeasureArr['Hanger_Rail_D_1000mm']['x']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['y']).'mm x '.round($ModelMeasureArr['Hanger_Rail_D_1000mm']['z']).'mm' : "",
-                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) && array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? 'Hanger_Golf_Club_Driver ('.$hangerCount['Hanger_Golf_Club_Driver'].')' : "",
+                    "Hanger Rail D 1000 Qty" => array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? strval($hangerCount['Hanger_Rail_D_1000mm']) : "",
+                    "Hanger Rail D 1000 Sell Price" => array_key_exists("Hanger_Rail_D_1000mm", $hangerCount) ? strval($hangerCount['Hanger_Rail_D_1000mm'] * $priceListBaseOnQty["Hanger_Rail_D_1000"]) : "",
+                    "Hanger Golf Driver" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? 'Hanger_Golf_Club_Driver' : "",
                     "Hanger Golf Driver Size" => in_array('Hanger_Golf_Club_Driver', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Driver']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Driver']['z']).'mm' : "",
-                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) && array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? 'Hanger_Golf_Club_Iron ('.$hangerCount['Hanger_Golf_Club_Iron'].')' : "",
+                    "Hanger Golf Driver Qty" => array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? strval($hangerCount['Hanger_Golf_Club_Driver']) : "",
+                    "Hanger Golf Driver Sell Price" => array_key_exists("Hanger_Golf_Club_Driver", $hangerCount) ? strval($hangerCount['Hanger_Golf_Club_Driver'] * $priceListBaseOnQty["Hanger_Golf_Driver"]) : "",
+                    "Hanger Golf Iron" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? 'Hanger_Golf_Club_Iron' : "",
                     "Hanger Golf Iron Size" => in_array('Hanger_Golf_Club_Iron', $HangerArr) ? round($ModelMeasureArr['Hanger_Golf_Club_Iron']['x']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['y']).'mm x '.round($ModelMeasureArr['Hanger_Golf_Club_Iron']['z']).'mm' : "",
+                    "Hanger Golf Iron Qty" => array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? strval($hangerCount['Hanger_Golf_Club_Iron']) : "",
+                    "Hanger Golf Iron Sell Price" => array_key_exists("Hanger_Golf_Club_Iron", $hangerCount) ? strval($hangerCount['Hanger_Golf_Club_Iron'] * $priceListBaseOnQty["Hanger_Golf_Iron"]) : "",
                     "Header Image" => isset($headerImage['headerImage']) ? $headerImage['headerImage'] : "",
                     "Frame Image" => isset($frameImage['frameImage']) ? $frameImage['frameImage'] : "",
                 ];
@@ -904,7 +1441,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 
                 // Convert the column values to JSON
                 $columnValuesJson = json_encode($columnsToUpdate, JSON_UNESCAPED_SLASHES);
-
                 // Construct the GraphQL mutation
                 $mutation = 'mutation {
                     change_multiple_column_values(
@@ -915,7 +1451,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
                         id
                     }
                 }';
-
+                // echo "<pre>"; print_r($columnValuesJson);
+                // echo "<pre>"; print_r($mutation);
                 // Initialize cURL
                 $curl = curl_init();
                 curl_setopt_array($curl, array(
@@ -1043,6 +1580,11 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         ["title" => "Email", "type" => "text"],
         ["title" => "Qty", "type" => "text"],
         ["title" => "Date", "type" => "text"],
+        ["title" => "Product Cost", "type" => "text"],
+        ["title" => "Pricing Structure", "type" => "dropdown", "labels" => ["A - 2", "B - 1.8", "C - 1.5", "D - 1.3", "E - 1.2", "F - 1"]],
+        ["title" => "Total Cost", "type" => "text"],
+        ["title" => "Labour Cost", "type" => "text"],
+        ["title" => "Packaging Cost", "type" => "text"],
     ];
 
     // Step 1: Fetch existing columns in the board
@@ -1084,17 +1626,37 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Step 2: Loop through columns and create them if they don't exist
     foreach ($columnsToCreate as $column) {
         if (!in_array($column['title'], $existingColumns)) {
-            // Create the column
-            $createColumnMutation = 'mutation {
-                create_column (
-                    board_id: ' . $boardId . ',
-                    title: "' . addslashes($column['title']) . '",
-                    column_type: ' . $column['type'] . '
-                ) {
-                    id
-                }
-            }';
-
+            // Create mutation based on column type
+            if ($column['type'] === 'dropdown') {
+                $createColumnMutation = 'mutation {
+                    create_column (
+                        board_id: ' . $boardId . ',
+                        title: "' . addslashes($column['title']) . '",
+                        column_type: dropdown,
+                        defaults: "{\"settings\":{\"labels\":[
+                            {\"id\":1,\"name\":\"A - 2\"}, 
+                            {\"id\":2,\"name\":\"B - 1.8\"}, 
+                            {\"id\":3,\"name\":\"C - 1.5\"},
+                            {\"id\":4,\"name\":\"D - 1.3\"}, 
+                            {\"id\":5,\"name\":\"E - 1.2\"}, 
+                            {\"id\":6,\"name\":\"F - 1\"}
+                        ]}}"
+                    ) {
+                        id
+                    }
+                }';
+            } else {
+                // Create the column
+                $createColumnMutation = 'mutation {
+                    create_column (
+                        board_id: ' . $boardId . ',
+                        title: "' . addslashes($column['title']) . '",
+                        column_type: ' . $column['type'] . '
+                    ) {
+                        id
+                    }
+                }';
+            }
             $curl = curl_init();
             curl_setopt_array($curl, array(
                 CURLOPT_URL => 'https://api.monday.com/v2',
@@ -1141,13 +1703,42 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $mondayColumns = json_decode($response, true)['data']['boards'][0]['columns'];
     // ---------------------------------- GETTING COLUMNS ----------------------------------------------------
     // ---------------------------------- MATCHING COLUMNS ----------------------------------------------------
-
+    $labourPackageCostArr = [
+        "Labour_Price" => "Labour Price", 
+        "Packaging_Price" => "Packaging Price", 
+    ];
+    $labourAndPackagingCost = [];
+    foreach ($labourPackageCostArr as $nameKey => $valueKey){
+        foreach ($priceBoardData as $dataPriceKey => $dataPriceValue) {
+            if($valueKey == $dataPriceKey){
+                if($formData['Qty'] > 0 && $formData['Qty'] <= 10){
+                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 1-10"]);
+                }else if($formData['Qty'] >= 11 && $formData['Qty'] <= 25){
+                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 11-25"]);
+                }else if($formData['Qty'] >= 26 && $formData['Qty'] <= 50){
+                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 26-50"]);
+                }else if($formData['Qty'] >= 51 && $formData['Qty'] <= 100){
+                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 51-100"]);
+                }else if($formData['Qty'] > 100){
+                    $labourAndPackagingCost[$nameKey] = (int)str_replace('"', '', $dataPriceValue["Sell Price 100+"]);
+                }
+            }
+        } 
+    }
     $columnValues = [];
+    $dropDownColumnVal;
+    $grandTotalCost = ($formData['Qty'] * $labourAndPackagingCost['Labour_Price']) + ($formData['Qty'] * $labourAndPackagingCost['Packaging_Price']);
+    $formData['Product Cost'] = strval($totalPrice);
+    $formData['Total Cost'] = strval((($totalPrice * 1.5) * $formData['Qty']) + $grandTotalCost);
+    $formData['Labour Cost'] = strval($formData['Qty'] * $labourAndPackagingCost['Labour_Price']);
+    $formData['Packaging Cost'] = strval($formData['Qty'] * $labourAndPackagingCost['Packaging_Price']);
     foreach ($formData as $field => $value) {
         foreach ($mondayColumns as $column) {
             if ($column['title'] == $field) {
                 $columnValues[$column['id']] = $value;
-                break;
+            }
+            if($column['title'] == "Pricing Structure"){
+                $dropDownColumnVal = $column['id'];
             }
         }
     }
@@ -1163,7 +1754,6 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             ) { id }
         }
     ';
-
 
     // Initialize curl for the mutation request
     $curl = curl_init();
@@ -1186,6 +1776,44 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     // Execute the request to update the column values
     $response = curl_exec($curl);
     curl_close($curl);
+    //----------------------------------------- UPDATE DROPDOWN COLUMNS
+    $dropMutation = '
+        mutation {
+            change_column_value(
+                item_id: ' . $itemId . ',
+                board_id: ' . $boardId . ',
+                column_id: "'.$dropDownColumnVal.'"
+                value: "{\"ids\": [3]}"
+            ) {
+                id
+            }
+        }
+    ';
+
+    // Initialize curl for the mutation request
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.monday.com/v2',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => json_encode(['query' => $dropMutation]),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json',
+        ),
+    ));
+
+    // Execute the request to update the column values
+    $response = curl_exec($curl);
+    curl_close($curl); 
+    //----------------------------------------- UPDATE DROPDOWN COLUMNS 
+
+
     sendEmailToUser($_REQUEST);
     echo json_encode(["status" => "success", "message" => $response]);
     exit;
@@ -1194,7 +1822,7 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
     $_SESSION['user_id'] = $_REQUEST['userId'];
     $_SESSION['username'] = $_REQUEST['username'];
 } else if(!empty($_REQUEST['action']) && $_REQUEST['action'] == 'createMainBoard'){
-    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ1NjgxNDA4NSwiYWFpIjoxMSwidWlkIjo3MDcwMjMwMSwiaWFkIjoiMjAyNS0wMS0xM1QwNzowMzo0NS4wNThaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6Mjc0MDM0NTMsInJnbiI6ImFwc2UyIn0.RWvrPlm1bhPuCbUVF8yA96gRRscc5L7J7vNuZcOUYWo";
+    $apiToken = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQ0MzA5Mjc2NSwiYWFpIjoxMSwidWlkIjo2OTE2MjExMCwiaWFkIjoiMjAyNC0xMi0wMlQwNToxMDo0My4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjY3NzIwODAsInJnbiI6ImFwc2UyIn0.htHEKSVIIvtaIyoGdM9K8iHx3GYvE2mZv-RG87LfjBM";
     // Initialize cURL
     $query = 'query {
                 boards {
@@ -1389,8 +2017,18 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
         }
         // echo "<pre>"; print_r($jsonData);
         $itemData = [
-            "header 300",
-            "header 500",
+            "Header 661X300",
+            "Header 1061X300",
+            "Header 1200X300",
+            "Header 1500X300",
+            "Header 2000X300",
+            "Header 3000X300",
+            "Header 661X500",
+            "Header 1061X500",
+            "Header 1200X500",
+            "Header 1500X500",
+            "Header 2000X500",
+            "Header 3000X500",
             "Header Woodern Shelf",
             "Header Glass Shelf",
             "Header Glass Shelf Fixing",
@@ -1415,6 +2053,8 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
             "Hanger Rail D 1000",
             "Hanger Golf Driver",
             "Hanger Golf Iron",
+            "Labour Price",
+            "Packaging Price",
         ];
         foreach ($itemData as $itemName) {
             $mutationForItemCreate = 'mutation {
