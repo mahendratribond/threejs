@@ -24,6 +24,7 @@ async function exportGLB(clone, name) {
         }
     });
     clone.renderOrder = 999999;
+    await optimizeTexturesForGLB(clone);
     const options = {
         compressed: true, // Enable mesh compression
         bufferStreamed: true, // Stream the buffer data
@@ -33,7 +34,7 @@ async function exportGLB(clone, name) {
         embedImages: false, // Embed images in the GLB file
         forcePowerOfTwoTextures: true, // Ensure textures have power-of-two dimensions
         textureCompressionFormat: THREE.RGBA_ASTC_4x4_Format, // Use ASTC texture compression
-        textureCompressionQuality: 0.5,
+        textureCompressionQuality: 1.0,
 
         // Other options
         includeCustomExtensions: false, // Exclude custom extensions
@@ -66,8 +67,8 @@ async function exportUSDZ(clone, name) {
 
     const usdzExporter = new USDZExporter();
     const result = await usdzExporter.parse(clone, {
-        textureCompressionQuality: 0.5,
-        maxTextureSize: 512,
+        textureCompressionQuality: 1.0,
+        // maxTextureSize: 1024,
         compressGeometry: true,
         compressMaterials: true,
         binary: true,
@@ -287,7 +288,7 @@ async function optimizeTexturesForUSDZ(model) {
                 texture.maxFilter = THREE.LinearFilter;
 
                 // Aggressively limit texture size
-                const maxSize = 32; // Xcode often uses efficient sizes
+                const maxSize = 1024; // Xcode often uses efficient sizes
                 if (
                     texture.image &&
                     (texture.image.width > maxSize ||
@@ -310,36 +311,36 @@ async function optimizeTexturesForUSDZ(model) {
     });
 }
 
-// function optimizeTexturesForGLB(model) {
-//   model.traverse((node) => {
-//     if (node.isMesh && node.material) {
-//       if (node.material.map) {
-//         // Force power-of-two textures
-//         const texture = node.material.map;
-//         texture.minFilter = THREE.LinearFilter;
-//         texture.magFilter = THREE.LinearFilter;
+async function optimizeTexturesForGLB(model) {
+  model.traverse((node) => {
+    if (node.isMesh && node.material) {
+      if (node.material.map) {
+        // Force power-of-two textures
+        const texture = node.material.map;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
 
-//         // Aggressively limit texture size
-//         const maxSize = 256; // Adjust the maximum texture size as needed
-//         if (
-//           texture.image &&
-//           (texture.image.width > maxSize || texture.image.height > maxSize)
-//         ) {
-//           const scale =
-//             maxSize / Math.max(texture.image.width, texture.image.height);
-//           texture.image.width *= scale;
-//           texture.image.height *= scale;
-//         }
+        // Aggressively limit texture size
+        const maxSize = 1024; // Adjust the maximum texture size as needed
+        if (
+          texture.image &&
+          (texture.image.width > maxSize || texture.image.height > maxSize)
+        ) {
+          const scale =
+            maxSize / Math.max(texture.image.width, texture.image.height);
+          texture.image.width *= scale;
+          texture.image.height *= scale;
+        }
 
-//         // Remove unnecessary maps
-//         node.material.roughnessMap = null;
-//         node.material.metalnessMap = null;
-//         node.material.normalMap = null;
-//         node.material.aoMap = null;
-//       }
-//     }
-//   });
-// }
+        // Remove unnecessary maps
+        node.material.roughnessMap = null;
+        node.material.metalnessMap = null;
+        node.material.normalMap = null;
+        node.material.aoMap = null;
+      }
+    }
+  });
+}
 
 function optimizeGeometry(model, options = {}) {
     const {
