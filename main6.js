@@ -84,7 +84,7 @@ async function init() {
     sharedParams.direction = new THREE.Vector3(); // Initialize direction vector
 
     sharedParams.camera = new Camera(
-        45,
+        10,
         window.innerWidth / window.innerHeight,
         1,
         500000
@@ -101,13 +101,15 @@ async function init() {
     sharedParams.main_model = await loadGLTFModel(params.defaultModel + ".glb");
     sharedParams.main_model.name = params.selectedGroupName;
     sharedParams.main_model.activeModel = sharedParams.main_model.children[0];
+    sharedParams.main_model.activeModel.name = "Model_610";
     allGroups.push(sharedParams.main_model);
+    console.log("sharedParams.main_model", sharedParams.main_model);
     sharedParams.selectedGroup = sharedParams.main_model;
     sharedParams.modelGroup.add(sharedParams.main_model);
     sharedParams.modelGroup.name = "main_group";
     modelManager.setupMainModel(sharedParams.main_model);
     await loadAllModels();
-    await loadRemainingModels();
+    // await loadRemainingModels();
     // Transform controls
     sharedParams.transformControls = new TransformControls(
         sharedParams.camera,
@@ -132,15 +134,15 @@ async function init() {
     window.addEventListener("click", uiManager.onMouseClick(), false);
     window.addEventListener("resize", uiManager.onWindowResize());
 
-    await calculateBoundingBox(sharedParams.modelGroup);
-    await showHideNodes();
+    // await calculateBoundingBox(sharedParams.modelGroup);
+    // await showHideNodes();
 
     sharedParams.labelRenderer = await initLabelRenderer();
     document.body.appendChild(sharedParams.labelRenderer.domElement);
     uiManager.setupEventListeners(lights, lightHelpers);
     uiManager.loadingElements.progressText.innerText = `Loading... 100%`;
     uiManager.loadingElements.loaderElement.style.display = "none";
-    await loadPreviousModels();    
+    await loadPreviousModels();
 }
 
 async function render() {

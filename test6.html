@@ -55,12 +55,8 @@
                   <div class="control-group">
                     <label for="frameSize">Unit Size</label>
                     <select class="frameSize">
-                      <option value="Model_661">661mm Wide</option>
-                      <option value="Model_1061">1061mm Wide</option>
-                      <option value="Model_1200">1200mm Wide</option>
-                      <option value="Model_1500">1500mm Wide</option>
-                      <option value="Model_2000">2000mm Wide</option>
-                      <option value="Model_3000">3000mm Wide</option>
+                      <option value="Model_610">610mm Wide</option>
+                      <option value="Model_1010">1010mm Wide</option>
                     </select>
                   </div>
                   <div class="control-group">
@@ -393,7 +389,7 @@
           <!-- <div class="control-group mt-3">
             <button id="takeScreenShot" class="btn btn-outline-primary btn-sm">take screenShot</button>
           </div> -->
-          <div class="control-group mt-3 loginFormDiv"> 
+          <div class="control-group mt-3 loginFormDiv">
             <div id="loginForm" class="form-container">
               <div id="loginRegisterClose">X</div>
               <form id="Login">
@@ -401,13 +397,13 @@
                 <p id="responseErr" style="color: red; display: none;"></p>
                 <input type="email" name="email" id="loginEmail" placeholder="Email" required autocomplete="email">
                 <span id="loginEmailError" class="error-message" style="color: red;"></span>
-              
+
                 <input type="password" name="password" id="loginPassword" placeholder="Password" required
                   autocomplete="current-password">
                 <span id="loginPasswordError" class="error-message" style="color: red;"></span>
-              
+
                 <input type="hidden" name="action" value="LoginUser">
-              
+
                 <input type="button" value="Login" id="loginButton">
               </form>
 
@@ -417,27 +413,27 @@
             </div>
           </div>
 
-          <div class="control-group mt-3 registerFormDiv"> 
+          <div class="control-group mt-3 registerFormDiv">
             <div id="registerForm" class="form-container">
               <form id="Register">
                 <h2>Register</h2>
-              
+
                 <!-- Username Field -->
                 <input type="text" id="registerUsername" name="userName" placeholder="Username" required autocomplete="username">
                 <span id="registerUsernameError" class="error-message" style="color: red;"></span>
-              
+
                 <!-- Email Field -->
                 <input type="email" id="registerEmail" name="email" placeholder="Email" required autocomplete="email">
                 <span id="registerEmailError" class="error-message" style="color: red;"></span>
-              
+
                 <!-- Password Field -->
                 <input type="password" id="registerPassword" name="password" placeholder="Password" required
                   autocomplete="new-password">
                 <span id="registerPasswordError" class="error-message" style="color: red;"></span>
-              
+
                 <!-- Hidden Field -->
                 <input type="hidden" name="action" value="RegisterUser">
-              
+
                 <!-- Register Button -->
                 <input type="button" value="Register" id="registerButton">
               </form>
@@ -598,7 +594,7 @@
   <script src="assets/plugins/bootstrap/js/bootstrap.min.js" defer></script>
   <script src="assets/plugins/cropperjs/cropper.min.js" defer></script>
   <script>
-    window.onload = function () {
+   /* window.onload = function () {
       fetch('api.php')
         .then(response => response.json())
         .then(data => {
@@ -608,9 +604,9 @@
           }
         })
         .catch(error => console.error('Fetch error:', error));
-    };
+    }; */
   </script>
-  <script>    
+  <script>
     const userAgent = navigator.userAgent;
     if (/iPhone|iPad|iPod/.test(userAgent) || /Android/.test(userAgent)) {
       document.querySelector(".ArInPhone").style.display = "block";
@@ -645,7 +641,7 @@
       destroySession();
       window.location.href = "test6.html";
     })
-    
+
     // Lazy load images using IntersectionObserver
     document.addEventListener("DOMContentLoaded", function () {
       const images = document.querySelectorAll('img[data-src]');
