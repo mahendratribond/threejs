@@ -305,83 +305,42 @@ async function init() {
   mouse = new THREE.Vector2();
   direction = new THREE.Vector3(); // Initialize direction vector
 
-  camera = new Camera(45, window.innerWidth / window.innerHeight, 1, 500000);
-  // Set initial camera position
-  camera.position.set(2000, 1000, 2000);
-  controls = new Controls(camera, renderer.domElement);
+    sharedParams.camera = new Camera(
+        10,
+        window.innerWidth / window.innerHeight,
+        1,
+        500000
+    );
+    // Set initial sharedParams.camera position
+    sharedParams.camera.position.set(2000, 1000, 2000);
+    sharedParams.controls = new Controls(
+        sharedParams.camera,
+        sharedParams.renderer.domElement
+    );
 
-  modelGroup = new THREE.Group();
-  scene.add(modelGroup);
-
-  main_model = await loadGLTFModel(params.defaultModel + ".glb");
-  main_model.name = params.selectedGroupName;
-  await setupMainModel(main_model);
-  modelGroup.add(main_model);
-  await showHideNodes(modelGroup, scene, camera);
-  await loadHangerModels();
-  modelGroup.name = "main_group";
-
-  for (let val of allModelNames) {
-    let model_name = val + ".glb";
-    let already_added = modelGroup.getObjectByName(val);
-    if (!already_added) {
-      let model_load = await loadGLTFModel(model_name);
-      await setupMainModel(model_load);
-      let model = model_load.getObjectByName(val);
-      model.visible = false;
-      main_model.add(model);
-    }
-  }
-
-  await showHideNodes(modelGroup, scene, camera);
-
-  // Transform controls
-  transformControls = new TransformControls(camera, renderer.domElement);
-  transformControls.addEventListener("dragging-changed", (event) => {
-    controls.enabled = !event.value;
-  });
-  scene.add(transformControls);
-
-  // Add event listeners
-  window.addEventListener(
-    "mousemove",
-    (event) => {
-      uiManager.onMouseMove(event, mouse, raycaster, camera, modelGroup);
-    },
-    false
-  );
-  window.addEventListener(
-    "click",
-    uiManager.onMouseClick(
-      transformControls,
-      selectedNode,
-      scene,
-      camera,
-      modelGroup
-    ),
-    false
-  );
-  window.addEventListener("resize", uiManager.onWindowResize(camera, renderer));
-
-  await calculateBoundingBox(modelGroup);
-  await otherModelSetup();
-  await showHideNodes(modelGroup, scene, camera);
-  await setupMainModel(modelGroup);
-
-  await traverseAsync(modelGroup, async (modelNode) => {
-    if (allModelNames.includes(modelNode.name)) {
-      modelNode.traverse(async function (child) {
-        if (
-          frameTop1Names.includes(child.name) ||
-          frameMainNames.includes(child.name)
-        ) {
-          if (child.isMesh && child.material) {
-            params.lastInnerMaterial = params.lastInnerMaterial || {};
-            params.lastInnerMaterial[modelNode.name] =
-              params.lastInnerMaterial[modelNode.name] || {};
-            params.lastInnerMaterial[modelNode.name][child.name] =
-              child.material;
-          }
+    sharedParams.modelGroup = new THREE.Group();
+    sharedParams.scene.add(sharedParams.modelGroup);
+    sharedParams.main_model = await loadGLTFModel(params.defaultModel + ".glb");
+    sharedParams.main_model.name = params.selectedGroupName;
+    sharedParams.main_model.activeModel = sharedParams.main_model.children[0];
+    sharedParams.main_model.activeModel.name = "Model_610";
+    allGroups.push(sharedParams.main_model);
+    console.log("sharedParams.main_model", sharedParams.main_model);
+    sharedParams.selectedGroup = sharedParams.main_model;
+    sharedParams.modelGroup.add(sharedParams.main_model);
+    sharedParams.modelGroup.name = "main_group";
+    modelManager.setupMainModel(sharedParams.main_model);
+    await loadAllModels();
+    // await loadRemainingModels();
+    // Transform controls
+    sharedParams.transformControls = new TransformControls(
+        sharedParams.camera,
+        sharedParams.renderer.domElement
+    );
+    sharedParams.transformControls.addEventListener(
+        "dragging-changed",
+        (event) => {
+            sharedParams.controls.enabled = !event.value;
         }
       });
     }
@@ -396,37 +355,15 @@ async function init() {
     removeLoader(Golfloader2);
   }
 
-  if (!rack_glass_model) {
-    rack_glass_model = await loadGLTFModel("rack_glass_model.glb");
-    await setupGlassRackModel(rack_glass_model, texture_background);
-  }
-  if (!rack_wooden_model) {
-    rack_wooden_model = await loadGLTFModel("rack_wooden_model.glb");
-    await setupWoodenRackModel(rack_wooden_model);
-  }
+    // await calculateBoundingBox(sharedParams.modelGroup);
+    // await showHideNodes();
 
-  labelRenderer = await initLabelRenderer();
-  document.body.appendChild(labelRenderer.domElement);
-
-  await loadPreviousModels();
-  uiManager.setupEventListeners(
-    modelGroup,
-    scene,
-    camera,
-    renderer,
-    lights,
-    lightHelpers,
-    transformControls,
-    mouse,
-    raycaster,
-    sharedData,
-    cropper,
-    hanger_model,
-    hanger_golf_club_model,
-    rack_wooden_model,
-    rack_glass_model,
-    selectedNode
-  );
+    sharedParams.labelRenderer = await initLabelRenderer();
+    document.body.appendChild(sharedParams.labelRenderer.domElement);
+    uiManager.setupEventListeners(lights, lightHelpers);
+    uiManager.loadingElements.progressText.innerText = `Loading... 100%`;
+    uiManager.loadingElements.loaderElement.style.display = "none";
+    await loadPreviousModels();
 }
 
 async function loadPreviousModels() {
