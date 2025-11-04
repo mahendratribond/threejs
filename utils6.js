@@ -1306,7 +1306,7 @@ export async function addAnotherModels(
         // console.log('defaultModel', defaultModel);
         const newModel = defaultModel.clone();
         await cloneWithCustomProperties(defaultModel, newModel);
-        
+
         const nodesToRemove = [];
         await traverseAsync(newModel, async (child) => {
             if (hangerNames.includes(child.name) || rackNames.includes(child.name)) {
@@ -1317,7 +1317,7 @@ export async function addAnotherModels(
                 nodesToRemove.push(child);
             }
         });
-        
+
         // Remove nodes after traversal
         nodesToRemove.forEach((node) => {
             if (node.parent) {
@@ -1350,9 +1350,9 @@ export async function addAnotherModels(
             sharedParams.modelGroup,
             allModelNames
         );
-        
+
         const center = boundingBox.getCenter(new THREE.Vector3());
-        const cameraOnLeft = side || sharedParams.camera.position.x < center.x;        
+        const cameraOnLeft = side || sharedParams.camera.position.x < center.x;
         if (cameraOnLeft) {
             newModel.position.x = boundingBox.max.x + modelWidth / 2;
             allGroupNames.push(newModel.name);

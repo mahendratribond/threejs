@@ -293,227 +293,185 @@ export async function loadAllModels() {
                 const gltf = await loadModelWithRetry(modelPath);
 
                 switch (modelPath) {
-                    case "Model_1061.glb":
+                    case "Model_1010.glb":
                         modelManager.setupMainModel(gltf);
-                        const model_1061 = gltf.getObjectByName("Model_1061");
-                        if (!model_1061)
+                        gltf.name = "Model_1010";
+                        const model_1010 = gltf.getObjectByName("Model_1010");
+                        if (!model_1010)
                             throw new Error(
-                                "Model_1061 not found in loaded model"
+                                "Model_1010 not found in loaded model"
                             );
-                        model_1061.visible = false;
-                        sharedParams.main_model.add(model_1061);
+                        model_1010.visible = false;
+                        sharedParams.main_model.add(model_1010);
                         break;
 
-                    case "Model_1200.glb":
-                        modelManager.setupMainModel(gltf);
-                        const Model_1200 = gltf.getObjectByName("Model_1200");
-                        if (!Model_1200)
-                            throw new Error(
-                                "Model_1200 not found in loaded model"
-                            );
-                        Model_1200.visible = false;
-                        sharedParams.main_model.add(Model_1200);
-                        break;
 
-                    case "Model_1500.glb":
-                        modelManager.setupMainModel(gltf);
-                        const Model_1500 = gltf.getObjectByName("Model_1500");
-                        if (!Model_1500)
-                            throw new Error(
-                                "Model_1500 not found in loaded model"
-                            );
-                        Model_1500.visible = false;
-                        sharedParams.main_model.add(Model_1500);
-                        break;
+                    // case "Hanger_Rail_Step.glb":
+                    //     if (!gltf) {
+                    //         throw new Error("Hanger_Rail_Step model is null");
+                    //     }
+                    //     const railStep =
+                    //         gltf.getObjectByName("Hanger_Rail_Step");
+                    //     if (!railStep) {
+                    //         throw new Error(
+                    //             "Hanger_Rail_Step not found in loaded model"
+                    //         );
+                    //     }
+                    //     sharedParams.hanger_rail_step = railStep;
+                    //     sharedParams.hanger_model.add(
+                    //         sharedParams.hanger_rail_step
+                    //     );
+                    //     break;
 
-                    case "Model_2000.glb":
-                        modelManager.setupMainModel(gltf);
-                        const Model_2000 = gltf.getObjectByName("Model_2000");
-                        if (!Model_2000)
-                            throw new Error(
-                                "Model_2000 not found in loaded model"
-                            );
-                        Model_2000.visible = false;
-                        sharedParams.main_model.add(Model_2000);
-                        break;
+                    // case "Hanger_Rail_Single.glb":
+                    //     if (!sharedParams.hanger_model)
+                    //         throw new Error("hanger_model not initialized");
+                    //     sharedParams.hanger_rail_single = gltf;
+                    //     const railSingle =
+                    //         gltf.getObjectByName("Hanger_Rail_Single");
+                    //     if (!railSingle)
+                    //         throw new Error(
+                    //             "Hanger_Rail_Single not found in loaded model"
+                    //         );
+                    //     sharedParams.hanger_rail_single = railSingle;
+                    //     sharedParams.hanger_model.add(
+                    //         sharedParams.hanger_rail_single
+                    //     );
+                    //     break;
 
-                    case "Model_3000.glb":
-                        modelManager.setupMainModel(gltf);
-                        const Model_3000 = gltf.getObjectByName("Model_3000");
-                        if (!Model_3000)
-                            throw new Error(
-                                "Model_3000 not found in loaded model"
-                            );
-                        Model_3000.visible = false;
-                        sharedParams.main_model.add(Model_3000);
-                        break;
+                    // case "Hanger_Rail_D_500mm.glb":
+                    //     if (!sharedParams.hanger_model)
+                    //         throw new Error("hanger_model not initialized");
+                    //     sharedParams.hanger_rail_d_500 = gltf;
+                    //     const railD500 = gltf.getObjectByName(
+                    //         "Hanger_Rail_D_500mm"
+                    //     );
+                    //     if (!railD500)
+                    //         throw new Error("Hanger_Rail_D_500mm not found");
+                    //     sharedParams.hanger_rail_d_500 = railD500;
+                    //     sharedParams.hanger_model.add(
+                    //         sharedParams.hanger_rail_d_500
+                    //     );
+                    //     break;
 
-                    case "Hanger_Rail_Step.glb":
-                        if (!gltf) {
-                            throw new Error("Hanger_Rail_Step model is null");
-                        }
-                        const railStep =
-                            gltf.getObjectByName("Hanger_Rail_Step");
-                        if (!railStep) {
-                            throw new Error(
-                                "Hanger_Rail_Step not found in loaded model"
-                            );
-                        }
-                        sharedParams.hanger_rail_step = railStep;
-                        sharedParams.hanger_model.add(
-                            sharedParams.hanger_rail_step
-                        );
-                        break;
+                    // case "Hanger_Rail_D_1000mm.glb":
+                    //     if (!sharedParams.hanger_model)
+                    //         throw new Error("hanger_model not initialized");
+                    //     sharedParams.hanger_rail_d_1000 = gltf;
+                    //     const railD1000 = gltf.getObjectByName(
+                    //         "Hanger_Rail_D_1000mm"
+                    //     );
+                    //     if (!railD1000)
+                    //         throw new Error("Hanger_Rail_D_1000mm not found");
+                    //     sharedParams.hanger_rail_d_1000 = railD1000;
+                    //     sharedParams.hanger_model.add(
+                    //         sharedParams.hanger_rail_d_1000
+                    //     );
+                    //     break;
 
-                    case "Hanger_Rail_Single.glb":
-                        if (!sharedParams.hanger_model)
-                            throw new Error("hanger_model not initialized");
-                        sharedParams.hanger_rail_single = gltf;
-                        const railSingle =
-                            gltf.getObjectByName("Hanger_Rail_Single");
-                        if (!railSingle)
-                            throw new Error(
-                                "Hanger_Rail_Single not found in loaded model"
-                            );
-                        sharedParams.hanger_rail_single = railSingle;
-                        sharedParams.hanger_model.add(
-                            sharedParams.hanger_rail_single
-                        );
-                        break;
+                    // case "hanger_golf_driver_club_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error(
+                    //             "hanger_golf_driver_club_model is null"
+                    //         );
+                    //     sharedParams.hanger_golf_driver_club_model = gltf;
+                    //     break;
 
-                    case "Hanger_Rail_D_500mm.glb":
-                        if (!sharedParams.hanger_model)
-                            throw new Error("hanger_model not initialized");
-                        sharedParams.hanger_rail_d_500 = gltf;
-                        const railD500 = gltf.getObjectByName(
-                            "Hanger_Rail_D_500mm"
-                        );
-                        if (!railD500)
-                            throw new Error("Hanger_Rail_D_500mm not found");
-                        sharedParams.hanger_rail_d_500 = railD500;
-                        sharedParams.hanger_model.add(
-                            sharedParams.hanger_rail_d_500
-                        );
-                        break;
+                    // case "hanger_golf_Iron_club_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error(
+                    //             "hanger_golf_Iron_club_model is null"
+                    //         );
+                    //     sharedParams.hanger_golf_Iron_club_model = gltf;
+                    //     break;
 
-                    case "Hanger_Rail_D_1000mm.glb":
-                        if (!sharedParams.hanger_model)
-                            throw new Error("hanger_model not initialized");
-                        sharedParams.hanger_rail_d_1000 = gltf;
-                        const railD1000 = gltf.getObjectByName(
-                            "Hanger_Rail_D_1000mm"
-                        );
-                        if (!railD1000)
-                            throw new Error("Hanger_Rail_D_1000mm not found");
-                        sharedParams.hanger_rail_d_1000 = railD1000;
-                        sharedParams.hanger_model.add(
-                            sharedParams.hanger_rail_d_1000
-                        );
-                        break;
+                    // case "rack_glass_model.glb":
+                    //     if (!gltf) throw new Error("rack_glass_model is null");
+                    //     sharedParams.rack_glass_model = gltf;
+                    //     await modelManager.setupGlassRackModel(
+                    //         sharedParams.rack_glass_model
+                    //     );
+                    //     break;
 
-                    case "hanger_golf_driver_club_model.glb":
-                        if (!gltf)
-                            throw new Error(
-                                "hanger_golf_driver_club_model is null"
-                            );
-                        sharedParams.hanger_golf_driver_club_model = gltf;
-                        break;
+                    // case "rack_wooden_model.glb":
+                    //     if (!gltf) throw new Error("rack_wooden_model is null");
+                    //     sharedParams.rack_wooden_model = gltf;
+                    //     await modelManager.setupWoodenRackModel(
+                    //         sharedParams.rack_wooden_model
+                    //     );
+                    //     break;
 
-                    case "hanger_golf_Iron_club_model.glb":
-                        if (!gltf)
-                            throw new Error(
-                                "hanger_golf_Iron_club_model is null"
-                            );
-                        sharedParams.hanger_golf_Iron_club_model = gltf;
-                        break;
+                    // case "arrow_model.glb":
+                    //     if (!gltf) throw new Error("arrow_model is null");
+                    //     sharedParams.arrow_model = gltf;
+                    //     await modelManager.setupArrowModel();
+                    //     break;
 
-                    case "rack_glass_model.glb":
-                        if (!gltf) throw new Error("rack_glass_model is null");
-                        sharedParams.rack_glass_model = gltf;
-                        await modelManager.setupGlassRackModel(
-                            sharedParams.rack_glass_model
-                        );
-                        break;
+                    // case "header_rod_model.glb":
+                    //     if (!gltf) throw new Error("header_rod_model is null");
+                    //     sharedParams.header_rod_model = gltf;
+                    //     params.rodSize = { x: 50, y: 50, z: 50 };
+                    //     break;
 
-                    case "rack_wooden_model.glb":
-                        if (!gltf) throw new Error("rack_wooden_model is null");
-                        sharedParams.rack_wooden_model = gltf;
-                        await modelManager.setupWoodenRackModel(
-                            sharedParams.rack_wooden_model
-                        );
-                        break;
+                    // case "header_glass_shelf_fixing_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error(
+                    //             "header_glass_shelf_fixing_model is null"
+                    //         );
+                    //     sharedParams.header_glass_shelf_fixing_model = gltf;
+                    //     params.glassShelfFixingSize = getNodeSize(
+                    //         sharedParams.header_glass_shelf_fixing_model
+                    //     );
+                    //     await modelManager.setupGlassShelfFixingModel();
+                    //     break;
 
-                    case "arrow_model.glb":
-                        if (!gltf) throw new Error("arrow_model is null");
-                        sharedParams.arrow_model = gltf;
-                        await modelManager.setupArrowModel();
-                        break;
+                    // case "header_500_height_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error("header_500_height_model is null");
+                    //     sharedParams.header_500_height_model = gltf;
+                    //     await modelManager.setupHeader500HeightModel();
+                    //     break;
 
-                    case "header_rod_model.glb":
-                        if (!gltf) throw new Error("header_rod_model is null");
-                        sharedParams.header_rod_model = gltf;
-                        params.rodSize = { x: 50, y: 50, z: 50 };
-                        break;
+                    // case "header_wooden_shelf_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error(
+                    //             "header_wooden_shelf_model is null"
+                    //         );
+                    //     sharedParams.header_wooden_shelf_model = gltf;
+                    //     await modelManager.setupHeaderWoodenShelfModel();
+                    //     break;
 
-                    case "header_glass_shelf_fixing_model.glb":
-                        if (!gltf)
-                            throw new Error(
-                                "header_glass_shelf_fixing_model is null"
-                            );
-                        sharedParams.header_glass_shelf_fixing_model = gltf;
-                        params.glassShelfFixingSize = getNodeSize(
-                            sharedParams.header_glass_shelf_fixing_model
-                        );
-                        await modelManager.setupGlassShelfFixingModel();
-                        break;
+                    // case "header_glass_shelf_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error("header_glass_shelf_model is null");
+                    //     sharedParams.header_glass_shelf_model = gltf;
+                    //     await modelManager.setupHeaderGlassShelfModel();
+                    //     break;
 
-                    case "header_500_height_model.glb":
-                        if (!gltf)
-                            throw new Error("header_500_height_model is null");
-                        sharedParams.header_500_height_model = gltf;
-                        await modelManager.setupHeader500HeightModel();
-                        break;
+                    // case "slotted_sides_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error("slotted_sides_model is null");
+                    //     sharedParams.slotted_sides_model = gltf;
+                    //     await modelManager.setupSlottedSidesModel();
+                    //     break;
 
-                    case "header_wooden_shelf_model.glb":
-                        if (!gltf)
-                            throw new Error(
-                                "header_wooden_shelf_model is null"
-                            );
-                        sharedParams.header_wooden_shelf_model = gltf;
-                        await modelManager.setupHeaderWoodenShelfModel();
-                        break;
+                    // case "support_base_middle.glb":
+                    //     if (!gltf)
+                    //         throw new Error("support_base_middle is null");
+                    //     sharedParams.support_base_middle = gltf;
+                    //     await modelManager.setupSupportBaseModel();
+                    //     break;
 
-                    case "header_glass_shelf_model.glb":
-                        if (!gltf)
-                            throw new Error("header_glass_shelf_model is null");
-                        sharedParams.header_glass_shelf_model = gltf;
-                        await modelManager.setupHeaderGlassShelfModel();
-                        break;
+                    // case "support_base_sides.glb":
+                    //     if (!gltf) throw new Error("support_base_side is null");
+                    //     sharedParams.support_base_side = gltf;
+                    //     await modelManager.setupSupportBaseModel();
+                    //     break;
 
-                    case "slotted_sides_model.glb":
-                        if (!gltf)
-                            throw new Error("slotted_sides_model is null");
-                        sharedParams.slotted_sides_model = gltf;
-                        await modelManager.setupSlottedSidesModel();
-                        break;
-
-                    case "support_base_middle.glb":
-                        if (!gltf)
-                            throw new Error("support_base_middle is null");
-                        sharedParams.support_base_middle = gltf;
-                        await modelManager.setupSupportBaseModel();
-                        break;
-
-                    case "support_base_sides.glb":
-                        if (!gltf) throw new Error("support_base_side is null");
-                        sharedParams.support_base_side = gltf;
-                        await modelManager.setupSupportBaseModel();
-                        break;
-
-                    case "removeIcon.glb":
-                        if (!gltf) throw new Error("removeIcon is null");
-                        sharedParams.removeIcon = gltf;
-                        break;
+                    // case "removeIcon.glb":
+                    //     if (!gltf) throw new Error("removeIcon is null");
+                    //     sharedParams.removeIcon = gltf;
+                    //     break;
 
                     default:
                         console.log(`No specific handling for ${modelPath}`);
