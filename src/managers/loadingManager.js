@@ -420,11 +420,14 @@ export async function loadAllModels() {
                     //     await modelManager.setupHeader500HeightModel();
                     //     break;
 
-                    case "header_rod_model.glb":
-                        if (!gltf) throw new Error("header_rod_model is null");
-                        sharedParams.header_rod_model = gltf;
-                        params.rodSize = { x: 50, y: 50, z: 50 };
-                        break;
+                    // case "header_wooden_shelf_model.glb":
+                    //     if (!gltf)
+                    //         throw new Error(
+                    //             "header_wooden_shelf_model is null"
+                    //         );
+                    //     sharedParams.header_wooden_shelf_model = gltf;
+                    //     await modelManager.setupHeaderWoodenShelfModel();
+                    //     break;
 
                     // case "header_glass_shelf_model.glb":
                     //     if (!gltf)
