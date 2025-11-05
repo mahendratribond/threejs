@@ -136,20 +136,33 @@ export class UIManager {
             const base64Image = sharedParams.cropper
                 .getCroppedCanvas()
                 .toDataURL("image/png");
-            const formData = new FormData();
-            formData.append("modelCropImage", base64Image);
-            formData.append("action", "saveModelCropImage");
-            try {
-                const response = await fetch("api.php", {
-                    method: "POST",
-                    body: formData,
-                });
-                const data = await response.json();
-                return data; // Ensure the resolved data is returned
-            } catch (error) {
-                console.error("Error saving image:", error);
-                throw error; // Re-throw the error to handle it at the calling point
+
+            // Return base64 immediately for instant display
+            return { base64Image: base64Image };
+        }
+    }
+
+    // Save image to server in background (non-blocking)
+    async saveCropImageToServer(base64Image, callback) {
+        const formData = new FormData();
+        formData.append("modelCropImage", base64Image);
+        formData.append("action", "saveModelCropImage");
+        try {
+            const response = await fetch("api.php", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await response.json();
+            if (callback && typeof callback === 'function') {
+                callback(data);
             }
+            return data;
+        } catch (error) {
+            console.error("Error saving image:", error);
+            if (callback && typeof callback === 'function') {
+                callback(null);
+            }
+            throw error;
         }
     }
 
@@ -402,19 +415,47 @@ export class UIManager {
                         let selectedGroupName = params.selectedGroupName;
                         let defaultModel = setting[selectedGroupName].defaultModel;
                         let defaultHeaderSize = setting[selectedGroupName].defaultHeaderSize;
+
+                        // Get cropped base64 image immediately (no waiting)
+                        const cropResult = await this.saveCropImage();
+                        const base64Image = cropResult.base64Image;
+
                         if (params.fileUploadFlag == "MainFrame") {
                             sharedParams.mainFrameCropedImage = sharedParams.mainFrameCropedImage || {};
                             sharedParams.mainFrameCropedImage[selectedGroupName] = sharedParams.mainFrameCropedImage[selectedGroupName] || {};
-                            let mainFrameSaveImageURl = await this.saveCropImage();
-                            sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] = mainFrameSaveImageURl.imageUrl;
+
+                            // Use base64 immediately for instant display
+                            sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] = base64Image;
                             await setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
+
+                            // Save to server in background and update URL when response arrives
+                            this.saveCropImageToServer(base64Image, (response) => {
+                                if (response && response.success && response.imageUrl) {
+                                    // Update with server URL when response arrives
+                                    sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] = response.imageUrl;
+                                    // Optionally update texture with server URL
+                                    // setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
+                                    console.log("response", sharedParams.mainFrameCropedImage);
+                                }
+                            });
                         } else if (params.fileUploadFlag == "TopFrame") {
                             sharedParams.topFrameCropedImage = sharedParams.topFrameCropedImage || {};
                             sharedParams.topFrameCropedImage[selectedGroupName] = sharedParams.topFrameCropedImage[selectedGroupName] || {};
                             sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] = sharedParams.topFrameCropedImage[selectedGroupName][defaultModel] || {};
-                            let topFrameSaveImageURl = await this.saveCropImage();
-                            sharedParams.topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = topFrameSaveImageURl.imageUrl;
+
+                            // Use base64 immediately for instant display
+                            sharedParams.topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = base64Image;
                             await setTopFrameCropedImage(sharedParams.topFrameCropedImage);
+
+                            // Save to server in background and update URL when response arrives
+                            this.saveCropImageToServer(base64Image, (response) => {
+                                if (response && response.success && response.imageUrl) {
+                                    // Update with server URL when response arrives
+                                    sharedParams.topFrameCropedImage[selectedGroupName][defaultModel][defaultHeaderSize] = response.imageUrl;
+                                    // Optionally update texture with server URL
+                                    // setTopFrameCropedImage(sharedParams.topFrameCropedImage);
+                                }
+                            });
                         }
                     }
                     this.hideLoadingModal();

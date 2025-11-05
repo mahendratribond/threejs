@@ -74,6 +74,7 @@ export let allGroupNames = ["main_model"];
 export let allModelNames = [
     "Model_610",
     "Model_1010",
+    "Wall",
     // "Model_1210",
     // "Model_1510",
     // "Model_2010",
@@ -99,6 +100,7 @@ export let rodFrameTextureNames = ["Rod"];
 export let heightMeasurementNames = [
     "Frame",
     "Cube1-Mat",
+    // "Wall",
 ];
 export let hangerNames = [
     "Hanger_Rail_Step",
@@ -133,6 +135,7 @@ export let allGroupModelName = ["main_model"];
 export let modelQueue = [
     // "Model_610.glb",
     "Model_1010.glb",
+    "Wall.glb",
     // "Model_1200.glb",
     // "Model_1500.glb",
     // "Model_2000.glb",

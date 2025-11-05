@@ -81,6 +81,71 @@ export class ModelManager {
         });
     }
 
+    /**
+     * Positions and rotates the wall model at the back of the main model
+     * @param {THREE.Object3D} wallGroup - The wall group to position
+     */
+    positionWallAtBack(wallGroup) {
+        const wall = wallGroup.getObjectByName("Wall");
+        if (!wall) {
+            console.warn("Wall not found in wallGroup");
+            return;
+        }
+
+        wall.traverse((child) => {
+            if (child.isMesh && child.material) {
+                const redMaterial = commonMaterial(0xff0000); // Red color
+                redMaterial.then((material) => {
+                    child.material = material;
+                    child.material.needsUpdate = true;
+                }).catch((error) => {
+                    console.error("Error setting wall material:", error);
+                });
+            }
+        });
+
+        // Ensure bounding boxes are computed for accurate positioning
+        sharedParams.main_model.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+                child.geometry.computeBoundingBox();
+            }
+        });
+        wall.traverse((child) => {
+            if (child.isMesh && child.geometry) {
+                child.geometry.computeBoundingBox();
+            }
+        });
+
+        // Calculate main model's bounding box to position wall at the back
+        sharedParams.main_model.updateMatrixWorld(true);
+        const boundingBox = new THREE.Box3().setFromObject(sharedParams.main_model);
+        const modelCenter = boundingBox.getCenter(new THREE.Vector3());
+
+        // Get wall's bounding box to center it properly
+        wallGroup.updateMatrixWorld(true);
+        const wallBoundingBox = new THREE.Box3().setFromObject(wallGroup);
+        const wallDepth = wallBoundingBox.max.z - wallBoundingBox.min.z;
+        const wallHeight = wallBoundingBox.max.y - wallBoundingBox.min.y;
+
+        // Position wall group at the back edge of the main model (negative Z direction)
+        // Align X with main model center
+        wallGroup.position.x = modelCenter.x;
+
+        // Align Y so that wall's bottom matches main model's bottom (same level)
+        // Get the model's bottom Y in world space
+        const modelBottomY = boundingBox.min.y;
+
+        // Get the wall's bottom Y in local space (relative to wallGroup)
+        const wallBottomYLocal = wallBoundingBox.min.y;
+
+        // Set wallGroup Y position so that wall's bottom aligns with model's bottom
+        // wallGroup.position.y + wallBottomYLocal = modelBottomY
+        wallGroup.position.y = modelBottomY - wallBottomYLocal;
+
+        // Position wall at the back edge of the main model (negative Z direction)
+        wallGroup.position.z = boundingBox.min.z - wallDepth / 2;
+    }
+
     async setupArrowModel() {
         if (sharedParams.arrow_model) {
             await sharedParams.arrow_model.traverse(async function (child) {

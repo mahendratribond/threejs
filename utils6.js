@@ -1138,7 +1138,7 @@ export async function getMainParentNode(child, nodeNames, isVisible = true) {
 
 export async function centerMainModel() {
     if (sharedParams.modelGroup !== undefined) {
-        const spacing = 1; // Base space between models
+        const spacing = 0; // Base space between models
         let currentX = 0; // Start positioning from 0 along the x-axis
 
         // Get total width of all models to center the group

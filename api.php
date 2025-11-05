@@ -2145,53 +2145,77 @@ if (!empty($data['action']) && $data['action'] == 'save_model_data') {
 $conn->close();
 
 function compressImage($source, $destination, $quality = 60) {
+    $mime = null;
+    $image = null;
+
     // Check if the source is a Base64 string or a file path
     if (strpos($source, 'data:image/') === 0) {
-        // Base64 string: Extract the actual image data and decode it
+        // Base64 string: Extract MIME type and image data
+        if (preg_match('#^data:image/(\w+);base64,#i', $source, $matches)) {
+            $mime = 'image/' . strtolower($matches[1]);
+        } else {
+            // Fallback: try to detect from image data
+            $mime = 'image/png'; // Default for Base64 from canvas
+        }
+
+        // Extract the actual image data and decode it
         $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $source));
         // Create an image from the decoded data
         $image = imagecreatefromstring($imageData);
+        if (!$image) {
+            return false;
+        }
     } else {
-        // Regular file path: Get image info
+        // Regular file path: Get image info once
         $info = getimagesize($source);
         if (!$info) {
-            return "Unsupported file type or invalid image.";
+            return false;
         }
 
-        // Create an image from the file
         $mime = $info['mime'];
+
+        // Create an image from the file
         switch ($mime) {
             case 'image/jpeg':
                 $image = imagecreatefromjpeg($source);
                 break;
             case 'image/png':
                 $image = imagecreatefrompng($source);
-                imagealphablending($image, false); // Disable alpha blending
-                imagesavealpha($image, true); // Save alpha channel
+                if ($image) {
+                    imagealphablending($image, false); // Disable alpha blending
+                    imagesavealpha($image, true); // Save alpha channel
+                }
                 break;
             case 'image/gif':
                 $image = imagecreatefromgif($source);
                 break;
             default:
-                return "Unsupported image format: " . $mime;
+                return false;
         }
     }
 
+    if (!$image) {
+        return false;
+    }
+
+    // Get dimensions from the image resource (faster than getimagesize)
+    $width = imagesx($image);
+    $height = imagesy($image);
+
     // Compress and save the image based on the MIME type
-    $info = getimagesize($source);  // For MIME type checking
-    $mime = $info['mime'];
-    list($width, $height, $type) = getimagesize($source);
     switch ($mime) {
         case 'image/jpeg':
             imagejpeg($image, $destination, $quality);
             break;
 
         case 'image/png':
-            $resized_image = imagecreatetruecolor($width, $height);
-            $whiteBackground = imagecolorallocate($resized_image, 255, 255, 255);
-            // imagecolortransparent($resized_image, $whiteBackground);
-            imagefill($resized_image,0,0,$whiteBackground);
-            @imagecopyresampled($resized_image, $image, 0, 0, 0, 0, $width, $height, $width, $height);
+            // $resized_image = imagecreatetruecolor($width, $height);
+            // $whiteBackground = imagecolorallocate($resized_image, 255, 255, 255);
+            // // imagecolortransparent($resized_image, $whiteBackground);
+            // imagefill($resized_image,0,0,$whiteBackground);
+            // @imagecopyresampled($resized_image, $image, 0, 0, 0, 0, $width, $height, $width, $height);
+
+            // Save PNG directly with compression (no need for resized_image if not resizing)
             imagealphablending($image, false); // Disable alpha blending
             imagesavealpha($image, true); // Save the alpha channel (transparency)
             $pngQuality = 9 - floor($quality / 10);  // Convert JPEG quality (0-100) to PNG compression level (0-9)
@@ -2203,7 +2227,8 @@ function compressImage($source, $destination, $quality = 60) {
             break;
 
         default:
-            return "Unsupported image format: " . $mime;
+            imagedestroy($image);
+            return false;
     }
 
     // Free up memory
@@ -2279,3 +2304,4 @@ function getExistingColumns($apiToken, $subitemBoardId) {
 
     return [];
 }
+

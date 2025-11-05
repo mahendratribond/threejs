@@ -58,3 +58,6 @@ screenshots/
 export_models/
 images/
 assets/images/borders12
+
+# Environment variables
+.env

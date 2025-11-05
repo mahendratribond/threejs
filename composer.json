@@ -12,9 +12,11 @@
         }
     ],
     "require": {
+        "php": ">=7.4",
         "mpdf/mpdf": "^8.2",
-        "endroid/qr-code": "^4.6",
+        "endroid/qr-code": "^3.9",
         "phpmailer/phpmailer": "^6.9",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^5.5",
+        "vlucas/phpdotenv": "^4.0"
     }
 }

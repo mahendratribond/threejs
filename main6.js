@@ -7,7 +7,8 @@ import {
     TextureLoaderJpg,
     loadPreviousModels,
     loadRemainingModels,
-} from "./src/managers/loadingManager.js";
+    loadWallModel,
+} from "./src/managers/LoadingManager.js";
 import { Camera } from "./src/core/Camera.js";
 import { Renderer } from "./src/core/Renderer.js";
 import { Scene } from "./src/core/Scene.js";
@@ -98,16 +99,28 @@ async function init() {
 
     sharedParams.modelGroup = new THREE.Group();
     sharedParams.scene.add(sharedParams.modelGroup);
+
+    // Load wall model first, before main_model
+    sharedParams.wallGroup = await loadWallModel();
+    sharedParams.wallGroup.visible = true; // Wall is always visible
+    sharedParams.wallGroup.name = "main_wall"; // Wall is always visible
+    sharedParams.scene.add(sharedParams.wallGroup);
+
+    // Load main model
     sharedParams.main_model = await loadGLTFModel(params.defaultModel + ".glb");
     sharedParams.main_model.name = params.selectedGroupName;
     sharedParams.main_model.activeModel = sharedParams.main_model.children[0];
     sharedParams.main_model.activeModel.name = params.defaultModel;
     allGroups.push(sharedParams.main_model);
-    console.log("sharedParams.main_model", sharedParams.main_model);
+    console.log("sharedParams", sharedParams);
     sharedParams.selectedGroup = sharedParams.main_model;
     sharedParams.modelGroup.add(sharedParams.main_model);
     sharedParams.modelGroup.name = "main_group";
     modelManager.setupMainModel(sharedParams.main_model);
+
+    // Position wall at the back of main_model after main_model is loaded
+    modelManager.positionWallAtBack(sharedParams.wallGroup);
+
     await loadAllModels();
     await loadRemainingModels();
     // Transform controls

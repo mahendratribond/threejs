@@ -25,7 +25,7 @@ import { addNewMaterials, restoreMaterials } from "./MaterialManager.js";
 import {
     setTopFrameCropedImage,
     setMainFrameCropedImage,
-} from "./frameImagesManager.js";
+} from "./FrameImagesManager.js";
 import {getNodeSize} from "./MeasurementManager.js"
 
 import { UIManager } from "./UIManager.js";
@@ -71,6 +71,32 @@ export async function normalizeModelNames(model) {
         }
     });
 }
+
+/**
+ * Loads and positions the wall model separately from main_model
+ * @returns {Promise<THREE.Group>} The wall group
+ */
+export async function loadWallModel() {
+    const gltf = await loadGLTFModel("Wall.glb");
+    const wall = gltf.getObjectByName("Wall");
+    if (!wall) {
+        throw new Error("Wall not found in loaded model");
+    }
+
+    wall.visible = true;
+
+    // Create a separate group for wall
+    const wallGroup = new THREE.Group();
+
+    wallGroup.add(wall);
+
+    // Rotate Wall by 90 degrees around Y axis
+    wall.rotateY(Math.PI / 2); // 90 degrees in radians
+
+    // Position will be updated after main_model is loaded
+    return wallGroup;
+}
+
 
 
 export async function loadGLTFModel(url) {
@@ -335,6 +361,9 @@ export async function loadAllModels() {
                         model_1010.visible = false;
                         sharedParams.main_model.add(model_1010);
                         break;
+                    // Wall.glb is now loaded separately using loadWallModel()
+                    // case "Wall.glb":
+                    //     break;
 
                     // case "Hanger_Rail_Step.glb":
                     //     if (!gltf) {
@@ -543,6 +572,7 @@ export async function loadRemainingModels() {
         sharedParams.arrow_model = await loadGLTFModel("arrow_model.glb");
         await modelManager.setupArrowModel();
     }
+    return;
     if (!sharedParams.header_rod_model) {
         sharedParams.header_rod_model = await loadGLTFModel(
             "header_rod_model.glb"
