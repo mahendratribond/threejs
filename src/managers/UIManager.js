@@ -34,7 +34,7 @@ import { exportModelForAr } from "./ExportModelManager.js";
 import {
     setTopFrameCropedImage,
     setMainFrameCropedImage,
-} from "./frameImagesManager.js";
+} from "./FrameImagesManager.js";
 
 import { Scene } from "../core/Scene.js";
 import {
