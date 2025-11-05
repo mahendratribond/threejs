@@ -295,9 +295,9 @@ export async function updateMeasurementGroups() {
             // Determine if the camera is on the left or right side of the model
             const cameraOnLeft = sharedParams.camera.position.x < center.x;
             const cameraZAdjustment =
-                sharedParams.camera.position.z < center.z ? -70 : 70; // Adjust if camera is in front or behind
+                sharedParams.camera.position.z < center.z ? -10 : 10; // Adjust if camera is in front or behind
             const lableZAdjustment =
-                sharedParams.camera.position.z < center.z ? -20 : 20; // Adjust if camera is in front or behind
+                sharedParams.camera.position.z < center.z ? -5 : 5; // Adjust if camera is in front or behind
             const lableYAdjustment = 30; // Adjust if camera is in front or behind
 
             // Create width measurement group

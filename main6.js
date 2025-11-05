@@ -7,7 +7,7 @@ import {
     TextureLoaderJpg,
     loadPreviousModels,
     loadRemainingModels,
-} from "./src/managers/LoadingManager.js";
+} from "./src/managers/loadingManager.js";
 import { Camera } from "./src/core/Camera.js";
 import { Renderer } from "./src/core/Renderer.js";
 import { Scene } from "./src/core/Scene.js";
@@ -101,7 +101,7 @@ async function init() {
     sharedParams.main_model = await loadGLTFModel(params.defaultModel + ".glb");
     sharedParams.main_model.name = params.selectedGroupName;
     sharedParams.main_model.activeModel = sharedParams.main_model.children[0];
-    sharedParams.main_model.activeModel.name = "Model_610";
+    sharedParams.main_model.activeModel.name = params.defaultModel;
     allGroups.push(sharedParams.main_model);
     console.log("sharedParams.main_model", sharedParams.main_model);
     sharedParams.selectedGroup = sharedParams.main_model;
@@ -109,7 +109,7 @@ async function init() {
     sharedParams.modelGroup.name = "main_group";
     modelManager.setupMainModel(sharedParams.main_model);
     await loadAllModels();
-    // await loadRemainingModels();
+    await loadRemainingModels();
     // Transform controls
     sharedParams.transformControls = new TransformControls(
         sharedParams.camera,

@@ -91,34 +91,14 @@ export let frameTop1Names = ["Header_Graphic1-Mat", "Header_Graphic2-Mat"];
 export let headerNames = ["Header_300", "Header_500", "Header_500_2"];
 export let frameMainNames = ["Cube1-Mat", "Cube2-Mat"];
 export let allFrameBorderNames = [
-    "Header_Frame",
-    "Top_Ex",
-    "Top_Ex-Frame",
-    "Bottom_Ex",
-    "Left_Ex",
-    "Right_Ex",
-    "Left_Ex_Slotted",
-    "Right_Ex_Slotted",
-    "Left_Ex_Slotted-Frame",
-    "Right_Ex_Slotted-Frame",
+    "Frame",
 ];
 export let baseFrameNames = ["Base_Flat", "Base_Solid", "Base_Support_Sides"];
 export let baseFrameTextureNames = ["Base_Option.1", "Base_Option.2"];
 export let rodFrameTextureNames = ["Rod"];
 export let heightMeasurementNames = [
-    "Header_300",
-    "Header_500",
-    "Header_500_2",
-    "Left_Ex",
-    "Right_Ex",
-    "Left_Ex_Slotted",
-    "Right_Ex_Slotted",
-    "Base_Flat",
-    "Base_Solid",
-    "Header_Wooden_Shelf",
-    "Header_Glass_Shelf",
-    "Rod",
-    "Glass_Shelf_Fixing",
+    "Frame",
+    "Cube1-Mat",
 ];
 export let hangerNames = [
     "Hanger_Rail_Step",
@@ -212,9 +192,9 @@ export let params = {
     calculateBoundingBox: {},
     headerUpDown: false,
     measurementToggle: false,
-    measurementLineDistance: 100,
-    measurementLineLength: 5,
-    measurementLineHeight: 40,
+    measurementLineDistance: 10,
+    measurementLineLength: 2,
+    measurementLineHeight: 5,
     slottedSidesToggle: false,
     fontSize: 32,
     hangerClothesToggle: true,

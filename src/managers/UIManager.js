@@ -34,7 +34,7 @@ import { exportModelForAr } from "./ExportModelManager.js";
 import {
     setTopFrameCropedImage,
     setMainFrameCropedImage,
-} from "./FrameImagesManager.js";
+} from "./frameImagesManager.js";
 
 import { Scene } from "../core/Scene.js";
 import {
@@ -1050,7 +1050,7 @@ export class UIManager {
                 beforeMainModel = mainModelIndex ? allGroupNames[mainModelIndex - 1] : null;
             }
             let beforeCurrentModel = setting[beforeMainModel];
-            
+
             const selectedGroupName = params.selectedGroupName;
             const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
                 if (selectedModelGroup) {
@@ -1059,7 +1059,7 @@ export class UIManager {
                         selectedModelGroup,
                         -params.moveLeftRight
                     );
-                    
+
                     if (canMoveLeft) {
                     selectedModelGroup.position.x -= params.moveLeftRight; // Move selected model group left
                     if (!selectedModelGroup.spacing) {
@@ -1068,7 +1068,7 @@ export class UIManager {
                     selectedModelGroup.spacing -= params.moveLeftRight;
                     if(beforeCurrentModel && beforeCurrentModel.spacing !== 0){
                         beforeCurrentModel.spacing += params.moveLeftRight;
-                    }                    
+                    }
                     setting[params.selectedGroupName].spacing = selectedModelGroup.spacing;
                     await drawMeasurementBoxesWithLabels();
                 } else {

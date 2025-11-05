@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/svg" href="assets/images/logo_3.svg" />
   <title>Three.js Frame Customizer</title>
   <link href="assets/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -59,7 +59,7 @@
                       <option value="Model_1010">1010mm Wide</option>
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="topDropdown">Top Options</label>
                     <select class="topDropdown">
                       <option value="Header">Header</option>
@@ -67,14 +67,14 @@
                       <option value="None">None</option>
                     </select>
                   </div>
-                  <div class="control-group topShelfOptions">
+                  <div class="control-group topShelfOptions hidden">
                     <label for="shelfTypeDropdown">Shelf Type</label>
                     <select class="shelfTypeDropdown">
                       <option value="Header_Wooden_Shelf">Wooden Shelf 18mm</option>
                       <option value="Header_Glass_Shelf">Glass Shelf 8mm</option>
                     </select>
                   </div>
-                  <div class="control-group topShelfOptions shelfTypeBox">
+                  <div class="control-group topShelfOptions shelfTypeBox hidden">
                     <label for="shelfTexture">Shelf Style</label>
                     <div class="custom-dropdown" data-type="shelf">
                       <button class="dropdown-button">
@@ -94,7 +94,7 @@
                       </div>
                     </div>
                   </div>
-                  <div class="control-group topHeaderOptions">
+                  <div class="control-group topHeaderOptions hidden">
                     <label for="headerOptions">Header Option</label>
                     <select class="headerOptions">
                       <option value="SEG">SEG</option>
@@ -102,26 +102,26 @@
                       <option value="ALG3D">Acrylic with Logo in 3D</option>
                     </select>
                   </div>
-                  <div class="control-group topHeaderOptions">
+                  <div class="control-group topHeaderOptions hidden">
                     <label for="headerSizeDropdown">Header Height</label>
                     <select class="headerSizeDropdown">
                       <option value="Header_300">300mm</option>
                       <option value="Header_500">500mm</option>
                     </select>
                   </div>
-                  <div class="control-group topHeaderOptions">
+                  <div class="control-group topHeaderOptions hidden">
                     <label class="header-toggle-label">
                       <input type="checkbox" class="headerRodToggle header-toggle-input" /> Rods
                     </label>
                   </div>
-                  <div class="control-group topHeaderOptions headerRodColorDropdownBox">
+                  <div class="control-group topHeaderOptions headerRodColorDropdownBox hidden">
                     <label for="headerRodColorDropdown">Rod Colour</label>
                     <select class="headerRodColorDropdown">
                       <option value="0x000000">Black RAL 9005</option>
                       <option value="0xffffff">White RAL 9016</option>
                     </select>
                   </div>
-                  <div class="control-group topHeaderOptions">
+                  <div class="control-group topHeaderOptions hidden">
                     <label for="topFrameFileUpload">Header Graphic</label>
                     <div class="file-upload-wrapper">
                       <label class="file-upload-label">
@@ -130,18 +130,18 @@
                       </label>
                     </div>
                   </div>
-                  <div class="control-group topHeaderOptions headerFrameColorInputBox">
+                  <div class="control-group topHeaderOptions headerFrameColorInputBox hidden">
                     <label for="headerFrameColorInput">Header Graphic BG Colour</label>
                     <input type="color" class="headerFrameColorInput">
                   </div>
-                  <div class="control-group topHeaderOptions headerFrameColorDropdownBox">
+                  <div class="control-group topHeaderOptions headerFrameColorDropdownBox hidden">
                     <label for="headerFrameColorDropdown">Header Acrylic Colour</label>
                     <select class="headerFrameColorDropdown">
                       <option value="0x000000">Black</option>
                       <option value="0xffffff">White</option>
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label class="header-toggle-label">
                       <input type="checkbox" class="slottedSidesToggle header-toggle-input" /> Slotted Sides
                     </label>
@@ -267,7 +267,7 @@
                     <label for="mainFrameColorInput">Frame Graphic BG Colour</label>
                     <input type="color" class="mainFrameColorInput">
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="baseSelectorDropdown">Base Style</label>
                     <select class="baseSelectorDropdown" class="">
                       <option value="none">Select Base Style</option>
@@ -276,7 +276,7 @@
                       <option value="Base_Solid">Solid</option>
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="baseColor">Base Colour</label>
                     <select class="baseColor">
                       <option value="0x000000">Black RAL 9005</option>
@@ -294,7 +294,7 @@
                       <option value="0x315442">Pine Green RAL 6028</option> -->
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="addHanger">Fixtures</label>
                     <div class="horizontal-buttons d-flex gap-2 add-hangers">
                       <button class="btn btn-primary btn-sm addHanger" data-hanger="Hanger_Rail_Step">
@@ -329,38 +329,38 @@
                       </button>
                     </div>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label class="header-toggle-label">
                       <input type="checkbox" class="hangerClothesToggle header-toggle-input" /> Clothes
                     </label>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label class="header-toggle-label">
                       <input type="checkbox" class="hangerGolfClubsToggle header-toggle-input" /> Golf Clubs
                     </label>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="hangerStandColor">Fixtures Colour</label>
                     <select class="hangerStandColor">
                       <option value="0x000000">Black</option>
                       <option value="0xffffff">White</option>
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <!-- <label for="addRack">Shelf</label> -->
                     <div class="horizontal-buttons d-flex gap-2">
                       <button class="btn btn-primary btn-sm addRack" data-rack="RackWoodenShelf">Wooden Shelf</button>
                       <button class="btn btn-primary btn-sm addRack" data-rack="RackGlassShelf">Glass Shelf</button>
                     </div>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="rackStandColor">Shelf Bracket Colour</label>
                     <select class="rackStandColor">
                       <option value="0x000000">Black</option>
                       <option value="0xffffff">White</option>
                     </select>
                   </div>
-                  <div class="control-group">
+                  <div class="control-group hidden">
                     <label for="rackShelfColor">Shelf Colour</label>
                     <select class="rackShelfColor">
                       <option value="0x000000">Black</option>
@@ -447,19 +447,19 @@
           <div class="control-group mt-3" id="myModelsDiv" style="display: none;">
             <a href="my-model.php" class="btn btn-link btn-sm">My Models</a>
           </div>
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 hidden">
             <button id="saveModelDataButton" class="btn btn-outline-primary btn-sm">Save My Model</button>
           </div>
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 hidden">
             <button id="savePdfButton" class="btn btn-outline-primary btn-sm">Download Pdf</button>
           </div>
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 hidden">
             <button id="formSubmition" class="btn btn-outline-primary btn-sm">Submit</button>
           </div>
           <!-- <div class="control-group mt-3">
             <button id="formSubmition2" class="btn btn-outline-primary btn-sm">Submit2</button>
           </div> -->
-          <div class="control-group mt-3">
+          <div class="control-group mt-3 hidden">
             <button id="createQrButton" class="btn btn-outline-primary btn-sm">Show In My Phone</button>
           </div>
           <div class="control-group mt-3 ArInPhone" style="display:none">

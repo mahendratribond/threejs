@@ -1,11 +1,13 @@
-IP =   3.8.249.69
+IP =   35.178.84.194
 username = staging-big
 Password =  " Key file attached in the mail"
 SSH Port = 22
-path: cd /var/www/html/biginstore.net/frame-demo
 
-ssh -i /Applications/Code/ppk/beginstore.pem staging-big@3.8.249.69
-ssh -i "C:\Users\balaji\Downloads/beginstore.pem" staging-big@3.8.249.69
+/var/www/html/biginstore.net/biginstore
+/var/www/html/biginstore.net/frame-demo
+
+ssh -i /Applications/Code/ppk/beginstore.pem staging-big@35.178.84.194
+ssh -i "C:\Users\balaji\Downloads/beginstore.pem" staging-big@35.178.84.194
 
 
 puttygen /Applications/Code/ppk/beginstore.ppk -O private-openssh -o /Applications/Code/ppk/beginstore.pem
@@ -23,7 +25,7 @@ emboss
 4. add loader on show previous model
 
 
-2. Model ko move krne ka option add krne h 
+2. Model ko move krne ka option add krne h
 3. recenter krne pe issue aa raha h
 
 
@@ -31,10 +33,10 @@ emboss
 2. Fixture, holder white aa rha h
 3. Frame ka background color copy nhi krna h
 5. PDF ki imager aa rhi h niche usko remove krna h
-4. Model ko move krne ka option add krne h 
-6. recenter krne pe issue aa raha h 
+4. Model ko move krne ka option add krne h
+6. recenter krne pe issue aa raha h
 7. same model add krne pe remove background texture and color
-1. Rack color must apply on the selected model (sare field andar dalne h) 
+1. Rack color must apply on the selected model (sare field andar dalne h)
 
 
 
@@ -42,7 +44,7 @@ emboss
 
 
 
-8. remove new added model 
+8. remove new added model
 1. Brightness a bit darker
 3. Stand look a bit flat (will do in last)
 6. The frame selection clietn did not like it we need to find another thing
@@ -68,7 +70,7 @@ Wooden Shelf Top
 Glass Shelf Top
 Glass Shelf Fixing
 500 Tall Headers
-Slotted upright Options 
+Slotted upright Options
 Clothing Fixtures
 Glass Shelf 6661_1061_1200
 Wooden Shelf 6661_1061_1200
@@ -102,8 +104,8 @@ Vector3 {x: 307.6876017470631, y: 129.61141967773438, z: 224.19418334960778}
 Vector3 {x: -219.10731576252135, y: 129.61141967773438, z: 224.19418334960778}
 
 
-frame/header =  colormaterial 
-frame/header =  texturematerial 
+frame/header =  colormaterial
+frame/header =  texturematerial
 base = colormaterial
 glassRack = glassMaterial
 woodenRack = woodenMaterial

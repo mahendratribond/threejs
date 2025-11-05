@@ -177,9 +177,11 @@ async function updateMainFrameImageTexture(
   //   let defaultModel = setting[selectedGroupName].defaultModel;
   let main_model = sharedParams.modelGroup.getObjectByName(selectedGroupName);
   const currentModel = main_model.getObjectByName(defaultModel);
-  const frame = currentModel.getObjectByName("Frame");
-  if (frame) {
-    frame.traverse(async function (child) {
+
+  // Traverse currentModel to find Cube1-Mat and Cube2-Mat which are direct children
+  // Also traverse Frame if it exists for any Frame children
+  if (currentModel) {
+    currentModel.traverse(async function (child) {
       await setUploadedTexture(child, texture, frameMainNames);
     });
   }

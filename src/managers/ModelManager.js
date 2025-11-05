@@ -109,7 +109,7 @@ export class ModelManager {
                         let cone = cone_model.clone();
 
                         cone = await setPositionCenter(cone);
-                        cone.scale.set(0.1, 0.1, 0.1);
+                        cone.scale.set(0.025, 0.025, 0.025);
                         const coneBox = new THREE.Box3().setFromObject(cone);
                         const coneHeight = coneBox.max.y - coneBox.min.y;
                         // console.log('arrowHeight', coneHeight)
@@ -117,7 +117,7 @@ export class ModelManager {
                         // cone.scale.set(0.5, 0.5, 0.5)
                         cone.position.set(
                             modelNode.position.x, // Adjust based on offset
-                            modelBox.max.y + coneHeight / 2 + 260,
+                            modelBox.max.y + coneHeight / 2 + 10,
                             // modelBox.min.y - coneHeight / 2 - 10,
                             0
                         );

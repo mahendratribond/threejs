@@ -25,7 +25,7 @@ import { addNewMaterials, restoreMaterials } from "./MaterialManager.js";
 import {
     setTopFrameCropedImage,
     setMainFrameCropedImage,
-} from "./FrameImagesManager.js";
+} from "./frameImagesManager.js";
 import {getNodeSize} from "./MeasurementManager.js"
 
 import { UIManager } from "./UIManager.js";
@@ -42,6 +42,37 @@ export const TextureLoaderJpg = new THREE.TextureLoader(manager).setPath(
 export const rgbeLoader = new RGBELoader(manager).setPath(
     "./assets/images/background/"
 );
+export async function normalizeModelNames(model) {
+    model.traverse((child) => {
+        const name = child.name || "";
+
+        // Skip if name is empty
+        if (!name) return;
+
+        // Rule 1: Wall_Frame → Frame
+        if (name.includes("Wall_Frame")) {
+            child.name = "Frame";
+        }
+        // Rule 2: Graphic → Cube1-Mat
+        else if (name.includes("Graphic")) {
+            child.name = "Cube1-Mat";
+        }
+        // Rule 3: e.g. 610_Wide_Unit → Model_610 or 610mm_Wide_Unit → Model_610
+        else if (/_Wide_Unit/i.test(name)) {
+            // Match both patterns: 610_Wide_Unit and 610mm_Wide_Unit
+            const match = name.match(/^(\d+)(mm)?_Wide_Unit/i);
+            if (match && match[1]) {
+                child.name = `Model_${match[1]}`;
+
+                // Rotate all _Wide_Unit frames by 180 degrees around Y axis
+                // because they appear inverted
+                child.rotateY(Math.PI); // 180 degrees in radians
+            }
+        }
+    });
+}
+
+
 export async function loadGLTFModel(url) {
     return new Promise((resolve, reject) => {
         glftLoader.load(
@@ -52,6 +83,8 @@ export async function loadGLTFModel(url) {
                 // model.position.set(0, -params.cameraPosition, 0);
 
                 model = await setPositionCenter(model); // Center it in the scene
+
+                normalizeModelNames(model);
 
                 model.scale.set(1, 1, 1);
                 model.updateMatrixWorld();
@@ -291,11 +324,9 @@ export async function loadAllModels() {
         const loadPromises = modelQueue.map(async (modelPath) => {
             try {
                 const gltf = await loadModelWithRetry(modelPath);
-
                 switch (modelPath) {
                     case "Model_1010.glb":
                         modelManager.setupMainModel(gltf);
-                        gltf.name = "Model_1010";
                         const model_1010 = gltf.getObjectByName("Model_1010");
                         if (!model_1010)
                             throw new Error(
@@ -304,7 +335,6 @@ export async function loadAllModels() {
                         model_1010.visible = false;
                         sharedParams.main_model.add(model_1010);
                         break;
-
 
                     // case "Hanger_Rail_Step.glb":
                     //     if (!gltf) {
