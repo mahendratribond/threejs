@@ -1232,6 +1232,7 @@ export async function centerMainModel() {
 
     // Center walls after centering models
     if (sharedParams.main_wall_model) {
+        await updateWallModels();
         await centerWallModels();
     }
 
@@ -1249,6 +1250,52 @@ export async function centerMainModel() {
  * This function positions walls based on the combined bounding box of all models
  */
 export async function centerWallModels() {
+
+    if (sharedParams.modelWallGroup !== undefined) {
+        const wallGroupChildren = sharedParams.modelWallGroup.children;
+        const visibleWalls = wallGroupChildren.filter((wall) => wall && wall.visible);
+
+        if (visibleWalls.length === 0) {
+            return;
+        }
+
+        // Get wall width from the first visible wall (all walls should have same width)
+        const firstWall = visibleWalls[0];
+        firstWall.updateMatrixWorld(true);
+        const firstWallBoundingBox = new THREE.Box3().setFromObject(firstWall);
+        const wallWidth = firstWallBoundingBox.max.x - firstWallBoundingBox.min.x;
+        const firstWallBoundingBoxCenter = firstWallBoundingBox.getCenter(new THREE.Vector3());
+        const positionToCenterOffsetX = firstWallBoundingBoxCenter.x - firstWall.position.x;
+
+        // Calculate total width of all walls
+        const totalWidth = visibleWalls.length * wallWidth;
+
+        // Calculate starting position to center all walls
+        const startX = -(totalWidth / 2) + (wallWidth / 2);
+
+        // Position each wall side by side
+        visibleWalls.forEach((wallModel, index) => {
+            // Calculate desired center position for this wall
+            const desiredCenterX = startX + (index * wallWidth);
+
+            // Position the wall accounting for the offset between center and position
+            wallModel.position.x = desiredCenterX - positionToCenterOffsetX;
+            wallModel.updateMatrixWorld(true);
+        });
+
+        // Recompute bounding boxes for all models in the group
+        await traverseAsync(sharedParams.modelWallGroup, async (modelchild) => {
+            modelchild.traverse((child) => {
+                if (child.isMesh && child.geometry) {
+                    child.geometry.computeBoundingBox();
+                }
+            });
+        });
+    }
+
+}
+
+export async function centerWallModels1() {
 
     // Calculate combined bounding box of all models (excluding walls)
     let allModelsBoundingBox = null;
@@ -1337,6 +1384,11 @@ export async function checkForCollision(movingModelGroup, moveAmount) {
                     otherModelBoundingBox.max.z - movingModelBoundingBox.min.z
                 );
 
+                // console.log('Collision detected! Overlap amounts:');
+                // console.log('  X overlap:', overlapX);
+                // console.log('  Y overlap:', overlapY);
+                // console.log('  Z overlap:', overlapZ);
+                // console.log('  Total overlap volume:', overlapX * overlapY * overlapZ);
 
                 if(overlapX > 1){
                     return false;
@@ -1517,7 +1569,7 @@ export async function addAnotherModels(
         sharedParams.selectedGroup = newModel;
 
         if (sharedParams.modelWallGroup) {
-            await addWallModels();
+            // await addWallModels();
         }
 
         await addAnotherModelView(allGroupNames, cameraOnLeft);
@@ -1643,6 +1695,48 @@ export async function removeWallModels() {
         if (lastWall.parent) {
             lastWall.parent.remove(lastWall);
         }
+    }
+
+}
+
+/**
+ * Remove the last wall model from modelWallGroup
+ * Removes the last wall if there are more than 1 walls
+ */
+export async function updateWallModels() {
+    sharedParams.main_wall_model.updateMatrixWorld(true);
+    const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.main_wall_model);
+    const wallWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;
+
+    sharedParams.modelWallGroup.updateMatrixWorld(true);
+    const wallGroupBoundingBox = new THREE.Box3().setFromObject(sharedParams.modelWallGroup);
+    const wallModelsWidth = wallGroupBoundingBox.max.x - wallGroupBoundingBox.min.x;
+
+    sharedParams.modelGroup.updateMatrixWorld(true);
+    const modelGroupBoundingBox = new THREE.Box3().setFromObject(sharedParams.modelGroup);
+    const modelsWidth = modelGroupBoundingBox.max.x - modelGroupBoundingBox.min.x;
+
+
+    // const modelsWidth = await maxSizeAllModelsWidth();
+    // const wallModelsWidth = await maxWallWidth();
+    const wallModelsWidthToRemove = wallModelsWidth - wallWidth;
+    const padding = 0; // Padding between models and walls
+    const requiredWidth = modelsWidth + padding;
+    const numberOfWalls = sharedParams.modelWallGroup.children.length;
+
+    // Add new walls if needed
+    if (numberOfWalls > 1 && wallModelsWidthToRemove > requiredWidth) {
+        const lastWall = sharedParams.modelWallGroup.children[sharedParams.modelWallGroup.children.length - 1];
+        if (lastWall.parent) {
+            lastWall.parent.remove(lastWall);
+        }
+    }
+
+    if (wallModelsWidth < requiredWidth) {
+        const newWallModel = sharedParams.main_wall_model.clone();
+        newWallModel.visible = true;
+        newWallModel.name = `main_wall_${sharedParams.modelWallGroup.children.length}`;
+        sharedParams.modelWallGroup.add(newWallModel);
     }
 
 }

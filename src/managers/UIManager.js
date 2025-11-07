@@ -19,7 +19,7 @@ import {
     showHideNodes,
     traverseAsync,
     centerMainModel,
-    removeWallModels,
+    // removeWallModels,
     addAnotherModels,
     updateActiveModel,
     checkForCollision,
@@ -115,6 +115,8 @@ export class UIManager {
             accordionModel: document.getElementById("accordionModel"),
             moveLeftModel: document.getElementById("moveLeftModel"),
             moveRightModel: document.getElementById("moveRightModel"),
+            swapLeftModel: document.getElementById("swapLeftModel"),
+            swapRightModel: document.getElementById("swapRightModel"),
             zoomInButton: document.getElementById("cropper-zoom-in"),
             zoomOutButton: document.getElementById("cropper-zoom-out"),
             resetButton: document.getElementById("cropper-reset"),
@@ -669,6 +671,12 @@ export class UIManager {
                         sharedParams.selectedGroup = main_model;
 
                         await showHideNodes();
+
+                        // Update move button states
+                        await this.updateMoveButtonStates();
+
+                        // Update swap button states
+                        await this.updateSwapButtonStates();
                     }
                 }
             );
@@ -1112,6 +1120,10 @@ export class UIManager {
                     }
                     setting[params.selectedGroupName].spacing = selectedModelGroup.spacing;
                     await drawMeasurementBoxesWithLabels();
+                    // Update move button states after movement
+                    await this.updateMoveButtonStates();
+                    // Update swap button states
+                    await this.updateSwapButtonStates();
                 } else {
                     console.log(
                         "Collision detected! Cannot move further left."
@@ -1151,6 +1163,10 @@ export class UIManager {
                     }
                     setting[params.selectedGroupName].spacing = selectedModelGroup.spacing;
                     await drawMeasurementBoxesWithLabels();
+                    // Update move button states after movement
+                    await this.updateMoveButtonStates();
+                    // Update swap button states
+                    await this.updateSwapButtonStates();
                 } else {
                     console.log(
                         "Collision detected! Cannot move further right."
@@ -1158,6 +1174,28 @@ export class UIManager {
                 }
             } else {
                 console.log(`Group ${selectedGroupName} not found.`);
+            }
+        });
+
+        // Swap Left (with previous model)
+        this.elements.swapLeftModel.addEventListener("click", async () => {
+            const currentIndex = allGroupNames.indexOf(params.selectedGroupName);
+            if (currentIndex > 0) {
+                const previousModelName = allGroupNames[currentIndex - 1];
+                await this.swapModelPositions(params.selectedGroupName, previousModelName);
+            } else {
+                console.log("Cannot swap left: Already at the first position.");
+            }
+        });
+
+        // Swap Right (with next model)
+        this.elements.swapRightModel.addEventListener("click", async () => {
+            const currentIndex = allGroupNames.indexOf(params.selectedGroupName);
+            if (currentIndex < allGroupNames.length - 1) {
+                const nextModelName = allGroupNames[currentIndex + 1];
+                await this.swapModelPositions(params.selectedGroupName, nextModelName);
+            } else {
+                console.log("Cannot swap right: Already at the last position.");
             }
         });
 
@@ -1368,6 +1406,11 @@ export class UIManager {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+
+        // Initialize move button states
+        await this.updateMoveButtonStates();
+        // Initialize swap button states
+        await this.updateSwapButtonStates();
     }
 
     async handleClick(event) {
@@ -2546,13 +2589,214 @@ export class UIManager {
                 if (index > -1) {
                     mergedArray.splice(index, 1); // Removes 1 element at the specified index
                 }
+                // Also remove from allGroupNames
+                const allGroupIndex = allGroupNames.indexOf(modelName);
+                if (allGroupIndex > -1) {
+                    allGroupNames.splice(allGroupIndex, 1);
+                }
+                // Remove from setting
+                if (setting[modelName]) {
+                    delete setting[modelName];
+                }
                 accordionItem.remove();
+
+                // Update move button states
+                await this.updateMoveButtonStates();
+                // Update swap button states
+                await this.updateSwapButtonStates();
             }
             if (sharedParams.modelWallGroup) {
-                await removeWallModels();
+                // await removeWallModels();
             }
             await centerMainModel();
         });
+    }
+
+    /**
+     * Swap positions of two models in the array and UI
+     * @param {string} model1Name - First model name
+     * @param {string} model2Name - Second model name
+     */
+    async swapModelPositions(model1Name, model2Name) {
+        try {
+            // Get indices of both models
+            const index1 = allGroupNames.indexOf(model1Name);
+            const index2 = allGroupNames.indexOf(model2Name);
+
+            if (index1 === -1 || index2 === -1) {
+                console.error("One or both models not found in allGroupNames");
+                return;
+            }
+
+            // Swap in allGroupNames array
+            [allGroupNames[index1], allGroupNames[index2]] = [allGroupNames[index2], allGroupNames[index1]];
+
+            // Reset spacing for both models to ensure clean swap
+            const model1Group = sharedParams.modelGroup.getObjectByName(model1Name);
+            const model2Group = sharedParams.modelGroup.getObjectByName(model2Name);
+
+            if (model1Group) {
+                model1Group.spacing = 0;
+                if (setting[model1Name]) {
+                    setting[model1Name].spacing = 0;
+                }
+            }
+
+            if (model2Group) {
+                model2Group.spacing = 0;
+                if (setting[model2Name]) {
+                    setting[model2Name].spacing = 0;
+                }
+            }
+
+            // Reorder accordion items in UI
+            await this.reorderAccordionItems();
+
+            // Recalculate positions
+            await centerMainModel();
+
+            // Update measurements
+            await drawMeasurementBoxesWithLabels();
+
+            // Update move button states after swap
+            await this.updateMoveButtonStates();
+            // Update swap button states after swap
+            await this.updateSwapButtonStates();
+
+            // console.log(`Successfully swapped ${model1Name} with ${model2Name}`);
+        } catch (error) {
+            console.error("Error swapping model positions:", error);
+        }
+    }
+
+    /**
+     * Update swap button states (enable/disable based on position)
+     */
+    async updateSwapButtonStates() {
+        if (!this.elements.swapLeftModel || !this.elements.swapRightModel) {
+            return;
+        }
+
+        const currentIndex = allGroupNames.indexOf(params.selectedGroupName);
+        const totalModels = allGroupNames.length;
+
+        // Disable swap up if at first position
+        if (currentIndex === 0) {
+            this.elements.swapLeftModel.disabled = true;
+            this.elements.swapLeftModel.classList.add("disabled");
+        } else {
+            this.elements.swapLeftModel.disabled = false;
+            this.elements.swapLeftModel.classList.remove("disabled");
+        }
+
+        // Disable swap down if at last position
+        if (currentIndex === totalModels - 1) {
+            this.elements.swapRightModel.disabled = true;
+            this.elements.swapRightModel.classList.add("disabled");
+        } else {
+            this.elements.swapRightModel.disabled = false;
+            this.elements.swapRightModel.classList.remove("disabled");
+        }
+    }
+
+    /**
+     * Update move button states (enable/disable based on collision detection)
+     */
+    async updateMoveButtonStates() {
+        if (!this.elements.moveLeftModel || !this.elements.moveRightModel) {
+            return;
+        }
+
+        const selectedGroupName = params.selectedGroupName;
+        const selectedModelGroup = sharedParams.modelGroup.getObjectByName(selectedGroupName);
+
+        if (!selectedModelGroup) {
+            // Disable both buttons if model not found
+            this.elements.moveLeftModel.disabled = true;
+            this.elements.moveRightModel.disabled = true;
+            this.elements.moveLeftModel.classList.add("disabled");
+            this.elements.moveRightModel.classList.add("disabled");
+            return;
+        }
+
+        // Update matrix world for all models to ensure accurate collision detection
+        sharedParams.modelGroup.updateMatrixWorld(true);
+
+        // Check if can move left
+        const canMoveLeft = await checkForCollision(
+            selectedModelGroup,
+            -params.moveLeftRight
+        );
+
+        // Check if can move right
+        const canMoveRight = await checkForCollision(
+            selectedModelGroup,
+            params.moveLeftRight
+        );
+
+        // Update left button state
+        if (canMoveLeft) {
+            this.elements.moveLeftModel.disabled = false;
+            this.elements.moveLeftModel.classList.remove("disabled");
+        } else {
+            this.elements.moveLeftModel.disabled = true;
+            this.elements.moveLeftModel.classList.add("disabled");
+        }
+
+        // Update right button state
+        if (canMoveRight) {
+            this.elements.moveRightModel.disabled = false;
+            this.elements.moveRightModel.classList.remove("disabled");
+        } else {
+            this.elements.moveRightModel.disabled = true;
+            this.elements.moveRightModel.classList.add("disabled");
+        }
+    }
+
+    /**
+     * Reorder accordion items in UI to match allGroupNames order
+     */
+    async reorderAccordionItems() {
+        const accordionContainer = document.querySelector("#accordionModel");
+        if (!accordionContainer) {
+            console.error("Accordion container not found");
+            return;
+        }
+
+        // Get all accordion items
+        const accordionItems = Array.from(accordionContainer.querySelectorAll(".accordion-item"));
+
+        // Create a map of model names to accordion items
+        const itemsMap = new Map();
+        accordionItems.forEach(item => {
+            const modelName = item.getAttribute("data-model");
+            if (modelName) {
+                itemsMap.set(modelName, item);
+            }
+        });
+
+        // Clear the container
+        accordionContainer.innerHTML = "";
+
+        // Append items in the order of allGroupNames
+        allGroupNames.forEach(modelName => {
+            const item = itemsMap.get(modelName);
+            if (item) {
+                accordionContainer.appendChild(item);
+            }
+        });
+
+        // Update card indices if they exist
+        const rightControls = document.querySelector(".model_items");
+        if (rightControls) {
+            const allCards = rightControls.querySelectorAll(".model_item_card");
+            allCards.forEach((card, idx) => {
+                const indexElement = card.querySelector(".card-index");
+                if (indexElement) {
+                    indexElement.textContent = idx + 1;
+                }
+            });
+        }
     }
 
     async cloneAccordionItem(modelName) {
