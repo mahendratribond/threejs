@@ -1295,53 +1295,6 @@ export async function centerWallModels() {
 
 }
 
-export async function centerWallModels1() {
-
-    // Calculate combined bounding box of all models (excluding walls)
-    let allModelsBoundingBox = null;
-    const wallGroupChildren = sharedParams.modelWallGroup.children;
-
-    if (sharedParams.modelGroup?.children) {
-        sharedParams.modelGroup.children.forEach((child) => {
-            // Exclude wall models from calculation
-            if (!wallGroupChildren.includes(child)) {
-                child.updateMatrixWorld(true);
-                const childBoundingBox = new THREE.Box3().setFromObject(child);
-
-                if (!allModelsBoundingBox) {
-                    allModelsBoundingBox = childBoundingBox.clone();
-                } else {
-                    allModelsBoundingBox.union(childBoundingBox);
-                }
-            }
-        });
-    }
-
-    const modelCenter = allModelsBoundingBox.getCenter(new THREE.Vector3());
-    const modelsMinZ = allModelsBoundingBox.min.z;
-
-    // Get main wall's bounding box dimensions
-    sharedParams.main_wall_model.updateMatrixWorld(true);
-    const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.main_wall_model);
-    const wallDepth = mainWallBoundingBox.max.z - mainWallBoundingBox.min.z;
-    const wallWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;
-    const mainWallBoundingBoxCenter = mainWallBoundingBox.getCenter(new THREE.Vector3());
-    const positionToCenterOffsetX = mainWallBoundingBoxCenter.x - sharedParams.main_wall_model.position.x;
-
-    // Calculate positions for all walls
-    const numberOfWalls = wallGroupChildren.length;
-    const firstWallDesiredCenterX = modelCenter.x - ((numberOfWalls - 1) * wallWidth) / 2;
-
-    // Position all walls
-    wallGroupChildren.forEach((wallModel, index) => {
-        const desiredCenterX = firstWallDesiredCenterX + (index * wallWidth);
-        wallModel.position.x = desiredCenterX - positionToCenterOffsetX;
-        wallModel.position.z = modelsMinZ - wallDepth / 2;
-        wallModel.updateMatrixWorld(true);
-    });
-
-}
-
 // Function to check for collision
 export async function checkForCollision(movingModelGroup, moveAmount) {
     // Update matrix world before calculating bounding box
