@@ -97,16 +97,23 @@ async function init() {
         sharedParams.renderer.domElement
     );
 
+    // Create wall group
+    sharedParams.modelWallGroup = new THREE.Group();
+    sharedParams.modelWallGroup.name = "model_wall_group";
+    sharedParams.scene.add(sharedParams.modelWallGroup);
+
+    // Load main wall model
+    sharedParams.main_wall_model = await loadGLTFModel(params.defaultWallModel + ".glb");
+    sharedParams.main_wall_model.visible = true; // Wall is always visible
+    sharedParams.main_wall_model.name = "main_wall"; // Wall is always visible
+    sharedParams.main_wall_model.rotateY(Math.PI / 2);
+    sharedParams.modelWallGroup.add(sharedParams.main_wall_model);
+
+    // Create main model group
     sharedParams.modelGroup = new THREE.Group();
     sharedParams.scene.add(sharedParams.modelGroup);
 
-    // Load wall model first, before main_model
-    sharedParams.wallGroup = await loadWallModel();
-    sharedParams.wallGroup.visible = true; // Wall is always visible
-    sharedParams.wallGroup.name = "main_wall"; // Wall is always visible
-    sharedParams.scene.add(sharedParams.wallGroup);
-
-    // Load main model
+    // Load main model and add it to the main model group
     sharedParams.main_model = await loadGLTFModel(params.defaultModel + ".glb");
     sharedParams.main_model.name = params.selectedGroupName;
     sharedParams.main_model.activeModel = sharedParams.main_model.children[0];
@@ -118,11 +125,12 @@ async function init() {
     sharedParams.modelGroup.name = "main_group";
     modelManager.setupMainModel(sharedParams.main_model);
 
-    // Position wall at the back of main_model after main_model is loaded
-    modelManager.positionWallAtBack(sharedParams.wallGroup);
+    // Setup wall models position at the back of all main models
+    await modelManager.setupWallModel();
 
     await loadAllModels();
     await loadRemainingModels();
+
     // Transform controls
     sharedParams.transformControls = new TransformControls(
         sharedParams.camera,
@@ -147,8 +155,8 @@ async function init() {
     window.addEventListener("click", uiManager.onMouseClick(), false);
     window.addEventListener("resize", uiManager.onWindowResize());
 
-    // await calculateBoundingBox(sharedParams.modelGroup);
-    // await showHideNodes();
+    await calculateBoundingBox(sharedParams.modelGroup);
+    await showHideNodes();
 
     sharedParams.labelRenderer = await initLabelRenderer();
     document.body.appendChild(sharedParams.labelRenderer.domElement);

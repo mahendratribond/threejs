@@ -61,7 +61,6 @@ export async function computeBoundingBox(object, frameNames) {
 
             // Expand the bounding box only if the node is visible and has visible parents
             if (isNodeVisible) {
-                // console.log('modelNode.name', modelNode.name)
                 bbox.expandByObject(modelNode);
             }
         }

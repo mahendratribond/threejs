@@ -28,9 +28,7 @@ import {
 } from "./FrameImagesManager.js";
 import {getNodeSize} from "./MeasurementManager.js"
 
-import { UIManager } from "./UIManager.js";
 import { ModelManager } from "./ModelManager.js";
-const uiManager = new UIManager();
 const modelManager = new ModelManager();
 // Create a function to load GLTF models using a Promise
 export const manager = new THREE.LoadingManager();
@@ -319,10 +317,11 @@ export async function loadAllModels() {
                     const gltf = await loadGLTFModel(modelPath);
                     count += 1;
                     let percent = (count * 100) / modelQueue.length;
-                    uiManager.loadingElements.progressText.innerText = `Loading... ${Math.round(
-                        percent
-                    )}%`;
-
+                    // Access progress text directly to avoid circular dependency
+                    const progressText = document.getElementById("progress-text");
+                    if (progressText) {
+                        progressText.innerText = `Loading... ${Math.round(percent)}%`;
+                    }
                     if (!gltf) {
                         throw new Error(
                             `Model ${modelPath} loaded but is null`

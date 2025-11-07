@@ -795,8 +795,14 @@ export async function showHideNodes() {
         // Update cone nodes
         updateInChunks(nodes.coneNodes, (node) => {
             for (const hideCornNode of sharedParams.modelGroup.children) {
+                // Skip wall model as it doesn't have activeModel property
+                if (!hideCornNode.activeModel) {
+                    continue;
+                }
                 let coneNode = hideCornNode.activeModel.getObjectByName("Cone");
-                coneNode.visible = false;
+                if (coneNode) {
+                    coneNode.visible = false;
+                }
             }
             node.visible = true;
             if (sharedParams.modelGroup.children.length < 2) {
@@ -851,7 +857,7 @@ export async function showHideNodes() {
                     (current_setting.defaultShelfType ==
                         "Header_Wooden_Shelf" ||
                         current_setting.defaultShelfType ==
-                            "Header_Glass_Shelf") &&
+                        "Header_Glass_Shelf") &&
                     nodes.headerShelfGlass.length > 0) ||
                 (current_setting.headerRodToggle &&
                     current_setting.topOption == "Header");
@@ -934,7 +940,7 @@ export async function showHideNodes() {
                     sharedParams.border_texture_material.clone();
                 let frame_texture_border = await new THREE.TextureLoader().load(
                     "./assets/images/borders/" +
-                        current_setting.frameBorderColor
+                    current_setting.frameBorderColor
                 );
                 frame_texture_border = await setTextureParams(
                     frame_texture_border
@@ -956,7 +962,7 @@ export async function showHideNodes() {
                 // Load texture
                 let texture_border = new THREE.TextureLoader().load(
                     "./assets/images/borders/" +
-                        current_setting.defaultShelfColor
+                    current_setting.defaultShelfColor
                 );
                 texture_border = await setTextureParams(texture_border);
                 let material = border_texture_material_Clone;
@@ -1224,12 +1230,76 @@ export async function centerMainModel() {
         });
     }
 
+    // Center walls after centering models
+    if (sharedParams.main_wall_model) {
+        await centerWallModels();
+    }
+
+    // Update measurements after centering the model
+    await updateMeasurementGroups();
+    await updateLabelOcclusion();
+    await drawMeasurementBoxesWithLabels();
+
     // console.log("sharedParams.modelGroup:", sharedParams.modelGroup);
     // console.log("models:", models);
 }
 
+/**
+ * Center wall models around the center of all models
+ * This function positions walls based on the combined bounding box of all models
+ */
+export async function centerWallModels() {
+
+    // Calculate combined bounding box of all models (excluding walls)
+    let allModelsBoundingBox = null;
+    const wallGroupChildren = sharedParams.modelWallGroup.children;
+
+    if (sharedParams.modelGroup?.children) {
+        sharedParams.modelGroup.children.forEach((child) => {
+            // Exclude wall models from calculation
+            if (!wallGroupChildren.includes(child)) {
+                child.updateMatrixWorld(true);
+                const childBoundingBox = new THREE.Box3().setFromObject(child);
+
+                if (!allModelsBoundingBox) {
+                    allModelsBoundingBox = childBoundingBox.clone();
+                } else {
+                    allModelsBoundingBox.union(childBoundingBox);
+                }
+            }
+        });
+    }
+
+    const modelCenter = allModelsBoundingBox.getCenter(new THREE.Vector3());
+    const modelsMinZ = allModelsBoundingBox.min.z;
+
+    // Get main wall's bounding box dimensions
+    sharedParams.main_wall_model.updateMatrixWorld(true);
+    const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.main_wall_model);
+    const wallDepth = mainWallBoundingBox.max.z - mainWallBoundingBox.min.z;
+    const wallWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;
+    const mainWallBoundingBoxCenter = mainWallBoundingBox.getCenter(new THREE.Vector3());
+    const positionToCenterOffsetX = mainWallBoundingBoxCenter.x - sharedParams.main_wall_model.position.x;
+
+    // Calculate positions for all walls
+    const numberOfWalls = wallGroupChildren.length;
+    const firstWallDesiredCenterX = modelCenter.x - ((numberOfWalls - 1) * wallWidth) / 2;
+
+    // Position all walls
+    wallGroupChildren.forEach((wallModel, index) => {
+        const desiredCenterX = firstWallDesiredCenterX + (index * wallWidth);
+        wallModel.position.x = desiredCenterX - positionToCenterOffsetX;
+        wallModel.position.z = modelsMinZ - wallDepth / 2;
+        wallModel.updateMatrixWorld(true);
+    });
+
+}
+
 // Function to check for collision
 export async function checkForCollision(movingModelGroup, moveAmount) {
+    // Update matrix world before calculating bounding box
+    // movingModelGroup.updateMatrixWorld(true);
+
     const movingModelBoundingBox = await computeBoundingBox(
         movingModelGroup,
         allModelNames
@@ -1239,13 +1309,39 @@ export async function checkForCollision(movingModelGroup, moveAmount) {
     // Check against all other model groups in the scene
     for (let otherModelGroup of sharedParams.modelGroup.children) {
         if (otherModelGroup !== movingModelGroup && otherModelGroup.visible) {
+            // Update matrix world before calculating bounding box
+            // otherModelGroup.updateMatrixWorld(true);
+
             const otherModelBoundingBox = await computeBoundingBox(
                 otherModelGroup,
                 allModelNames
             );
+
             // Check if the bounding boxes intersect
             if (movingModelBoundingBox.intersectsBox(otherModelBoundingBox)) {
-                return false; // Collision detected
+                // Calculate overlap amount in X direction
+                const overlapX = Math.min(
+                    movingModelBoundingBox.max.x - otherModelBoundingBox.min.x,
+                    otherModelBoundingBox.max.x - movingModelBoundingBox.min.x
+                );
+
+                // Calculate overlap amount in Y direction
+                const overlapY = Math.min(
+                    movingModelBoundingBox.max.y - otherModelBoundingBox.min.y,
+                    otherModelBoundingBox.max.y - movingModelBoundingBox.min.y
+                );
+
+                // Calculate overlap amount in Z direction
+                const overlapZ = Math.min(
+                    movingModelBoundingBox.max.z - otherModelBoundingBox.min.z,
+                    otherModelBoundingBox.max.z - movingModelBoundingBox.min.z
+                );
+
+
+                if(overlapX > 1){
+                    return false;
+                }
+                // return false; // Collision detected
             }
         }
     }
@@ -1293,6 +1389,7 @@ export function findParentWithNamesInArr(node, nameArray) {
 
     return null;
 }
+
 
 export async function addAnotherModels(
     allGroupNames,
@@ -1390,7 +1487,7 @@ export async function addAnotherModels(
                     // const material = await commonMaterial(parseInt('0xffffff', 16))
                     const material =
                         params.lastInnerMaterial[currentModelNode.name][
-                            mesh.name
+                        mesh.name
                         ];
                     mesh.material = material;
                     mesh.needsUpdate = true;
@@ -1407,11 +1504,147 @@ export async function addAnotherModels(
         });
 
         sharedParams.modelGroup.add(newModel);
+        const groupBoundingBox = await computeBoundingBox(
+            sharedParams.modelGroup,
+            allModelNames
+        );
+        // const groupWidth = groupBoundingBox.max.x - groupBoundingBox.min.x;
+        // console.log('allModelNames', allModelNames);
+        // console.log('groupWidth', groupWidth);
+
         newModel.activeModel = newModel.children[0];
         allGroups.push(newModel);
         sharedParams.selectedGroup = newModel;
+
+        if (sharedParams.modelWallGroup) {
+            await addWallModels();
+        }
+
         await addAnotherModelView(allGroupNames, cameraOnLeft);
     }
+}
+
+/**
+ * Get the width of the largest model (Model_610, Model_1010, etc.)
+ * Returns the bounding box width of the largest model found in modelGroup
+ */
+export async function maxSizeAllModelsWidth() {
+    // Find the largest model name from allModelNames
+    let maxModelName = '';
+    let maxModelSize = 0;
+
+    for (const modelName of allModelNames) {
+        const sizeMatch = modelName.match(/Model_(\d+)/);
+        if (sizeMatch) {
+            const modelSize = parseInt(sizeMatch[1], 10);
+            if (!maxModelSize || modelSize > maxModelSize) {
+                maxModelSize = modelSize;
+                maxModelName = modelName;
+            }
+        }
+    }
+
+    if (!maxModelName) {
+        return 0;
+    }
+
+    let modelsWidth = 0;
+    // Traverse modelGroup to find the largest model and get its width
+    if (sharedParams.modelGroup) {
+        await traverseAsync(sharedParams.modelGroup, async (node) => {
+            if (node.name === maxModelName) {
+                node.updateMatrixWorld(true);
+                // Ensure the bounding box is computed
+                node.traverse((child) => {
+                    if (child.isMesh && child.geometry) {
+                        child.geometry.computeBoundingBox();
+                    }
+                });
+
+                // Get bounding box for the model
+                const boundingBox = new THREE.Box3().setFromObject(node);
+                const modelWidth = boundingBox.max.x - boundingBox.min.x;
+                modelsWidth += modelWidth;
+            }
+        });
+    }
+
+    return modelsWidth;
+}
+
+/**
+ * Get the combined width of all walls in modelWallGroup
+ * Returns the total width of all walls combined
+ */
+export async function maxWallWidth() {
+    if (!sharedParams.modelWallGroup || !sharedParams.modelWallGroup.children.length) {
+        return 0;
+    }
+
+    sharedParams.modelWallGroup.updateMatrixWorld(true);
+    const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.modelWallGroup);
+    const wallModelsWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;
+
+    return wallModelsWidth;
+}
+
+/**
+ * Add a new wall model to modelWallGroup
+ * Clones the main_wall_model and adds it to the wall group
+ */
+export async function addWallModels() {
+    if (!sharedParams.main_wall_model) {
+        return;
+    }
+
+    const modelsWidth = await maxSizeAllModelsWidth();
+    const wallModelsWidth = await maxWallWidth();
+    const padding = 0; // Padding between models and walls
+    const requiredWidth = modelsWidth + padding;
+    // const numberOfWalls = sharedParams.modelWallGroup.children.length;
+
+    // console.log('modelsWidth', modelsWidth);
+    // console.log('wallModelsWidth', wallModelsWidth);
+    // console.log('requiredWidth', requiredWidth);
+    // console.log('numberOfWalls', numberOfWalls);
+
+    // Add new walls if needed
+    if (wallModelsWidth < requiredWidth) {
+        const newWallModel = sharedParams.main_wall_model.clone();
+        newWallModel.visible = true;
+        newWallModel.name = `main_wall_${sharedParams.modelWallGroup.children.length}`;
+        sharedParams.modelWallGroup.add(newWallModel);
+    }
+}
+
+/**
+ * Remove the last wall model from modelWallGroup
+ * Removes the last wall if there are more than 1 walls
+ */
+export async function removeWallModels() {
+    if (!sharedParams.modelWallGroup || sharedParams.modelWallGroup.children.length <= 1) {
+        return;
+    }
+
+    sharedParams.main_wall_model.updateMatrixWorld(true);
+    const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.main_wall_model);
+    const wallWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;
+
+
+    const modelsWidth = await maxSizeAllModelsWidth();
+    const wallModelsWidth = await maxWallWidth() - wallWidth;
+    const padding = 0; // Padding between models and walls
+    const requiredWidth = modelsWidth + padding;
+    const numberOfWalls = sharedParams.modelWallGroup.children.length;
+
+    // Add new walls if needed
+    if (numberOfWalls > 1 && wallModelsWidth > requiredWidth) {
+        const lastWall = sharedParams.modelWallGroup.children[sharedParams.modelWallGroup.children.length - 1];
+        if (lastWall.parent) {
+            lastWall.parent.remove(lastWall);
+        }
+    }
+
 }
 
 // Function to dynamically generate and append cards for visible models
@@ -1562,7 +1795,7 @@ export async function addRacks(rackType, lastside = null, position = null) {
 
                     const boundingBox =
                         params.calculateBoundingBox[defaultModelName][
-                            frame.name
+                        frame.name
                         ];
 
                     // Now compute the bounding box relative to the world coordinates
@@ -1640,7 +1873,7 @@ export async function addRacks(rackType, lastside = null, position = null) {
     }
 }
 
-export function checkTime(name){
+export function checkTime(name) {
     console.log(
         `${name}`,
         Math.floor(Math.floor(Date.now() / 1000) / 60),

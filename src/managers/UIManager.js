@@ -19,6 +19,7 @@ import {
     showHideNodes,
     traverseAsync,
     centerMainModel,
+    removeWallModels,
     addAnotherModels,
     updateActiveModel,
     checkForCollision,
@@ -435,7 +436,6 @@ export class UIManager {
                                     sharedParams.mainFrameCropedImage[selectedGroupName][defaultModel] = response.imageUrl;
                                     // Optionally update texture with server URL
                                     // setMainFrameCropedImage(sharedParams.mainFrameCropedImage);
-                                    console.log("response", sharedParams.mainFrameCropedImage);
                                 }
                             });
                         } else if (params.fileUploadFlag == "TopFrame") {
@@ -2547,6 +2547,9 @@ export class UIManager {
                     mergedArray.splice(index, 1); // Removes 1 element at the specified index
                 }
                 accordionItem.remove();
+            }
+            if (sharedParams.modelWallGroup) {
+                await removeWallModels();
             }
             await centerMainModel();
         });
