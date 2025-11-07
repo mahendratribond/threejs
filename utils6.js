@@ -1280,6 +1280,7 @@ export async function centerWallModels() {
 
             // Position the wall accounting for the offset between center and position
             wallModel.position.x = desiredCenterX - positionToCenterOffsetX;
+            // wallModel.position.z = wallModel.position.z - 10;
             wallModel.updateMatrixWorld(true);
         });
 
@@ -1346,7 +1347,6 @@ export async function checkForCollision(movingModelGroup, moveAmount) {
                 if(overlapX > 1){
                     return false;
                 }
-                // return false; // Collision detected
             }
         }
     }
@@ -1520,11 +1520,6 @@ export async function addAnotherModels(
         newModel.activeModel = newModel.children[0];
         allGroups.push(newModel);
         sharedParams.selectedGroup = newModel;
-
-        if (sharedParams.modelWallGroup) {
-            // await addWallModels();
-        }
-
         await addAnotherModelView(allGroupNames, cameraOnLeft);
     }
 }
@@ -1657,6 +1652,9 @@ export async function removeWallModels() {
  * Removes the last wall if there are more than 1 walls
  */
 export async function updateWallModels() {
+    if (!sharedParams.modelWallGroup || !sharedParams.main_wall_model) {
+        return;
+    }
     sharedParams.main_wall_model.updateMatrixWorld(true);
     const mainWallBoundingBox = new THREE.Box3().setFromObject(sharedParams.main_wall_model);
     const wallWidth = mainWallBoundingBox.max.x - mainWallBoundingBox.min.x;

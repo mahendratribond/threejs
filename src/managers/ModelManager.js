@@ -87,7 +87,7 @@ export class ModelManager {
      */
     async setupWallModel() {
 
-        if (!sharedParams.modelWallGroup) {
+        if (!sharedParams.modelWallGroup || !sharedParams.main_wall_model) {
             return;
         }
 
@@ -118,8 +118,9 @@ export class ModelManager {
             });
         }
 
-        // sharedParams.main_model.updateMatrixWorld(true);
-        // const boundingBox = new THREE.Box3().setFromObject(sharedParams.main_model);
+        sharedParams.main_model.updateMatrixWorld(true);
+        const boundingBox = new THREE.Box3().setFromObject(sharedParams.main_model);
+        // const mainModelDepth = boundingBox.max.z - boundingBox.min.z;
         // const modelCenter = boundingBox.getCenter(new THREE.Vector3());
         sharedParams.modelWallGroup.children.forEach((wallModel, index) => {
             wallModel.updateMatrixWorld(true);
@@ -132,7 +133,7 @@ export class ModelManager {
             // Y position: Don't set, let it use default position
 
             // Z position: Position at the back edge of models
-            wallModel.position.z = wallBoundingBox.min.z - wallDepth / 2;
+            wallModel.position.z = boundingBox.min.z - (wallDepth / 2);
         });
 
     }

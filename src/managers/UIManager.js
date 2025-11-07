@@ -19,7 +19,6 @@ import {
     showHideNodes,
     traverseAsync,
     centerMainModel,
-    // removeWallModels,
     addAnotherModels,
     updateActiveModel,
     checkForCollision,
@@ -2598,16 +2597,43 @@ export class UIManager {
                 if (setting[modelName]) {
                     delete setting[modelName];
                 }
+
+                // Get next or previous sibling before removing the accordion item
+                const nextSibling = accordionItem.nextElementSibling;
+                const previousSibling = accordionItem.previousElementSibling;
+
                 accordionItem.remove();
 
                 // Update move button states
                 await this.updateMoveButtonStates();
                 // Update swap button states
                 await this.updateSwapButtonStates();
+
+                // Automatically select next or previous accordion item after deletion
+                // by triggering accordion-item click to use existing event handler
+                let targetAccordionItem = null;
+
+                // First try next sibling (item after deleted one)
+                if (nextSibling && nextSibling.classList.contains("accordion-item")) {
+                    targetAccordionItem = nextSibling;
+                }
+                // If next sibling not found, try previous sibling (item before deleted one)
+                else if (previousSibling && previousSibling.classList.contains("accordion-item")) {
+                    targetAccordionItem = previousSibling;
+                }
+
+                if (targetAccordionItem) {
+                    // Find the accordion button inside the accordion header
+                    const accordionButton = targetAccordionItem.querySelector(
+                        ".accordion-header .accordion-button"
+                    );
+
+                    if (accordionButton) {
+                        accordionButton.click();
+                    }
+                }
             }
-            if (sharedParams.modelWallGroup) {
-                // await removeWallModels();
-            }
+
             await centerMainModel();
         });
     }
